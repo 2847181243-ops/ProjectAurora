@@ -41,8 +41,18 @@ private:
     const ModuleRegistry& registry_;
 };
 
-/* FNV-1a over the normalised path: stable across runs, short enough for an id. */
-std::string gameIdForPath(const std::string& path);
+/* Identity is content based, not path based: moving or renaming a game must not
+ * create a second library entry. The id hashes the first 64 KB of the file the
+ * detector matched plus its size, which is cheap and stable for real games. */
+std::string gameIdForContent(const std::string& entry_path);
+
+/* Library persistence. The file is a plain JSON array so it stays inspectable. */
+bool saveGames(const std::string& json_path,
+               const std::vector<GameEntry>& games,
+               std::string& error);
+bool loadGames(const std::string& json_path,
+               std::vector<GameEntry>& games,
+               std::string& error);
 
 } // namespace aurora
 

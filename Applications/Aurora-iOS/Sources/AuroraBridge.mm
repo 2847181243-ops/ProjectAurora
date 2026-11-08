@@ -13,6 +13,8 @@
 #include "aurora/builtin_modules.h"
 #include "aurora/diagnostics.h"
 #include "aurora/host.h"
+#include "aurora/display.h"
+#include "aurora/library.h"
 #include "aurora/registry.h"
 #include "aurora/supervisor.h"
 
@@ -39,6 +41,8 @@ struct BridgeState {
     std::unique_ptr<aurora::ModuleSupervisor> supervisor;
     std::string running_module;
     std::string last_error;
+    std::string games_root;
+    std::vector<aurora::GameEntry> games;
     std::string game_path = "/library/demo.sim";
     std::string game_format = "sim";
     std::vector<CachedRow> rows;
@@ -140,6 +144,14 @@ int32_t aurora_bridge_init(const char* storage_root, const char* manifest_direct
     BridgeState& s = state();
     s.storage_root = storage_root != nullptr ? storage_root : "";
     s.last_error.clear();
+
+    {
+        std::error_code code;
+        std::filesystem::path games = std::filesystem::path(s.storage_root);
+        games /= "Games";
+        std::filesystem::create_directories(games, code);
+        s.games_root = games.generic_string();
+    }
 
     aurora::SemVer sdk;
     aurora::SemVer::parse("1.1.0", sdk);
@@ -336,6 +348,109 @@ const char* aurora_bridge_last_error(void) {
 
 const char* aurora_bridge_state_name(int32_t state_value) {
     return aurora_module_state_string(static_cast<AuroraModuleState>(state_value));
+}
+
+
+/* ---- library -------------------------------------------------------------- */
+
+const char* aurora_bridge_games_root(void) {
+    return state().games_root.c_str();
+}
+
+int32_t aurora_bridge_library_scan(void) {
+    BridgeState& s = state();
+    if (!s.registry) return 0;
+    aurora::GameLibrary library(*s.registry);
+    s.games = library.scan(s.games_root, 2);
+    return static_cast<int32_t>(s.games.size());
+}
+
+int32_t aurora_bridge_library_count(void) {
+    return static_cast<int32_t>(state().games.size());
+}
+
+static const aurora::GameEntry* gameAt(int32_t index) {
+    BridgeState& s = state();
+    if (index < 0 || static_cast<std::size_t>(index) >= s.games.size()) return nullptr;
+    return &s.games[static_cast<std::size_t>(index)];
+}
+
+const char* aurora_bridge_library_title(int32_t index) {
+    const aurora::GameEntry* game = gameAt(index);
+    return game != nullptr ? game->title.c_str() : "";
+}
+
+const char* aurora_bridge_library_module(int32_t index) {
+    const aurora::GameEntry* game = gameAt(index);
+    return game != nullptr ? game->module_id.c_str() : "";
+}
+
+const char* aurora_bridge_library_state(int32_t index) {
+    BridgeState& s = state();
+    const aurora::GameEntry* game = gameAt(index);
+    if (game == nullptr || game->module_id.empty() || !s.registry) return "UNMATCHED";
+    const aurora::ModuleEntry* module = s.registry->find(game->module_id);
+    if (module == nullptr) return "UNKNOWN";
+    return aurora_module_state_string(module->state);
+}
+
+const char* aurora_bridge_library_detail(int32_t index) {
+    static std::string detail;
+    BridgeState& s = state();
+    const aurora::GameEntry* game = gameAt(index);
+    if (game == nullptr) return "";
+    detail = game->detected_by;
+    if (game->module_id.empty()) {
+        detail += " (no module claims this)";
+        return detail.c_str();
+    }
+    const aurora::ModuleEntry* module = s.registry ? s.registry->find(game->module_id) : nullptr;
+    if (module == nullptr) return detail.c_str();
+    if (!module->last_error.empty()) detail += " - " + module->last_error;
+    else if (!module->unmet.empty()) {
+        for (const auto& reason : module->unmet) detail += " - " + reason;
+    }
+    return detail.c_str();
+}
+
+int32_t aurora_bridge_library_import(const char* source_path) {
+    BridgeState& s = state();
+    if (source_path == nullptr || s.games_root.empty()) return -1;
+    std::error_code code;
+    const std::filesystem::path source(source_path);
+    if (!std::filesystem::exists(source, code)) return -1;
+    std::filesystem::path target(std::filesystem::path(s.games_root) / source.filename());
+    std::filesystem::copy(source, target,
+                          std::filesystem::copy_options::recursive |
+                              std::filesystem::copy_options::overwrite_existing,
+                          code);
+    if (code) {
+        s.last_error = "import failed: " + code.message();
+        return -1;
+    }
+    return 0;
+}
+
+/* ---- display -------------------------------------------------------------- */
+
+void aurora_bridge_compute_viewport(int32_t frame_width, int32_t frame_height,
+                                    int32_t view_width, int32_t view_height,
+                                    int32_t mode,
+                                    int32_t* out_x, int32_t* out_y,
+                                    int32_t* out_width, int32_t* out_height) {
+    aurora::DisplaySettings settings;
+    switch (mode) {
+        case 1: settings.mode = aurora::ScaleMode::Fill; break;
+        case 2: settings.mode = aurora::ScaleMode::Integer; break;
+        case 3: settings.mode = aurora::ScaleMode::Stretch; break;
+        default: settings.mode = aurora::ScaleMode::Fit; break;
+    }
+    const aurora::Viewport viewport = aurora::computeViewport(
+        frame_width, frame_height, view_width, view_height, settings);
+    if (out_x) *out_x = viewport.x;
+    if (out_y) *out_y = viewport.y;
+    if (out_width) *out_width = viewport.width;
+    if (out_height) *out_height = viewport.height;
 }
 
 } // extern "C"

@@ -6,6 +6,14 @@ import Metal
 import SwiftUI
 import UIKit
 
+struct GameRow: Identifiable {
+    let id: String
+    let title: String
+    let module: String
+    let state: String
+    let detail: String
+}
+
 struct ModuleRow: Identifiable {
     let id: String
     let name: String
@@ -31,6 +39,7 @@ struct ModuleRow: Identifiable {
  * the supervisor are the source of truth, this class only mirrors them. */
 final class AuroraHost: ObservableObject {
     @Published var rows: [ModuleRow] = []
+    @Published var games: [GameRow] = []
     @Published var frame: UIImage?
     @Published var runningModule: String = ""
     @Published var framesPresented: Int32 = 0
@@ -84,10 +93,43 @@ final class AuroraHost: ObservableObject {
         rows = list
         runningModule = String(cString: aurora_bridge_running_module())
         lastError = String(cString: aurora_bridge_last_error())
+        rescanLibrary()
         if runningModule.isEmpty {
             frame = nil
             framesPresented = 0
         }
+    }
+
+    /* Library ------------------------------------------------------------- */
+
+    var gamesRoot: String { String(cString: aurora_bridge_games_root()) }
+
+    func rescanLibrary() {
+        _ = aurora_bridge_library_scan()
+        let count = aurora_bridge_library_count()
+        var list: [GameRow] = []
+        var index: Int32 = 0
+        while index < count {
+            let title = String(cString: aurora_bridge_library_title(index))
+            list.append(GameRow(
+                id: "\(index)-\(title)-(String(cString: aurora_bridge_library_module(index)))",
+                title: title,
+                module: String(cString: aurora_bridge_library_module(index)),
+                state: String(cString: aurora_bridge_library_state(index)),
+                detail: String(cString: aurora_bridge_library_detail(index))
+            ))
+            index += 1
+        }
+        games = list
+    }
+
+    func importGames(from urls: [URL]) {
+        for url in urls {
+            let accessing = url.startAccessingSecurityScopedResource()
+            _ = url.path.withCString { aurora_bridge_library_import($0) }
+            if accessing { url.stopAccessingSecurityScopedResource() }
+        }
+        rescanLibrary()
     }
 
     func setEnabled(_ row: ModuleRow, enabled: Bool) {

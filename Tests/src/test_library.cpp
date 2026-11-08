@@ -140,3 +140,75 @@ AURORA_TEST(library_reports_a_game_whose_module_is_not_compiled) {
     CHECK(module != nullptr);
     if (module != nullptr) CHECK_EQ(module->state, AURORA_STATE_DISCOVERED);
 }
+
+AURORA_TEST(library_id_survives_a_rename) {
+    const std::string directory = test::freshDirectory("library-rename");
+    const std::string first = writeFile(directory, "first.xp3", std::string("XP3\n") + "same payload");
+
+    ModuleRegistry registry(test::sdkVersion());
+    std::string error;
+    CHECK(registry.addManifestJson(xp3Manifest(), "krkr.json", error));
+    GameLibrary library(registry);
+
+    const GameEntry before = library.classify(first);
+    CHECK(!before.game_id.empty());
+
+    const std::string renamed = directory + "/renamed.xp3";
+    std::filesystem::rename(first, renamed);
+    const GameEntry after = library.classify(renamed);
+
+    CHECK_EQ(after.game_id, before.game_id);
+    CHECK(after.title != before.title);
+}
+
+AURORA_TEST(library_folder_id_survives_a_rename) {
+    const std::string root_dir = test::freshDirectory("library-folder-rename");
+    const std::string folder = root_dir + "/Old Name";
+    std::filesystem::create_directories(folder);
+    writeFile(folder, "nscript.dat", "script body");
+
+    ModuleRegistry registry(test::sdkVersion());
+    std::string error;
+    CHECK(registry.addManifestJson(onsManifest(), "ons.json", error));
+    GameLibrary library(registry);
+
+    const GameEntry before = library.classify(folder);
+    const std::string moved = root_dir + "/New Name";
+    std::filesystem::rename(folder, moved);
+    const GameEntry after = library.classify(moved);
+
+    CHECK_EQ(after.game_id, before.game_id);
+    CHECK_EQ(after.module_id, std::string("com.aurora.runtime.onscripter"));
+}
+
+AURORA_TEST(library_round_trips_through_json) {
+    const std::string root_dir = test::freshDirectory("library-roundtrip");
+    writeFile(root_dir, "game.sim", "payload");
+
+    ModuleRegistry registry(test::sdkVersion());
+    std::string error;
+    test::Environment env("library-roundtrip-env");
+    GameLibrary library(env.registry);
+    const std::vector<GameEntry> games = library.scan(root_dir, 1);
+    CHECK_EQ(games.size(), static_cast<std::size_t>(1));
+
+    const std::string jsonPath = root_dir + "/library.json";
+    CHECK(saveGames(jsonPath, games, error));
+
+    std::vector<GameEntry> loaded;
+    CHECK(loadGames(jsonPath, loaded, error));
+    CHECK_EQ(loaded.size(), games.size());
+    if (!loaded.empty() && !games.empty()) {
+        CHECK_EQ(loaded[0].game_id, games[0].game_id);
+        CHECK_EQ(loaded[0].title, games[0].title);
+        CHECK_EQ(loaded[0].module_id, games[0].module_id);
+    }
+    (void)registry;
+}
+
+AURORA_TEST(library_load_reports_a_missing_file) {
+    std::vector<GameEntry> games;
+    std::string error;
+    CHECK(!loadGames("D:/definitely/not/here/library.json", games, error));
+    CHECK(!error.empty());
+}

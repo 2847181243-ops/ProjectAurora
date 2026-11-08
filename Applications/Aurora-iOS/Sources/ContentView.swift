@@ -5,10 +5,28 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var host: AuroraHost
+    @State private var showImporter = false
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    if host.games.isEmpty {
+                        Text("Put game folders in Files → On My iPad → Aurora, or use Import.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(host.games) { game in
+                        GameRowView(game: game)
+                    }
+                } header: {
+                    Text("Library")
+                } footer: {
+                    Text(host.gamesRoot)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section {
                     ForEach(host.rows) { row in
                         ModuleRowView(
@@ -33,8 +51,56 @@ struct ContentView: View {
             }
             .navigationTitle("Aurora")
             .toolbar {
-                Button("Refresh") { host.refresh() }
+                Button("Rescan") { host.refresh() }
+                Button("Import") { showImporter = true }
             }
+            .fileImporter(
+                isPresented: $showImporter,
+                allowedContentTypes: [.folder, .item],
+                allowsMultipleSelection: true
+            ) { result in
+                if case .success(let urls) = result {
+                    host.importGames(from: urls)
+                }
+            }
+        }
+    }
+}
+
+private struct GameRowView: View {
+    let game: GameRow
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(game.title).font(.body)
+                Text(game.module.isEmpty ? "no module claims this file" : game.module)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                if !game.detail.isEmpty {
+                    Text(game.detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Text(game.state)
+                .font(.caption.weight(.semibold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(stateColor.opacity(0.16))
+                .foregroundStyle(stateColor)
+                .clipShape(Capsule())
+        }
+    }
+
+    private var stateColor: Color {
+        switch game.state {
+        case "READY": return .green
+        case "RUNNING": return .blue
+        case "DISABLED": return .orange
+        case "FAILED": return .red
+        default: return .gray
         }
     }
 }

@@ -117,11 +117,18 @@ final class FrameRenderer: NSObject, MTKViewDelegate {
             } else {
                 width = drawableSize.height * frameAspect
             }
-            let viewport = MTLViewport(originX: (drawableSize.width - width) / 2.0,
-                                       originY: (drawableSize.height - height) / 2.0,
-                                       width: width, height: height,
-                                       znear: 0.0, zfar: 1.0)
-            encoder.setViewport(viewport)
+            var x: Int32 = 0
+            var y: Int32 = 0
+            var targetWidth: Int32 = 0
+            var targetHeight: Int32 = 0
+            aurora_bridge_compute_viewport(Int32(frameSize.width), Int32(frameSize.height),
+                                           Int32(drawableSize.width), Int32(drawableSize.height),
+                                           0, &x, &y, &targetWidth, &targetHeight)
+            if targetWidth > 0 && targetHeight > 0 {
+                encoder.setViewport(MTLViewport(originX: Double(x), originY: Double(y),
+                                                width: Double(targetWidth), height: Double(targetHeight),
+                                                znear: 0.0, zfar: 1.0))
+            }
         }
 
         if let texture = texture {

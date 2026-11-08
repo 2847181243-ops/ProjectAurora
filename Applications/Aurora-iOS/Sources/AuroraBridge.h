@@ -40,6 +40,26 @@ int32_t aurora_bridge_frame_width(void);
 int32_t aurora_bridge_frame_height(void);
 int32_t aurora_bridge_frames_presented(void);
 const char* aurora_bridge_running_module(void);
+/* Library ------------------------------------------------------------------ */
+/* Games live in <storage_root>/Games. Scanning is cheap and safe to repeat. */
+const char* aurora_bridge_games_root(void);
+int32_t aurora_bridge_library_scan(void);
+int32_t aurora_bridge_library_count(void);
+const char* aurora_bridge_library_title(int32_t index);
+const char* aurora_bridge_library_module(int32_t index);
+const char* aurora_bridge_library_state(int32_t index);
+const char* aurora_bridge_library_detail(int32_t index);
+/* Copies a picked folder or file into the games root. Returns 0 on success. */
+int32_t aurora_bridge_library_import(const char* source_path);
+
+/* Display ------------------------------------------------------------------ */
+/* 0 fit, 1 fill, 2 integer, 3 stretch. Mirrors Aurora's display policy. */
+void aurora_bridge_compute_viewport(int32_t frame_width, int32_t frame_height,
+                                    int32_t view_width, int32_t view_height,
+                                    int32_t mode,
+                                    int32_t* out_x, int32_t* out_y,
+                                    int32_t* out_width, int32_t* out_height);
+
 const char* aurora_bridge_last_error(void);
 const char* aurora_bridge_state_name(int32_t state);
 
