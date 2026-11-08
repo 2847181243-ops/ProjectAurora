@@ -73,8 +73,9 @@ jobs:
           git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/iosons
           git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          CXX="clang++ -std=gnu++14 -arch arm64 -mios-version-min=16.0 -isysroot $SDK -w"
-          INC="-I prefix/include -I prefix/include/SDL2"
+          CXX="clang++ -std=gnu++14 -arch arm64 -mios-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing"
+          # sdl12-compat installs the SDL 1.2 headers under include/SDL; SDL2's live in include/SDL2.
+          INC="-I prefix/include/SDL -I prefix/include -I prefix/include/SDL2"
           mkdir -p obj obj/smpeg
           : > ons.log
 
@@ -95,7 +96,7 @@ jobs:
           ok=0; fail=0
           for f in third_party/onscripter/*.cpp Modules/ONScripter/src/ons_engine_onscripter.cpp; do
             case "$(basename "$f")" in
-              nscriptdecode.cpp|AVIWrapper.cpp) continue ;;   # a tiny tool, and the avifile path we do not build
+              nscriptdecode.cpp|AVIWrapper.cpp|LUAHandler.cpp) continue ;;   # a tiny tool, the avifile path, and the optional lua path
             esac
             out="obj/$(basename "${f%.cpp}").o"
             if $CXX $INC -I third_party/onscripter -I Modules/ONScripter/src -I "$SMPEG" \
