@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* A module that fails on purpose.
  *
  * Every failure mode in the fault-isolation spec needs a way to be reproduced on

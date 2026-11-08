@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Module registry: the platform's single source of truth about what exists.
  *
  * Three inputs are fused, and the platform never trusts one alone:

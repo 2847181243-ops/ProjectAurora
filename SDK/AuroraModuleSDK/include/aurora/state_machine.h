@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Module state machine.
  *
  * The states answer different questions and the platform must not blur them:

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Project Aurora contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 add_library(aurora_test_support STATIC
     support/test_harness.cpp
     support/test_module.cpp

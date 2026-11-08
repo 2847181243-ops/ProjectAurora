@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Project Aurora contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Emit the built-in module table from Modules/modules.list.
 
 The Xcode build cannot run the CMake generator, so this small script reads the

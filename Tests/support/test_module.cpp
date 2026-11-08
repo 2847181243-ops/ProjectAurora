@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* A module that exists only inside the test binary.
  *
  * It gives the registry tests a module with a dependency and a switchable state,

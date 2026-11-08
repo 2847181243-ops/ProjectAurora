@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* A simulated runtime module.
  *
  * It exists to prove the contract, not to emulate anything: it renders animated

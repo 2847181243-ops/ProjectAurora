@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Project Aurora contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # One target per module, driven by modules.list.
 #
 # Turning a module off is a cache option; leaving it out of modules.list is a

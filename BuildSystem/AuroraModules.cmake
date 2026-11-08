@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Project Aurora contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Module registration machinery.
 #
 # Adding a module is: one add_subdirectory line in Modules/CMakeLists.txt, one

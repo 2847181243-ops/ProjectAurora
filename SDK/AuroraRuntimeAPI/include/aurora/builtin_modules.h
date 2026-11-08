@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Generated build table: which modules this build actually linked.
  *
  * This file is the second of the three inputs the registry fuses. It is produced

@@ -62,3 +62,19 @@ supervisor catches it if it does.
 - App Store builds cannot download emulator code. Updates ship through app
   updates.
 - JIT availability is a runtime property, not a distribution-channel property.
+
+## License
+
+Aurora is distributed under the **GNU General Public License v3.0 or later**
+(see `LICENSE`). That is a deliberate choice, not a default: the platform is
+built to host emulators that are themselves GPL (PPSSPP, melonDS), and pretending
+otherwise would mean shipping a binary whose licence cannot be honoured.
+
+Consequences worth stating plainly:
+
+- Every binary built from this repository can be redistributed, studied and
+  modified. The source is this repository.
+- Modules keep their own licences. A module whose licence forbids public
+  redistribution is not accepted, no matter how good it is.
+- DuckStation is therefore **out of scope**: its licence changed to
+  CC BY-NC-ND 4.0 in 2024, which is neither open source nor App Store compatible.

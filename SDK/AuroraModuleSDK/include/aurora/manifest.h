@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Module manifest: declarative data, never code.
  *
  * A manifest says what a module *claims*. It never proves the module works. The

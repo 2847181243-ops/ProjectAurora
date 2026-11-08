@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* The smallest possible module: proves the ABI can be implemented in one screen
  * of code and that "a module that does nothing" still behaves like a citizen. */
 #include <cstring>

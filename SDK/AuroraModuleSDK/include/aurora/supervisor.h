@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Module supervisor: the only code that drives module lifecycles.
  *
  * What it can do: catch every error a module reports, tear the instance down,

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Project Aurora contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 cmake_minimum_required(VERSION 3.20)
 project(ProjectAurora VERSION 1.0.0 LANGUAGES C CXX)
 

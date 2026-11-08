@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Headless host. Same SDK, same registry, no display.
  *
  * This binary is the reason the architecture claim is testable: the platform half

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef AURORA_DIAGNOSTICS_H
 #define AURORA_DIAGNOSTICS_H
 

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Plain C surface for Swift.
  *
  * The UI never sees a C++ type; the C++ layer never learns UIKit exists. Rows are

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Aurora Module ABI - the only contract between the Aurora Platform and a runtime module.
  *
  * Rules this header exists to enforce:

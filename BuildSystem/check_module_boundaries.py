@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Project Aurora contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Fail the build if a module reaches past the public ABI header.
 
 The architecture claims modules cannot see platform internals. A claim that is

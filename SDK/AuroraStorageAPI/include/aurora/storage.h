@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Project Aurora contributors
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 /* Storage isolation.
  *
  * A module may only touch its own tree. The path is not a hint: the platform
