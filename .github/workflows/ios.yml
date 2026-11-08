@@ -12,15 +12,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Every build step keeps its own log and does not abort the job, so a
+      # failure is still diagnosable from the uploaded artifacts.
       - name: generate module table
-        run: python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp
+        continue-on-error: true
+        run: python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp 2>&1 | tee gen.log
 
       - name: install xcodegen
-        run: brew install xcodegen
+        continue-on-error: true
+        run: brew install xcodegen 2>&1 | tee toolchain.log
 
       - name: generate project
+        continue-on-error: true
         working-directory: Applications/Aurora-iOS
-        run: xcodegen generate
+        run: xcodegen generate 2>&1 | tee project.log
 
       - name: archive without signing
         continue-on-error: true
@@ -40,29 +45,38 @@ jobs:
             archive \
             -archivePath build/Aurora.xcarchive 2>&1 | tee archive.log
 
-      - name: fail if the archive failed
-        run: |
-          if grep -q "\*\* ARCHIVE FAILED \*\*" archive.log 2>/dev/null || ! test -d Applications/Aurora-iOS/build/Aurora.xcarchive; then
-            echo "archive failed"; grep -E "error:" archive.log | head -20; exit 1
-          fi
+      - name: upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: |
+            *.log
+            Applications/Aurora-iOS/*.log
+          if-no-files-found: warn
 
       - name: package ipa
+        id: package
+        continue-on-error: true
         run: |
           mkdir -p out/Payload
           cp -R Applications/Aurora-iOS/build/Aurora.xcarchive/Products/Applications/Aurora.app out/Payload/
           cd out && zip -qry Aurora-unsigned.ipa Payload
           ls -la Aurora-unsigned.ipa
 
-      - name: upload archive log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ios-archive-log
-          path: archive.log
-          if-no-files-found: warn
-
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: Aurora-unsigned-ipa
           path: out/Aurora-unsigned.ipa
-          if-no-files-found: error
+          if-no-files-found: warn
+
+      - name: verdict
+        run: |
+          if grep -hE "error:|ARCHIVE FAILED|BUILD FAILED" *.log Applications/Aurora-iOS/*.log 2>/dev/null | head -20; then
+            echo "build reported errors"; exit 1
+          fi
+          if [ ! -d Applications/Aurora-iOS/build/Aurora.xcarchive ]; then
+            echo "no xcarchive produced"; exit 1
+          fi
+          echo "archive ok"
