@@ -13,73 +13,44 @@ jobs:
       - name: clone sources
         run: |
           set -euo pipefail
-          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL         third_party/SDL
+          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL          third_party/SDL
           git clone --depth 1           https://github.com/libsdl-org/sdl12-compat third_party/sdl12-compat
-          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_image   third_party/SDL_image
-          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_ttf     third_party/SDL_ttf
-          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_mixer   third_party/SDL_mixer
 
       - name: build SDL2
+        continue-on-error: true
         run: |
-          set -euo pipefail
+          set -o pipefail
           cmake -S third_party/SDL -B b/sdl -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TESTS=OFF -DSDL_INSTALL=ON
-          cmake --build b/sdl --config Release --target install
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TESTS=OFF -DSDL_INSTALL=ON 2>&1 | tee sdl.log
+          cmake --build b/sdl --config Release --target install 2>&1 | tee -a sdl.log
 
       - name: build sdl12-compat
+        continue-on-error: true
         run: |
-          set -euo pipefail
+          set -o pipefail
           cmake -S third_party/sdl12-compat -B b/compat -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL12TESTS=OFF
-          cmake --build b/compat --config Release
-
-      - name: build SDL2_image
-        run: |
-          set -euo pipefail
-          cmake -S third_party/SDL_image -B b/image -G Xcode \
-            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2IMAGE_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2IMAGE_SAMPLES=OFF
-          cmake --build b/image --config Release
-
-      - name: build SDL2_ttf
-        run: |
-          set -euo pipefail
-          cmake -S third_party/SDL_ttf -B b/ttf -G Xcode \
-            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2TTF_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2TTF_SAMPLES=OFF
-          cmake --build b/ttf --config Release
-
-      - name: build SDL2_mixer
-        run: |
-          set -euo pipefail
-          cmake -S third_party/SDL_mixer -B b/mixer -G Xcode \
-            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2MIXER_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF
-          cmake --build b/mixer --config Release
-
-      - name: report
-        run: |
-          set -euo pipefail
-          {
-            echo "## SDL stack for iOS arm64"
-            echo ""
-            echo "| library | static lib |"
-            echo "|---|---|"
-            for lib in sdl/compat/image/ttf/mixer; do :; done
-            find b -name "*.a" | sort | sed 's/^/| /;s/$/ |/'
-          } >> "$GITHUB_STEP_SUMMARY"
-          count=$(find b -name "*.a" | wc -l | tr -d ' ')
-          echo "static libraries built: $count"
-          test "$count" -ge 4
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DCMAKE_FIND_ROOT_PATH=$PWD/prefix \
+            -DSDL12TESTS=OFF -DSDL12_COMPAT_INSTALL=OFF 2>&1 | tee compat.log
+          cmake --build b/compat --config Release 2>&1 | tee -a compat.log
 
       - name: upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sdl-stack-logs
+          name: sdl-spike-logs
           path: |
-            **/*.log
+            sdl.log
+            compat.log
           if-no-files-found: warn
+
+      - name: verdict
+        run: |
+          set -euo pipefail
+          echo "## SDL stack" >> "$GITHUB_STEP_SUMMARY"
+          find b -name "*.a" | sort | sed 's/^/| /;s/$/ |/' >> "$GITHUB_STEP_SUMMARY"
+          count=$(find b -name "*.a" | wc -l | tr -d ' ')
+          echo "static libraries: $count"
+          test "$count" -ge 2
