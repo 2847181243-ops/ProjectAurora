@@ -45,7 +45,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON 2>&1 | tee sdl.log
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON -DSDL_OPENGL=ON -DSDL_OPENGLES=ON 2>&1 | tee sdl.log
           cmake --build b/sdl --config Release --target install 2>&1 | tee -a sdl.log
 
       - name: patch sdl12-compat for iOS
@@ -132,6 +132,9 @@ jobs:
         if: always()
         run: |
           set +e
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git pull --rebase --autostash origin main || true
           mkdir -p ci-status
           {
             echo "# sdl-spike"
@@ -153,9 +156,6 @@ jobs:
             done
           } > ci-status/sdl-spike.md
           rm -f ci-status/sdl-spike.json
-          git config user.name "ci-bot"
-          git config user.email "ci-bot@users.noreply.github.com"
-          git pull --rebase --autostash origin main || true
           git add ci-status
           git commit -m "ci: sdl-spike status" || true
           git push origin HEAD:main || true
