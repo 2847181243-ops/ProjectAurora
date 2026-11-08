@@ -47,7 +47,11 @@ jobs:
             -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL12TESTS=OFF -DSDL12DEVEL=ON \
             "-DCMAKE_C_FLAGS=-include$PWD/sdl12_gl_stub.h" >> stack.log 2>&1
           cmake --build b/compat --config Release --target install >> stack.log 2>&1
-          ls prefix/include/SDL/SDL.h prefix/lib/libSDL.a
+          echo "--- installed headers ---" | tee -a stack.log
+          ls prefix/include | tee -a stack.log
+          echo "--- installed libraries ---" | tee -a stack.log
+          ls prefix/lib | tee -a stack.log
+          test -f prefix/lib/libSDL.a
 
       - name: compile the engine
         continue-on-error: true
@@ -127,8 +131,11 @@ jobs:
             echo ""
             grep -hE "error:|FAILED:|CMake Error" ons.log stack.log 2>/dev/null | head -40
             echo ""
+            echo "## stack tail"
+            tail -15 stack.log 2>/dev/null
+            echo ""
             echo "## summary"
-            tail -2 ons.log
+            tail -3 ons.log 2>/dev/null
           } > "$file"
           git add "$file"
           git commit -m "ci: ons run ${{ github.run_number }}" || true
