@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
     }
 
     aurora::SemVer hostSdk;
-    aurora::SemVer::parse("1.0.0", hostSdk);
+    aurora::SemVer::parse("1.1.0", hostSdk);
     aurora::Diagnostics diagnostics;
     diagnostics.setClockSource(&aurora::ModuleHost::monotonicSeconds);
 

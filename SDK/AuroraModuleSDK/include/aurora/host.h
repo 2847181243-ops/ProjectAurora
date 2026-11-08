@@ -12,6 +12,7 @@
 #define AURORA_HOST_H
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -40,6 +41,12 @@ struct HostBinding {
 
     bool owns_frame = false;
     AuroraFrame current_frame{};
+
+    /* Audio bookkeeping. The host may have no output device (tests, CLI); the
+     * module must not care, so submissions are still counted and recorded. */
+    std::uint64_t audio_frames_received = 0;
+    float audio_peak = 0.0f;
+    AuroraAudioSpec audio_spec_seen{};
 
     /* Set when the module tried something the boundary forbids, so the platform
      * can report a concrete violation instead of a mystery failure. */
@@ -72,6 +79,13 @@ public:
 
     static double monotonicSeconds();
 
+    /* Optional sink: the iOS bridge pushes submitted frames into AVAudioEngine,
+     * tests read them back. Called on the module's thread. */
+    using AudioSink = std::function<void(const AuroraAudioBuffer&)>;
+    void setAudioSink(AudioSink sink) { audio_sink_ = std::move(sink); }
+    void setDefaultAudioSpec(const AuroraAudioSpec& spec) { audio_spec_ = spec; }
+    const AuroraAudioSpec& defaultAudioSpec() const { return audio_spec_; }
+
     std::size_t bindingCount() const { return bindings_.size(); }
 
 private:
@@ -85,11 +99,15 @@ private:
     static AuroraStatus onPresentFrame(void* context, const AuroraFrame* frame);
     static AuroraStatus onPollInput(void* context, AuroraInputState* out_state);
     static double onMonotonicSeconds(void* context);
+    static AuroraStatus onAudioSpec(void* context, AuroraAudioSpec* out_spec);
+    static AuroraStatus onAudioSubmit(void* context, const AuroraAudioBuffer* buffer);
 
     StorageLayout storage_;
     Diagnostics& diagnostics_;
     uint32_t default_surface_width_ = 0;
     uint32_t default_surface_height_ = 0;
+    AuroraAudioSpec audio_spec_{48000u, 2u, AURORA_AUDIO_F32};
+    AudioSink audio_sink_;
     std::vector<std::unique_ptr<HostBinding>> bindings_;
 };
 

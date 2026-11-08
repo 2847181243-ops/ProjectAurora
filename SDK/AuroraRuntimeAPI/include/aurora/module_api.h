@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 #define AURORA_ABI_MAJOR 1u
-#define AURORA_ABI_MINOR 0u
+#define AURORA_ABI_MINOR 1u  /* 1.1 added the audio callbacks */
 
 /* Every entry point returns AuroraStatus. A module never throws across the ABI and
  * never reports success for a partial operation. */
@@ -153,6 +153,30 @@ typedef struct AuroraGameInfo {
     const char* display_name; /* nullable */
 } AuroraGameInfo;
 
+/* ---- Audio -----------------------------------------------------------------
+ * The platform owns the output device and the mixer. A module hands over
+ * interleaved frames at its own rate; it never opens a device itself, and it must
+ * tolerate a host that drops frames when the queue is full. */
+typedef enum AuroraAudioFormat {
+    AURORA_AUDIO_S16 = 0,
+    AURORA_AUDIO_F32 = 1
+} AuroraAudioFormat;
+
+typedef struct AuroraAudioSpec {
+    uint32_t sample_rate;
+    uint32_t channels;
+    AuroraAudioFormat format;
+} AuroraAudioSpec;
+
+typedef struct AuroraAudioBuffer {
+    uint32_t struct_size;
+    const void* samples;     /* interleaved, frame_count * channels values */
+    uint32_t frame_count;
+    uint32_t sample_rate;
+    uint32_t channels;
+    AuroraAudioFormat format;
+} AuroraAudioBuffer;
+
 typedef struct AuroraModuleInstanceStatus {
     AuroraModuleState state;
     int64_t frames_presented;
@@ -198,6 +222,11 @@ typedef struct AuroraHostServices {
 
     /* Seconds since an arbitrary fixed point. Never jumps. */
     double (*monotonic_seconds)(void* context);
+
+    /* Appended in ABI 1.1. A module built against 1.0 sees a shorter struct and
+     * must not touch these; it checks host->struct_size first if it wants them. */
+    AuroraStatus (*audio_spec)(void* context, AuroraAudioSpec* out_spec);
+    AuroraStatus (*audio_submit)(void* context, const AuroraAudioBuffer* buffer);
 } AuroraHostServices;
 
 /* ---- Module -> platform ---------------------------------------------------- */

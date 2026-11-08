@@ -4,6 +4,7 @@
 #include "aurora/host.h"
 
 #include <chrono>
+#include <cmath>
 #include <cstring>
 
 namespace aurora {
@@ -41,6 +42,8 @@ HostBinding* ModuleHost::createBinding(const std::string& moduleId) {
     binding->services.present_frame = &ModuleHost::onPresentFrame;
     binding->services.poll_input = &ModuleHost::onPollInput;
     binding->services.monotonic_seconds = &ModuleHost::onMonotonicSeconds;
+    binding->services.audio_spec = &ModuleHost::onAudioSpec;
+    binding->services.audio_submit = &ModuleHost::onAudioSubmit;
     HostBinding* raw = binding.get();
     bindings_.push_back(std::move(binding));
     if (default_surface_width_ > 0 && default_surface_height_ > 0) {
@@ -172,6 +175,51 @@ AuroraStatus ModuleHost::onPollInput(void* context, AuroraInputState* out_state)
 
 double ModuleHost::onMonotonicSeconds(void*) {
     return monotonicSeconds();
+}
+
+AuroraStatus ModuleHost::onAudioSpec(void* context, AuroraAudioSpec* out_spec) {
+    auto* binding = static_cast<HostBinding*>(context);
+    if (binding == nullptr || out_spec == nullptr) return AURORA_E_INVALID_ARGUMENT;
+    *out_spec = binding->host->defaultAudioSpec();
+    return AURORA_OK;
+}
+
+AuroraStatus ModuleHost::onAudioSubmit(void* context, const AuroraAudioBuffer* buffer) {
+    auto* binding = static_cast<HostBinding*>(context);
+    if (binding == nullptr || buffer == nullptr) return AURORA_E_INVALID_ARGUMENT;
+    if (buffer->samples == nullptr || buffer->frame_count == 0) return AURORA_E_INVALID_ARGUMENT;
+    /* The host accepts whatever the module produces as long as it is one of the
+     * two layouts we defined; resampling is the platform's job, not the module's. */
+    if (buffer->format != AURORA_AUDIO_S16 && buffer->format != AURORA_AUDIO_F32) {
+        return AURORA_E_INVALID_ARGUMENT;
+    }
+    if (buffer->channels == 0 || buffer->channels > 8 || buffer->sample_rate < 8000) {
+        return AURORA_E_INVALID_ARGUMENT;
+    }
+
+    const std::size_t values =
+        static_cast<std::size_t>(buffer->frame_count) * buffer->channels;
+    if (buffer->format == AURORA_AUDIO_F32) {
+        const float* samples = static_cast<const float*>(buffer->samples);
+        for (std::size_t i = 0; i < values; ++i) {
+            const float magnitude = samples[i] < 0.0f ? -samples[i] : samples[i];
+            if (magnitude > binding->audio_peak) binding->audio_peak = magnitude;
+        }
+    } else {
+        const std::int16_t* samples = static_cast<const std::int16_t*>(buffer->samples);
+        for (std::size_t i = 0; i < values; ++i) {
+            const float magnitude = std::abs(static_cast<float>(samples[i])) / 32768.0f;
+            if (magnitude > binding->audio_peak) binding->audio_peak = magnitude;
+        }
+    }
+
+    binding->audio_frames_received += buffer->frame_count;
+    binding->audio_spec_seen.sample_rate = buffer->sample_rate;
+    binding->audio_spec_seen.channels = buffer->channels;
+    binding->audio_spec_seen.format = buffer->format;
+
+    if (binding->host->audio_sink_) binding->host->audio_sink_(*buffer);
+    return AURORA_OK;
 }
 
 } // namespace aurora

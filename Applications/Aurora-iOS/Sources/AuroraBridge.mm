@@ -142,7 +142,7 @@ int32_t aurora_bridge_init(const char* storage_root, const char* manifest_direct
     s.last_error.clear();
 
     aurora::SemVer sdk;
-    aurora::SemVer::parse("1.0.0", sdk);
+    aurora::SemVer::parse("1.1.0", sdk);
 
     s.diagnostics = std::make_unique<aurora::Diagnostics>();
     s.diagnostics->setClockSource(&aurora::ModuleHost::monotonicSeconds);

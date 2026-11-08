@@ -43,7 +43,7 @@ inline std::string freshDirectory(const std::string& name) {
 
 inline SemVer sdkVersion() {
     SemVer version;
-    SemVer::parse("1.0.0", version);
+    SemVer::parse("1.1.0", version);
     return version;
 }
 

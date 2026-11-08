@@ -117,7 +117,7 @@ Manifest 里的 `status` 只是作者自述。平台永远不会因为它是 "re
 | touch_input | 支持触控 | — |
 | keyboard | 支持键盘 | — |
 | fast_forward | 支持快进 | — |
-| audio | 有音频输出 | 音频 ABI 尚未定义，先声明不实现 |
+| audio | 有音频输出 | ABI 1.1 起有 audio_submit / audio_spec |
 | video_output | 会出画面 | 必须配合 acquire_frame |
 | jit_required | 没 JIT 就跑不动 | 必须在 UI 明说 |
 | jit_optional | 有 JIT 更快 | — |
@@ -159,9 +159,31 @@ Manifest 里的 `status` 只是作者自述。平台永远不会因为它是 "re
 平台层、注册表、游戏库、存档管理都不需要改。这条"不用改"是任务书 13.5 的验收点，
 不是口头承诺——现有三个模块就是按这个流程加进来的。
 
-## 9. 尚未定义的部分
+## 9. 音频（ABI 1.1 起）
 
-- 音频：`AuroraHostServices` 里没有音频回调。接第一个真引擎前必须补，且属于 ABI 变更（次版本）。
+平台拥有输出设备与混音器，模块只交帧，不自己开设备。
+
+@@@c
+typedef struct AuroraAudioBuffer {
+    uint32_t struct_size;
+    const void* samples;      /* 交错采样，frame_count * channels 个值 */
+    uint32_t frame_count;
+    uint32_t sample_rate;
+    uint32_t channels;        /* 1–8 */
+    AuroraAudioFormat format; /* S16 或 F32 */
+} AuroraAudioBuffer;
+@@@
+
+宿主提供 @@@audio_spec()@@@（自己的输出格式）与 @@@audio_submit()@@@。约定：
+
+- 采样率由模块决定（平台负责重采样），格式必须是 S16 或 F32
+- 队列满时平台丢帧，模块必须容忍，不能因此报错
+- 模块先用 @@@host->struct_size@@@ 判断这两个回调是否存在（1.0 宿主没有）
+- 无输出设备的宿主（测试、CLI）照样接收并计数，模块感知不到差别
+
+## 10. 尚未定义的部分
+
+- 音频：ABI 已定义（1.1），宿主侧已实现并按帧计数；iOS 上接 AVAudioEngine 的输出还没做。
 - 输入映射层：现在只有原始快照，没有键位映射与死区，属于平台侧功能。
 - 着色器/滤镜链：Display 层还没实现。
 - 帧同步与垂直同步：现在由模块自己控制节奏，tick 由平台驱动。

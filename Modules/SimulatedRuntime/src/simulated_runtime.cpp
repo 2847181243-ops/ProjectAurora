@@ -8,6 +8,8 @@
  * and reports honest status. If the host has no display it keeps running and says
  * so once, instead of failing - that is the documented degradation rule.
  */
+#include <cmath>
+#include <cstddef>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -91,6 +93,37 @@ void renderFrame(Instance* instance, AuroraFrame* frame) {
     }
 }
 
+/* One frame of a quiet sine, at the top of what the host accepts. The point is
+ * to exercise the audio path, not to make noise. */
+void submitAudio(Instance* instance) {
+    if (instance->host == nullptr) return;
+    const std::size_t field_offset = offsetof(AuroraHostServices, audio_submit);
+    if (instance->host->struct_size < field_offset + sizeof(instance->host->audio_submit)) {
+        return; /* host predates ABI 1.1 */
+    }
+    if (instance->host->audio_submit == nullptr) return;
+
+    const uint32_t sample_rate = 48000;
+    const uint32_t channels = 2;
+    const uint32_t frames = sample_rate / 60; /* one platform tick */
+    float samples[800 * 2];
+    for (uint32_t i = 0; i < frames; ++i) {
+        const double t = static_cast<double>(instance->frame_index * frames + i) / sample_rate;
+        const float value = static_cast<float>(std::sin(2.0 * 3.141592653589793 * 220.0 * t) * 0.15);
+        samples[i * 2 + 0] = value;
+        samples[i * 2 + 1] = value;
+    }
+
+    AuroraAudioBuffer buffer{};
+    buffer.struct_size = sizeof(AuroraAudioBuffer);
+    buffer.samples = samples;
+    buffer.frame_count = frames;
+    buffer.sample_rate = sample_rate;
+    buffer.channels = channels;
+    buffer.format = AURORA_AUDIO_F32;
+    instance->host->audio_submit(instance->host->host_context, &buffer);
+}
+
 void advance(Instance* instance, double delta_seconds) {
     instance->frame_index += 1;
     instance->bar = static_cast<int32_t>((instance->frame_index * 3) % (static_cast<int64_t>(instance->width) + 24));
@@ -116,6 +149,8 @@ void advance(Instance* instance, double delta_seconds) {
         instance->warned_no_surface = true;
         log(instance, AURORA_LOG_INFO, "no display surface on this host; running headless");
     }
+
+    submitAudio(instance);
 
     if (instance->host != nullptr && instance->host->monotonic_seconds != nullptr && delta_seconds > 0.0) {
         const double now = instance->host->monotonic_seconds(instance->host->host_context);
