@@ -1,0 +1,41 @@
+name: ons-spike
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-sdl-stack:
+    name: ONScripter SDL stack for iOS arm64
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: clone the historical iOS port
+        run: |
+          git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/ons-ios 2>&1 | tail -3
+          ls third_party/ons-ios
+
+      - name: modernise the toolchain flags
+        working-directory: third_party/ons-ios
+        run: |
+          # armv7 and bitcode are gone; iOS 8 -> 16
+          sed -i '' 's/-arch armv7 -arch arm64 -miphoneos-version-min=8.0 -fembed-bitcode/-arch arm64 -miphoneos-version-min=16.0/' dev_iPhoneOS.sh
+          cat dev_iPhoneOS.sh
+
+      - name: build SDL, SDL_image, SDL_ttf, SDL_mixer, smpeg
+        working-directory: third_party/ons-ios
+        run: |
+          set +e
+          bash build_libraries.sh > libs.log 2>&1
+          echo "exit: $?"
+          tail -40 libs.log
+          find . -name "*.a" -path "*iphoneos*" | head -20
+
+      - name: upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ons-spike-logs
+          path: third_party/ons-ios/libs.log
+          if-no-files-found: warn
