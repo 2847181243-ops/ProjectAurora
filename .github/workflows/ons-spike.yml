@@ -51,7 +51,7 @@ jobs:
           ls prefix/include | tee -a stack.log
           echo "--- installed libraries ---" | tee -a stack.log
           ls prefix/lib | tee -a stack.log
-          test -f prefix/lib/libSDL.a
+          test -f prefix/lib/libSDL-1.2.a
 
       - name: compile the engine
         continue-on-error: true
