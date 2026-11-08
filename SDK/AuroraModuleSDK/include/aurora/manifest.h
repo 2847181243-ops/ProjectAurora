@@ -48,6 +48,12 @@ struct Manifest {
     std::string upstream_version;
     std::string upstream_commit;
 
+    /* How the library recognises a game that belongs to this module. Rules are
+     * data, not code: adding an engine must not mean editing the platform. */
+    std::vector<std::string> detect_extensions;   /* "xp3", "iso" */
+    std::vector<std::string> detect_filenames;    /* "nscript.dat", "start.ks" */
+    std::vector<std::string> detect_magic;        /* "5850330A" hex, matched at offset 0 */
+
     AuroraRuntimeKind kind = AURORA_KIND_OTHER;
     SemVer version_semver;
     SemVer sdk_semver;

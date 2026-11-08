@@ -300,6 +300,60 @@ ManifestParseResult parseManifest(const std::string& json_text, const std::strin
         }
     }
 
+    const json::Value* detection = root.find("detection");
+    if (detection != nullptr) {
+        if (!detection->isObject()) {
+            addIssue(result.issues, "error", "detection", "must be an object");
+        } else {
+            const json::Value* extensions = detection->find("extensions");
+            if (extensions != nullptr) {
+                if (!extensions->isArray()) {
+                    addIssue(result.issues, "error", "detection.extensions", "must be an array");
+                } else {
+                    for (const auto& item : extensions->array) {
+                        if (!item.isString() || !isValidFormatToken(item.string)) {
+                            addIssue(result.issues, "error", "detection.extensions",
+                                     "each entry must be a lowercase token without a dot");
+                            continue;
+                        }
+                        m.detect_extensions.push_back(item.string);
+                    }
+                }
+            }
+            const json::Value* filenames = detection->find("filenames");
+            if (filenames != nullptr) {
+                if (!filenames->isArray()) {
+                    addIssue(result.issues, "error", "detection.filenames", "must be an array");
+                } else {
+                    for (const auto& item : filenames->array) {
+                        if (!item.isString() || item.string.empty() || item.string.size() > 64) {
+                            addIssue(result.issues, "error", "detection.filenames",
+                                     "each entry must be a short file name");
+                            continue;
+                        }
+                        m.detect_filenames.push_back(item.string);
+                    }
+                }
+            }
+            const json::Value* magic = detection->find("magic");
+            if (magic != nullptr) {
+                if (!magic->isArray()) {
+                    addIssue(result.issues, "error", "detection.magic", "must be an array");
+                } else {
+                    for (const auto& item : magic->array) {
+                        if (!item.isString() || item.string.size() % 2 != 0 ||
+                            item.string.size() < 2 || item.string.size() > 32) {
+                            addIssue(result.issues, "error", "detection.magic",
+                                     "each entry must be an even-length hex string");
+                            continue;
+                        }
+                        m.detect_magic.push_back(item.string);
+                    }
+                }
+            }
+        }
+    }
+
     const json::Value* status = root.find("status");
     if (status != nullptr) {
         if (!status->isString()) {

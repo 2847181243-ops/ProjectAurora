@@ -27,5 +27,11 @@
     "project": "Project Aurora",
     "version": "0.1.0-dev",
     "commit": "local"
+  },
+  "detection": {
+    "extensions": [
+      "sim",
+      "demo"
+    ]
   }
 }

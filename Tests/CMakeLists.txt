@@ -17,6 +17,7 @@ add_executable(aurora_core_tests
     src/test_registry.cpp
     src/test_supervisor.cpp
     src/test_fault_isolation.cpp
+    src/test_library.cpp
 )
 target_link_libraries(aurora_core_tests PRIVATE aurora_test_support aurora_sdk aurora_builtin_modules)
 target_compile_definitions(aurora_core_tests PRIVATE

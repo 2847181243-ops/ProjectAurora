@@ -20,6 +20,7 @@
 #include "aurora/builtin_modules.h"
 #include "aurora/diagnostics.h"
 #include "aurora/host.h"
+#include "aurora/library.h"
 #include "aurora/registry.h"
 #include "aurora/storage.h"
 #include "aurora/supervisor.h"
@@ -32,6 +33,7 @@ void printUsage() {
         "\n"
         "usage:\n"
         "  aurora-cli list [--manifests DIR] [--data DIR]\n"
+        "  aurora-cli scan <directory> [--manifests DIR] [--data DIR]\n"
         "  aurora-cli run <module-id> [--frames N] [--format F] [--out FILE.ppm]\n"
         "                [--manifests DIR] [--data DIR] [--disable ID]\n"
         "\n"
@@ -182,6 +184,28 @@ int main(int argc, char** argv) {
         if (!registry.setEnabled(options.disable, false, error)) {
             std::printf("disable failed: %s\n", error.c_str());
         }
+    }
+
+    if (options.command == "scan") {
+        if (options.moduleId.empty()) {
+            std::printf("scan needs a directory\n");
+            return 2;
+        }
+        aurora::GameLibrary library(registry);
+        const std::vector<aurora::GameEntry> games = library.scan(options.moduleId);
+        std::printf("%-30s %-34s %-22s %s\n", "TITLE", "MODULE", "DETECTED", "PATH");
+        for (const auto& game : games) {
+            const aurora::ModuleEntry* module = game.module_id.empty()
+                ? nullptr : registry.find(game.module_id);
+            const char* state = module == nullptr ? "-" : aurora_module_state_string(module->state);
+            std::printf("%-30s %-34s %-22s %s\n",
+                        game.title.c_str(),
+                        game.module_id.empty() ? "(unmatched)" : game.module_id.c_str(),
+                        game.detected_by.empty() ? "-" : game.detected_by.c_str(),
+                        (game.path + "  [" + state + "]").c_str());
+        }
+        std::printf("\n%zu item(s)\n", games.size());
+        return 0;
     }
 
     if (options.command == "list") {

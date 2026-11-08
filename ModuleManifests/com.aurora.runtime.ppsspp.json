@@ -33,5 +33,13 @@
     "project": "PPSSPP",
     "version": "1.18.x",
     "commit": "unpinned"
+  },
+  "detection": {
+    "extensions": [
+      "iso",
+      "cso",
+      "chd",
+      "pbp"
+    ]
   }
 }
