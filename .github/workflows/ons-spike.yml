@@ -42,11 +42,12 @@ jobs:
           : > ons.log
           ok=0
           fail=0
-          for f in third_party/onscripter/*.cpp; do
+          for f in third_party/onscripter/*.cpp Modules/ONScripter/src/ons_engine_onscripter.cpp; do
             out="obj/$(basename "${f%.cpp}").o"
             if clang++ -std=c++14 -arch arm64 -mios-version-min=16.0 -isysroot "$SDK" \
                 -I sdl-stack/prefix/include -I sdl-stack/prefix/include/SDL2 \
-                -DSDL_MAIN_HANDLED -D_REENTRANT -w \
+                -I third_party/onscripter -I Modules/ONScripter/src \
+                -DSDL_MAIN_HANDLED -D_REENTRANT -DAURORA_WITH_ONSCRIPTER -w \
                 -c "$f" -o "$out" >> ons.log 2>&1; then
               ok=$((ok+1))
             else
