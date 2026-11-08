@@ -23,8 +23,9 @@
     "fast_forward": true,
     "save_state": true,
     "game_saves": true,
-    "requires_firmware": true,
-    "jit_required": true
+    "requires_firmware": false,
+    "jit_required": false,
+    "jit_optional": true
   },
   "dependencies": [],
   "status": "planned",

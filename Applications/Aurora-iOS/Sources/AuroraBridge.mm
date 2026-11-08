@@ -83,19 +83,25 @@ const CachedRow* rowAt(int32_t index) {
     return &s.rows[static_cast<std::size_t>(index)];
 }
 
-std::string bundleManifestDirectory(const char* manifest_directory) {
-    if (manifest_directory != nullptr && manifest_directory[0] != '\0') return manifest_directory;
-    NSString* path = [[NSBundle mainBundle] pathForResource:@"ModuleManifests" ofType:nil];
-    if (path == nil) return std::string();
-    return std::string([path UTF8String]);
+/* Manifests are a bundle resource. Depending on how the folder reference is
+ * copied they land either in a ModuleManifests directory or straight in the bundle
+ * root, so both layouts are accepted. */
+std::vector<std::string> bundleManifestDirectories(const char* manifest_directory) {
+    std::vector<std::string> directories;
+    if (manifest_directory != nullptr && manifest_directory[0] != '\0') {
+        directories.emplace_back(manifest_directory);
+        return directories;
+    }
+    NSString* nested = [[NSBundle mainBundle] pathForResource:@"ModuleManifests" ofType:nil];
+    if (nested != nil) directories.emplace_back([nested UTF8String]);
+    NSString* root = [[NSBundle mainBundle] bundlePath];
+    if (root != nil) directories.emplace_back([root UTF8String]);
+    return directories;
 }
 
-bool loadManifests(aurora::ModuleRegistry& registry, const std::string& directory) {
+int loadManifestsFrom(aurora::ModuleRegistry& registry, const std::string& directory) {
     std::error_code code;
-    if (directory.empty() || !std::filesystem::is_directory(directory, code)) {
-        state().last_error = "manifest directory not found: " + directory;
-        return false;
-    }
+    if (directory.empty() || !std::filesystem::is_directory(directory, code)) return 0;
     std::vector<std::filesystem::path> paths;
     for (const auto& item : std::filesystem::directory_iterator(directory, code)) {
         if (item.is_regular_file() && item.path().extension() == ".json") {
@@ -103,14 +109,20 @@ bool loadManifests(aurora::ModuleRegistry& registry, const std::string& director
         }
     }
     std::sort(paths.begin(), paths.end());
+    int loaded = 0;
     for (const auto& item : paths) {
         NSData* data = [NSData dataWithContentsOfFile:[NSString stringWithUTF8String:item.generic_string().c_str()]];
         if (data == nil) continue;
         const std::string text(static_cast<const char*>(data.bytes), data.length);
         std::string error;
-        registry.addManifestJson(text, item.filename().generic_string(), error);
+        if (registry.addManifestJson(text, item.filename().generic_string(), error)) {
+            ++loaded;
+        } else if (error.find("duplicate") == std::string::npos) {
+            /* A stray JSON that is not a manifest is ignored on purpose: the bundle
+             * root is scanned as a fallback and may hold unrelated files. */
+        }
     }
-    return true;
+    return loaded;
 }
 
 } // namespace
@@ -132,7 +144,14 @@ int32_t aurora_bridge_init(const char* storage_root, const char* manifest_direct
     s.registry = std::make_unique<aurora::ModuleRegistry>(sdk);
     s.registry->setFirmwareProbe([](const std::string&) { return false; });
 
-    loadManifests(*s.registry, bundleManifestDirectory(manifest_directory));
+    int manifest_count = 0;
+    for (const std::string& directory : bundleManifestDirectories(manifest_directory)) {
+        manifest_count += loadManifestsFrom(*s.registry, directory);
+        if (manifest_count > 0) break;
+    }
+    if (manifest_count == 0) {
+        s.last_error = "no module manifests found in the app bundle";
+    }
     for (std::size_t i = 0; i < aurora_builtin_module_count; ++i) {
         std::string error;
         s.registry->attachBuiltin(aurora_builtin_modules[i].entry,

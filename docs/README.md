@@ -1,12 +1,12 @@
 # Documentation index
 
-| # | Document | State |
-|---|----------|-------|
-| 00 | 技术调研 · Research | draft |
-| 01 | 总体架构 · Architecture | draft |
-| 02 | 模块 SDK 规范 · SDK spec | pending |
-| 03 | 生命周期与故障 · Lifecycle and faults | pending |
-| 04 | 构建与发行 · Build and release | pending |
-| 05 | 合规与许可证 · Compliance | pending |
-| 06 | 验收报告 · Test evidence | pending |
-| 07 | 独立审查 · Independent review | pending |
+| # | Document | What it answers |
+|---|----------|-----------------|
+| 00 | [技术调研](00-技术调研.md) | iOS 到底允许什么；JIT 是不是刚需；四家模拟器的许可证事实 |
+| 01 | [总体架构](01-总体架构.md) | 三层结构、依赖方向、可信度模型、状态机、故障边界 |
+| 02 | [模块 SDK 规范](02-模块SDK规范.md) | ABI、Manifest 字段、能力、Host 服务、接入清单 |
+| 03 | [生命周期与故障](03-生命周期与故障.md) | 状态迁移、错误分类、进程内崩溃的真实边界 |
+| 04 | [构建与发行](04-构建与发行.md) | CMake/XcodeGen 双轨、模块表生成、未签名 ipa 流水线 |
+| 05 | [合规与许可证](05-合规与许可证.md) | GPL 传染、DuckStation 冲突、待决策项 |
+| 06 | [测试证据](06-测试证据.md) | 真实输出、渲染帧截图、还没证据的部分 |
+| 07 | [独立审查](07-独立审查.md) | 另一个 agent 对着代码找问题 |
