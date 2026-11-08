@@ -80,3 +80,18 @@ $acquire_frame$，走我们统一的 Metal 通道。
 
 - SDL 全套（SDL2 + sdl12-compat + image + ttf + mixer）的 iOS 构建 spike 在跑
 - GitHub API 时不时连不上，需要重试；构建产物走 artifact 下载可用
+
+
+## 5. 模块骨架（已写，未接入构建）
+
+@@@
+Modules/ONScripter/src/
+  ons_engine.h             Aurora 与引擎的唯一接缝
+  ons_engine_stub.cpp      没链接引擎时返回 UNSUPPORTED（不会假装能跑）
+  onscripter_module.cpp    ABI 适配：start 起线程、tick 观察、stop 投递退出
+@@@
+
+这两个文件已用本地编译器单独验证能编过（不许接入 modules.list，
+否则构建表会指向一个不存在的符号）。
+接引擎时要做的是：把 @@@ons_engine_stub.cpp@@@ 换成真正的 ONScripter 实现，
+并把模块加进 @@@Modules/modules.list@@@。
