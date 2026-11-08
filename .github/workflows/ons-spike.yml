@@ -4,37 +4,73 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-sdl-stack:
-    name: ONScripter SDL stack for iOS arm64
+  compile-onscripter:
+    name: ONScripter objects for iOS arm64
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: clone the historical iOS port
-        run: |
-          git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/ons-ios 2>&1 | tail -3
-          ls third_party/ons-ios
-
-      - name: modernise the toolchain flags
-        working-directory: third_party/ons-ios
-        run: |
-          # armv7 and bitcode are gone; iOS 8 -> 16
-          sed -i '' 's/-arch armv7 -arch arm64 -miphoneos-version-min=8.0 -fembed-bitcode/-arch arm64 -miphoneos-version-min=16.0/' dev_iPhoneOS.sh
-          cat dev_iPhoneOS.sh
-
-      - name: build SDL, SDL_image, SDL_ttf, SDL_mixer, smpeg
-        working-directory: third_party/ons-ios
+      - name: clone ONScripter
         run: |
           set -euo pipefail
-          bash build_libraries.sh > libs.log 2>&1
-          echo "exit: $?"
-          tail -40 libs.log
-          find . -name "*.a" -path "*iphoneos*" | head -20
+          git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
+          ls third_party/onscripter | head -20
 
-      - name: upload logs
+      - name: fetch the SDL stack written by sdl-spike
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          run_id=$(gh run list --workflow sdl-spike.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          echo "sdl run: $run_id"
+          gh run download "$run_id" -n sdl-stack-libs -D sdl-stack
+          find sdl-stack -name "*.a" | head -20
+          find sdl-stack -name "SDL.h" | head -5
+
+      - name: compile every source file
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          mkdir -p obj
+          : > ons.log
+          ok=0
+          fail=0
+          for f in third_party/onscripter/*.cpp; do
+            out="obj/$(basename "${f%.cpp}").o"
+            if clang++ -std=c++14 -arch arm64 -mios-version-min=16.0 -isysroot "$SDK" \
+                -I sdl-stack/prefix/include -I sdl-stack/prefix/include/SDL2 \
+                -DSDL_MAIN_HANDLED -D_REENTRANT -w \
+                -c "$f" -o "$out" >> ons.log 2>&1; then
+              ok=$((ok+1))
+            else
+              fail=$((fail+1))
+              echo "FAILED: $(basename "$f")" >> ons.log
+            fi
+          done
+          echo "compiled=$ok failed=$fail" | tee -a ons.log
+          ls obj | wc -l
+
+      - name: upload logs and objects
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ons-spike-logs
-          path: third_party/ons-ios/libs.log
+          name: ons-spike-output
+          path: |
+            ons.log
+            obj/
           if-no-files-found: warn
+
+      - name: verdict
+        run: |
+          set -euo pipefail
+          tail -5 ons.log
+          errors=$(grep -E "error:" ons.log | head -15 || true)
+          if [ -n "$errors" ]; then
+            echo "$errors"
+            echo "compilation errors remain"
+            exit 1
+          fi
+          count=$(ls obj/*.o 2>/dev/null | wc -l | tr -d ' ')
+          echo "objects: $count"
+          test "$count" -ge 30

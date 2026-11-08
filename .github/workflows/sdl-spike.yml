@@ -70,6 +70,16 @@ jobs:
             -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2MIXER_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF 2>&1 | tee mixer.log
           cmake --build b/mixer --config Release 2>&1 | tee -a mixer.log
 
+      - name: upload libraries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdl-stack-libs
+          path: |
+            b/**/*.a
+            prefix/**
+          if-no-files-found: warn
+
       - name: upload logs
         if: always()
         uses: actions/upload-artifact@v4
