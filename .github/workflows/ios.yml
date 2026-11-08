@@ -1,5 +1,8 @@
 name: ios
 
+permissions:
+  contents: write
+
 on:
   push:
     branches: [main]
@@ -85,3 +88,16 @@ jobs:
             exit 1
           fi
           echo "archive ok"
+
+      - name: publish status
+        if: always()
+        run: |
+          set +e
+          mkdir -p ci-status
+          printf '{"job":"ios","sha":"%s","status":"%s","at":"%s"}\n' "$GITHUB_SHA" "${{ job.status }}" "$(date -u +%FT%TZ)" > ci-status/ios.json
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git pull --rebase --autostash origin main || true
+          git add ci-status
+          git commit -m "ci: ios status" || true
+          git push origin HEAD:main || true

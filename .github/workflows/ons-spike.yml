@@ -1,5 +1,8 @@
 name: ons-spike
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
 
@@ -74,3 +77,16 @@ jobs:
           count=$(ls obj/*.o 2>/dev/null | wc -l | tr -d ' ')
           echo "objects: $count"
           test "$count" -ge 30
+
+      - name: publish status
+        if: always()
+        run: |
+          set +e
+          mkdir -p ci-status
+          printf '{"job":"ons-spike","sha":"%s","status":"%s","at":"%s"}\n' "$GITHUB_SHA" "${{ job.status }}" "$(date -u +%FT%TZ)" > ci-status/ons-spike.json
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git pull --rebase --autostash origin main || true
+          git add ci-status
+          git commit -m "ci: ons-spike status" || true
+          git push origin HEAD:main || true

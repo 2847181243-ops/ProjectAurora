@@ -1,5 +1,8 @@
 name: sdl-spike
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
 
@@ -103,3 +106,16 @@ jobs:
           count=$(find b -name "*.a" | wc -l | tr -d ' ')
           echo "static libraries: $count"
           test "$count" -ge 5
+
+      - name: publish status
+        if: always()
+        run: |
+          set +e
+          mkdir -p ci-status
+          printf '{"job":"sdl-spike","sha":"%s","status":"%s","at":"%s"}\n' "$GITHUB_SHA" "${{ job.status }}" "$(date -u +%FT%TZ)" > ci-status/sdl-spike.json
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git pull --rebase --autostash origin main || true
+          git add ci-status
+          git commit -m "ci: sdl-spike status" || true
+          git push origin HEAD:main || true
