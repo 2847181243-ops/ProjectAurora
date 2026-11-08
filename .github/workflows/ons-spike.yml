@@ -48,7 +48,7 @@ jobs:
           sed -i '' 's/^if(APPLE)$/if(APPLE AND NOT IOS)/' third_party/sdl12-compat/CMakeLists.txt
           sed -i '' 's/add_library(SDL SHARED/add_library(SDL STATIC/' third_party/sdl12-compat/CMakeLists.txt
           cmake -S third_party/sdl12-compat -B b/compat $COMMON -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL12TESTS=OFF -DSDL12_COMPAT_INSTALL=ON \
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL12TESTS=OFF -DSDL12DEVEL=ON \
             "-DCMAKE_C_FLAGS=-include$PWD/sdl12_gl_stub.h" >> stack.log 2>&1
           cmake --build b/compat --config Release --target install >> stack.log 2>&1
 
