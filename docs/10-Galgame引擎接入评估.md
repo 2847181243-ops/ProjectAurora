@@ -52,3 +52,51 @@
 
 这两个引擎都会走 VisualNovelAdapter 这条路。ONScripter 接进来之后，
 "适配器 + 模块"这条线才算有真东西，而不是只有 Native 一种。
+
+## 6. ONScripter 的 SDL 依赖实测（2026-11-08）
+
+对已克隆的 ONScripter-EN 源码做了统计，它用的是 **SDL 1.2 时代的 API**：
+
+| API | 出现次数 |
+|---|---|
+| SDL_SetVideoMode | 36 |
+| SDL_UpdateRect | 15 |
+| SDL_DisplayFormat | 6 |
+| SDL_WM_SetCaption | 9 |
+| SDL_Flip | 4 |
+| SDL_VideoModeOK | 4 |
+| SDL_EnableKeyRepeat | 2 |
+
+配套库：SDL_image（IMG_Load 39 处）、SDL_ttf（TTF_OpenFont 9 处）、
+SDL_mixer（Mix_OpenAudio 10 处）、大量 SDL_BlitSurface（34 处）。
+
+**结论：走 sdl12-compat。** 它把 SDL 1.2 API 实现成 SDL2 的薄壳，
+上面这些调用都在覆盖范围内，比手工改 100 多个 .cpp 划算得多。
+
+## 7. 接入方案（定稿）
+
+依赖栈：
+
+$
+SDL2 (static, iOS arm64)
+ ├── sdl12-compat      ← ONScripter 直接编译在这上面
+ ├── SDL2_image        ← IMG_Load
+ ├── SDL2_ttf          ← TTF_OpenFont
+ └── SDL2_mixer        ← Mix_OpenAudio / Mix_PlayChannel
+$
+
+画面：SDL2 在 iOS 上支持从已有 UIView 建窗口（$SDL_CreateWindowFrom$）。
+模块启动时把 SwiftUI 侧传下来的 UIView 交出去，SDL 自己渲染；
+引擎的输出就不经过 Aurora 的 RGBA 通道。
+
+**这是一个明确的取舍**：先让引擎真的跑起来，再做画面统一。
+后续把渲染接回 $acquire_frame$ 是第二阶段的事。
+
+音频：初期先用 SDL_mixer 自己的 CoreAudio 输出，不经过 $audio_submit$。
+代价是平台无法统一混音、无法与其他模块共享输出。音频 ABI 已经定义好，
+迁移是后续工作，不是设计缺陷。
+
+## 8. 当前进度
+
+- CI spike $sdl-spike$：验证 SDL2 能否编到 iOS arm64（进行中）
+- 通过后再加三个配套库，最后让 ONScripter 的源文件对着这套头文件编译
