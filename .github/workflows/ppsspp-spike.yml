@@ -7,7 +7,6 @@ jobs:
   build-libretro-core:
     name: PPSSPP libretro core for iOS
     runs-on: macos-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +18,7 @@ jobs:
       - name: configure for iOS arm64
         working-directory: third_party/ppsspp
         run: |
-          set +e
+          set -euo pipefail
           cmake -S . -B build-ios -G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DLIBRETRO=ON -DHEADLESS=OFF > configure.log 2>&1
           echo "configure exit: $?"
           tail -40 configure.log
@@ -27,7 +26,7 @@ jobs:
       - name: build core
         working-directory: third_party/ppsspp
         run: |
-          set +e
+          set -euo pipefail
           cmake --build build-ios --config Release --target ppsspp_libretro > build.log 2>&1
           echo "build exit: $?"
           tail -60 build.log
