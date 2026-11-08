@@ -74,8 +74,10 @@ jobs:
           git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           CXX="clang++ -std=gnu++14 -arch arm64 -mios-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing"
-          # sdl12-compat installs the SDL 1.2 headers under include/SDL; SDL2's live in include/SDL2.
-          INC="-I prefix/include/SDL -I prefix/include -I prefix/include/SDL2"
+          # SDL 1.2 headers come from sdl12-compat; the add-on headers must be the 1.2 ones,
+          # because SDL2's add-on headers pull in SDL2's core headers and collide.
+          IOSONS=third_party/iosons
+          INC="-I prefix/include -I prefix/include/SDL -I $IOSONS/SDL_image -I $IOSONS/SDL_ttf -I $IOSONS/SDL_mixer"
           mkdir -p obj obj/smpeg
           : > ons.log
 
