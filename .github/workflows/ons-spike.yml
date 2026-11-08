@@ -11,7 +11,7 @@ on:
 
 jobs:
   ons:
-    name: ONScripter for iOS arm64
+    name: ONScripter iOS stack
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,88 +28,46 @@ jobs:
           git pull --rebase --autostash origin main || true
           git push origin HEAD:main || true
 
-      - name: build the SDL stack
+      - name: clone the port
         run: |
           set -euo pipefail
-          git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL third_party/SDL
-          git clone --depth 1 https://github.com/libsdl-org/sdl12-compat third_party/sdl12-compat
-          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_image third_party/SDL_image
-          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_ttf third_party/SDL_ttf
-          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer
+          git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/port
+          ls third_party/port
 
-          COMMON="-G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DBUILD_SHARED_LIBS=OFF"
-
-          cmake -S third_party/SDL -B b/sdl $COMMON -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON \
-            -DSDL_OPENGL=OFF -DSDL_OPENGLES=ON > stack.log 2>&1
-          cmake --build b/sdl --config Release --target install >> stack.log 2>&1
-
-          cp Modules/ONScripter/sdl12_gl_stub.h .
-          sed -i '' 's/^if(APPLE)$/if(APPLE AND NOT IOS)/' third_party/sdl12-compat/CMakeLists.txt
-          sed -i '' 's/add_library(SDL SHARED/add_library(SDL STATIC/' third_party/sdl12-compat/CMakeLists.txt
-          cmake -S third_party/sdl12-compat -B b/compat $COMMON -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL12TESTS=OFF -DSDL12DEVEL=ON \
-            "-DCMAKE_C_FLAGS=-include$PWD/sdl12_gl_stub.h" >> stack.log 2>&1
-          cmake --build b/compat --config Release --target install >> stack.log 2>&1
-
-          for lib in SDL_image SDL_ttf SDL_mixer; do
-            case $lib in
-              SDL_image) EXTRA="-DSDL2IMAGE_VENDORED=ON -DSDL2IMAGE_SAMPLES=OFF -DSDL2IMAGE_AVIF=OFF -DSDL2IMAGE_JXL=OFF -DSDL2IMAGE_WEBP=OFF -DSDL2IMAGE_TIF=OFF" ;;
-              SDL_ttf) EXTRA="-DSDL2TTF_VENDORED=ON -DSDL2TTF_SAMPLES=OFF -DSDL2TTF_HARFBUZZ=OFF" ;;
-              SDL_mixer) EXTRA="-DSDL2MIXER_VENDORED=ON -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF -DSDL2MIXER_WAVPACK=OFF -DSDL2MIXER_FLAC=OFF -DSDL2MIXER_OPUS=OFF -DSDL2MIXER_GME=OFF" ;;
-            esac
-            cmake -S third_party/$lib -B b/$lib $COMMON -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-              -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 $EXTRA >> stack.log 2>&1
-            cmake --build b/$lib --config Release --target install >> stack.log 2>&1
-          done
-          find prefix -name "*.a" | sort | tee -a stack.log
-          echo "--- SDL1.2 headers ---" | tee -a stack.log
-          ls prefix/include | head -20 | tee -a stack.log
-
-      - name: build smpeg and compile ONScripter
+      - name: build lua and smpeg
         continue-on-error: true
         run: |
           set -o pipefail
-          git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/iosons
-          git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
-          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          cp Modules/ONScripter/sdl12_compat_shim.h .
-          CXX="clang++ -std=gnu++14 -arch arm64 -mios-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing -include$PWD/sdl12_compat_shim.h"
-          # SDL 1.2 headers come from sdl12-compat; the add-on headers must be the 1.2 ones,
-          # because SDL2's add-on headers pull in SDL2's core headers and collide.
-          IOSONS=third_party/iosons
-          INC="-I prefix/include -I prefix/include/SDL -I $IOSONS/SDL_image -I $IOSONS/SDL_ttf -I $IOSONS/SDL_mixer"
-          mkdir -p obj obj/smpeg
-          : > ons.log
+          cd third_party/port
+          # armv7 and bitcode are long gone; target arm64 with our deployment floor.
+          sed -i '' "s/-arch armv7 -arch arm64 -miphoneos-version-min=8.0 -fembed-bitcode/-arch arm64 -miphoneos-version-min=16.0/" dev_iPhoneOS.sh
+          cat dev_iPhoneOS.sh
+          source ./dev_iPhoneOS.sh
+          make 2>&1 | tee ../../lua_smpeg.log
+          ls -la Release-iphoneos/lib || true
 
-          # SMPEG: ONScripter's MP3/MPEG backend. The original tree matches the API
-          # the engine calls (surface-first SMPEG_setdisplay).
-          git clone --depth 1 https://github.com/icculus/smpeg third_party/smpeg
-          SMPEG=third_party/smpeg
-          for src in "$SMPEG"/*.cpp "$SMPEG"/video/*.cpp "$SMPEG"/audio/*.cpp; do
-            [ -f "$src" ] || continue
-            out="obj/smpeg/$(echo "${src#$SMPEG/}" | tr '/' '_' | sed 's/\.cpp$/.o/')"
-            if ! $CXX $INC -I "$SMPEG" -DNOCONTROLS -c "$src" -o "$out" >> ons.log 2>&1; then
-              echo "FAILED: smpeg/${src#$SMPEG/}" >> ons.log
-            fi
+      - name: build the SDL libraries
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd third_party/port
+          for proj in SDL/Xcode-iOS/SDL SDL_image/Xcode-iOS/SDL_image SDL_ttf/Xcode-iOS/SDL_ttf SDL_mixer/Xcode-iOS/SDL_mixer; do
+            name=$(basename "$proj")
+            xcodebuild -project "$proj/$name.xcodeproj" -target "$name" -configuration Release -sdk iphoneos \
+              ARCHS=arm64 IPHONEOS_DEPLOYMENT_TARGET=16.0 CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+              build >> ../../sdl_projects.log 2>&1 || echo "FAILED: $name" >> ../../sdl_projects.log
           done
-          echo "smpeg objects: $(ls obj/smpeg/*.o 2>/dev/null | wc -l | tr -d ' ')" | tee -a ons.log
+          grep -E "FAILED:|BUILD SUCCEEDED|BUILD FAILED" ../../sdl_projects.log | tail -20
 
-          ok=0; fail=0
-          for f in third_party/onscripter/*.cpp Modules/ONScripter/src/ons_engine_onscripter.cpp; do
-            case "$(basename "$f")" in
-              nscriptdecode.cpp|AVIWrapper.cpp|LUAHandler.cpp|MadWrapper.cpp|X11_messagebox.cpp) continue ;;
-            esac
-            out="obj/$(basename "${f%.cpp}").o"
-            if $CXX $INC -I third_party/onscripter -I Modules/ONScripter/src -I "$SMPEG" \
-                -DSDL_MAIN_HANDLED -D_REENTRANT -DAURORA_WITH_ONSCRIPTER \
-                -c "$f" -o "$out" >> ons.log 2>&1; then
-              ok=$((ok+1))
-            else
-              fail=$((fail+1)); echo "FAILED: $(basename "$f")" >> ons.log
-            fi
-          done
-          echo "compiled=$ok failed=$fail" | tee -a ons.log
+      - name: build ONScripter
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd third_party/port
+          xcodebuild -project ONScripter.xcodeproj -target ONScripter -configuration Release -sdk iphoneos \
+            ARCHS=arm64 IPHONEOS_DEPLOYMENT_TARGET=16.0 CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee ../../ons_build.log | tail -30
+          find . -name "*.app" -maxdepth 6 | head -5
 
       - name: upload logs
         if: always()
@@ -117,23 +75,24 @@ jobs:
         with:
           name: ons-spike-output
           path: |
-            stack.log
-            ons.log
-            obj/
+            lua_smpeg.log
+            sdl_projects.log
+            ons_build.log
           if-no-files-found: warn
 
       - name: verdict
         run: |
           set -euo pipefail
-          tail -3 ons.log
-          ok=$(ls obj/*.o 2>/dev/null | wc -l | tr -d ' ')
-          failed=$(grep -c "^FAILED:" ons.log || true)
-          echo "compiled=$ok failed=$failed"
-          if [ "$failed" -gt 0 ]; then
-            echo "source files still failing: $failed"
+          for f in lua_smpeg.log sdl_projects.log ons_build.log; do
+            echo "=== $f ==="
+            [ -f "$f" ] && tail -5 "$f" || echo "(missing)"
+          done
+          if grep -qE "\*\* BUILD FAILED \*\*" sdl_projects.log ons_build.log 2>/dev/null; then
+            grep -E "error:" sdl_projects.log ons_build.log 2>/dev/null | head -15
+            echo "port does not build"
             exit 1
           fi
-          test "$ok" -ge 40
+          test -d third_party/port/Release-iphoneos/lib
 
       - name: publish status
         if: always()
@@ -152,13 +111,17 @@ jobs:
             echo ""
             echo "## errors"
             echo ""
-            grep -hE "error:|CMake Error|FAILED:" ons.log stack.log 2>/dev/null | head -40
+            grep -hE "error:|FAILED:|BUILD FAILED" lua_smpeg.log sdl_projects.log ons_build.log 2>/dev/null | head -30
             echo ""
-            echo "## compile summary"
-            tail -3 ons.log
+            echo "## tails"
+            for f in lua_smpeg.log sdl_projects.log ons_build.log; do
+              [ -f "$f" ] || continue
+              echo ""
+              echo "### $f"
+              tail -10 "$f"
+            done
           } > "$file"
           git add "$file"
           git commit -m "ci: ons run ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
           git push origin HEAD:main || true
-
