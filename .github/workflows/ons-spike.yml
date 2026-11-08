@@ -81,16 +81,15 @@ jobs:
           mkdir -p obj obj/smpeg
           : > ons.log
 
-          # SMPEG: ONScripter's MP3/MPEG backend, taken from the iOS port's tree.
-          SMPEG=third_party/iosons/smpeg
-          for src in MPEG MPEGring MPEGlist MPEGstream MPEGsystem smpeg \
-                     video/MPEGvideo video/decoders video/floatdct video/gdith video/jrevdct \
-                     video/motionvec video/parseblock video/readfile video/util video/video \
-                     audio/MPEGaudio audio/bitwindow audio/filter audio/filter_2 audio/hufftable \
-                     audio/mpeglayer1 audio/mpeglayer2 audio/mpeglayer3 audio/mpegtable audio/mpegtoraw; do
-            out="obj/smpeg/$(echo "$src" | tr '/' '_').o"
-            if ! $CXX $INC -I "$SMPEG" -DNOCONTROLS -c "$SMPEG/$src.cpp" -o "$out" >> ons.log 2>&1; then
-              echo "FAILED: smpeg/$src.cpp" >> ons.log
+          # SMPEG: ONScripter's MP3/MPEG backend. The original tree matches the API
+          # the engine calls (surface-first SMPEG_setdisplay).
+          git clone --depth 1 https://github.com/icculus/smpeg third_party/smpeg
+          SMPEG=third_party/smpeg
+          for src in "$SMPEG"/*.cpp "$SMPEG"/video/*.cpp "$SMPEG"/audio/*.cpp; do
+            [ -f "$src" ] || continue
+            out="obj/smpeg/$(echo "${src#$SMPEG/}" | tr '/' '_' | sed 's/\.cpp$/.o/')"
+            if ! $CXX $INC -I "$SMPEG" -DNOCONTROLS -c "$src" -o "$out" >> ons.log 2>&1; then
+              echo "FAILED: smpeg/${src#$SMPEG/}" >> ons.log
             fi
           done
           echo "smpeg objects: $(ls obj/smpeg/*.o 2>/dev/null | wc -l | tr -d ' ')" | tee -a ons.log
@@ -98,7 +97,7 @@ jobs:
           ok=0; fail=0
           for f in third_party/onscripter/*.cpp Modules/ONScripter/src/ons_engine_onscripter.cpp; do
             case "$(basename "$f")" in
-              nscriptdecode.cpp|AVIWrapper.cpp|LUAHandler.cpp) continue ;;   # a tiny tool, the avifile path, and the optional lua path
+              nscriptdecode.cpp|AVIWrapper.cpp|LUAHandler.cpp|MadWrapper.cpp|X11_messagebox.cpp) continue ;;
             esac
             out="obj/$(basename "${f%.cpp}").o"
             if $CXX $INC -I third_party/onscripter -I Modules/ONScripter/src -I "$SMPEG" \

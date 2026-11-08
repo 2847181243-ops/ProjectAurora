@@ -9,6 +9,7 @@
 #if defined(AURORA_WITH_ONSCRIPTER)
 
 #include <atomic>
+#include <cstring>
 
 #include <SDL.h>
 
@@ -25,7 +26,7 @@ std::atomic<bool> g_quit_requested{false};
 /* ONScripter reads events from the SDL queue, so a quit request is just an event. */
 void pushQuit() {
     SDL_Event event;
-    SDL_zero(event);
+    memset(&event, 0, sizeof(event));
     event.type = SDL_QUIT;
     SDL_PushEvent(&event);
 }
