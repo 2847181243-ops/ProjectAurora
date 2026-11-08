@@ -130,6 +130,10 @@ int loadManifestsFrom(aurora::ModuleRegistry& registry, const std::string& direc
 extern "C" {
 
 int32_t aurora_bridge_init(const char* storage_root, const char* manifest_directory) {
+    /* Tear the previous stack down first: assigning a new registry under a live
+     * supervisor leaves it holding a reference to freed memory. */
+    aurora_bridge_shutdown();
+
     BridgeState& s = state();
     s.storage_root = storage_root != nullptr ? storage_root : "";
     s.last_error.clear();

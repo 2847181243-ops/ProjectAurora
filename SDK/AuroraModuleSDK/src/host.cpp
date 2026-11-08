@@ -81,6 +81,7 @@ AuroraStatus ModuleHost::onStorageDirectory(void* context, const char* module_id
     if (!sameId(module_id, binding->module_id)) {
         binding->violation = "storage request for another module: ";
         binding->violation += module_id ? module_id : "(null)";
+        binding->host->diagnostics().record(AURORA_LOG_ERROR, binding->module_id, binding->violation);
         return AURORA_E_INVALID_ARGUMENT;
     }
     if (kind < 0 || kind >= AURORA_STORAGE_COUNT) return AURORA_E_INVALID_ARGUMENT;
@@ -95,9 +96,14 @@ AuroraStatus ModuleHost::onStorageDirectory(void* context, const char* module_id
         binding->module_id, kind, relative_path ? relative_path : "", error);
     if (path.empty()) {
         binding->violation = "storage path rejected: " + error;
+        binding->host->diagnostics().record(AURORA_LOG_ERROR, binding->module_id, binding->violation);
         return AURORA_E_INVALID_ARGUMENT;
     }
-    if (path.size() + 1 > out_capacity) return AURORA_E_INVALID_ARGUMENT;
+    if (path.size() + 1 > out_capacity) {
+        binding->violation = "storage path buffer too small";
+        binding->host->diagnostics().record(AURORA_LOG_ERROR, binding->module_id, binding->violation);
+        return AURORA_E_INVALID_ARGUMENT;
+    }
     std::memcpy(out_utf8, path.c_str(), path.size() + 1);
     return AURORA_OK;
 }
@@ -108,6 +114,7 @@ void ModuleHost::onWriteLog(void* context, const char* module_id, AuroraLogLevel
     if (binding == nullptr) return;
     if (!sameId(module_id, binding->module_id)) {
         binding->violation = "log call claimed another module";
+        binding->host->diagnostics().record(AURORA_LOG_ERROR, binding->module_id, binding->violation);
         return;
     }
     binding->host->diagnostics().record(level, binding->module_id, message ? message : "");
@@ -118,7 +125,16 @@ AuroraStatus ModuleHost::onAcquireFrame(void* context, uint32_t width, uint32_t 
     auto* binding = static_cast<HostBinding*>(context);
     if (binding == nullptr || out_frame == nullptr) return AURORA_E_INVALID_ARGUMENT;
     if (!binding->surface_enabled) return AURORA_E_UNSUPPORTED;
-    if (width != binding->surface_width || height != binding->surface_height) return AURORA_E_INVALID_ARGUMENT;
+    /* Each system has its own native resolution, so the module states the size it
+     * wants and the host reallocates. A fixed platform-side size would force every
+     * module to letterbox into somebody else's aspect ratio. */
+    if (width == 0 || height == 0 || width > 4096 || height > 2400) return AURORA_E_INVALID_ARGUMENT;
+    if (width != binding->surface_width || height != binding->surface_height ||
+        binding->surface_pixels.size() != static_cast<std::size_t>(width) * height * 4u) {
+        binding->surface_width = width;
+        binding->surface_height = height;
+        binding->surface_pixels.assign(static_cast<std::size_t>(width) * height * 4u, 0u);
+    }
 
     AuroraFrame frame{};
     frame.pixels = binding->surface_pixels.data();

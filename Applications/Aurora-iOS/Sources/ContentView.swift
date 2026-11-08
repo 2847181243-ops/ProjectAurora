@@ -117,7 +117,7 @@ private struct FramePanel: View {
                 Image(uiImage: image)
                     .resizable()
                     .interpolation(.none)
-                    .aspectRatio(480.0 / 320.0, contentMode: .fit)
+                    .aspectRatio(image.size.width / image.size.height, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             } else {
                 Text(host.runningModule.isEmpty ? "No module running" : "Waiting for the first frame")

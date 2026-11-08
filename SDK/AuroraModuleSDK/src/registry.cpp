@@ -175,6 +175,10 @@ AuroraModuleState ModuleRegistry::computeState(std::size_t index,
         target = AURORA_STATE_FAILED;
     } else if (entry.state == AURORA_STATE_RUNNING) {
         target = AURORA_STATE_RUNNING;
+    } else if (!entry.user_enabled) {
+        /* Disabling must work even for a module that failed earlier, otherwise the
+         * toggle appears to do something and the row never changes. */
+        target = AURORA_STATE_DISABLED;
     } else if (entry.state == AURORA_STATE_FAILED && !entry.last_error.empty()) {
         /* A runtime or probe failure is sticky until the user retries. Recomputing
          * preconditions must not silently paper over a crash. */
@@ -182,8 +186,6 @@ AuroraModuleState ModuleRegistry::computeState(std::size_t index,
     } else if (!entry.compiled_in || entry.vtable == nullptr) {
         target = AURORA_STATE_DISCOVERED;
         unmet.push_back("not compiled into this build");
-    } else if (!entry.user_enabled) {
-        target = AURORA_STATE_DISABLED;
     } else {
         const Manifest& manifest = entry.manifest;
         std::vector<std::string> reasons;

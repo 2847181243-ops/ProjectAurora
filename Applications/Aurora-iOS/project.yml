@@ -24,9 +24,14 @@ targets:
       - path: ../../SDK/AuroraModuleSDK/src
       - path: ../../SDK/AuroraStorageAPI/src
       - path: ../../SDK/AuroraDiagnosticsAPI/src
-      - path: ../../Modules/EmptyModule/src
-      - path: ../../Modules/SimulatedRuntime/src
-      - path: ../../Modules/FaultInjector/src
+      # The whole Modules tree, not a hand-written list: a module added to
+      # Modules/modules.list must not require an edit here, or the "one line to add
+      # a module" promise is false on the iOS side.
+      - path: ../../Modules
+        excludes:
+          - "**/CMakeLists.txt"
+          - "**/*.md"
+          - "**/modules.list"
       - path: Generated/AuroraBuiltinModules.cpp
       - path: ../../ModuleManifests
         buildPhase: resources

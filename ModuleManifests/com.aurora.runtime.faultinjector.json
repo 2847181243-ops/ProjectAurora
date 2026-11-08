@@ -14,7 +14,8 @@
     "unsupported",
     "crash",
     "failstart",
-    "stopfail"
+    "stopfail",
+    "tickfail"
   ],
   "capabilities": {
     "video_output": false,

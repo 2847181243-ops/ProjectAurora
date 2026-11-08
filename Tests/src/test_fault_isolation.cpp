@@ -100,3 +100,22 @@ AURORA_TEST(fault_stop_failure_still_releases_the_instance) {
         CHECK_EQ(entry->state, AURORA_STATE_READY);
     }
 }
+
+AURORA_TEST(fault_tick_failure_leaves_the_module_restartable) {
+    test::Environment env("fault-tick");
+    std::string error;
+    const AuroraGameInfo game = test::gameInfo("/library/demo.bin", "tickfail");
+    CHECK_EQ(env.supervisor.start(kFaultInjector, game, error), AURORA_OK);
+    CHECK_EQ(env.supervisor.tick(kFaultInjector, 1.0 / 60.0, error), AURORA_E_IO);
+    CHECK(!env.supervisor.isRunning(kFaultInjector));
+
+    /* Regression: the entry used to stay RUNNING with no instance, which made
+     * start(), stop() and setEnabled() all refuse. */
+    const ModuleEntry* entry = env.registry.find(kFaultInjector);
+    CHECK(entry != nullptr);
+    if (entry != nullptr) CHECK_EQ(entry->state, AURORA_STATE_READY);
+
+    const AuroraGameInfo healthy = test::gameInfo("/library/demo.bin", "ok");
+    CHECK_EQ(env.supervisor.start(kFaultInjector, healthy, error), AURORA_OK);
+    CHECK_EQ(env.supervisor.stop(kFaultInjector, error), AURORA_OK);
+}

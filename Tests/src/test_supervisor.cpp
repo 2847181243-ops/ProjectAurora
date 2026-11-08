@@ -78,3 +78,43 @@ AURORA_TEST(supervisor_reports_pause_and_resume) {
     CHECK_EQ(env.supervisor.resume("com.aurora.runtime.simulated", error), AURORA_OK);
     CHECK_EQ(env.supervisor.stop("com.aurora.runtime.simulated", error), AURORA_OK);
 }
+
+AURORA_TEST(supervisor_accepts_a_surface_size_the_module_chooses) {
+    /* Regression for the iOS case: the host default was 480x320 while the module
+     * renders at 320x240, and the old code rejected the mismatch outright, so a
+     * device build showed an empty frame forever. */
+    test::Environment env("supervisor-surface");
+    env.host.setDefaultSurface(480, 320);
+    std::string error;
+    const AuroraGameInfo game = test::gameInfo("/library/demo.sim", "sim");
+    CHECK_EQ(env.supervisor.start("com.aurora.runtime.simulated", game, error), AURORA_OK);
+    CHECK_EQ(env.supervisor.tick("com.aurora.runtime.simulated", 1.0 / 60.0, error), AURORA_OK);
+
+    const RuntimeInstance* instance = env.supervisor.instance("com.aurora.runtime.simulated");
+    CHECK(instance != nullptr);
+    if (instance != nullptr) {
+        CHECK_EQ(instance->status.frames_presented, static_cast<std::int64_t>(1));
+        CHECK(instance->binding != nullptr);
+        if (instance->binding != nullptr) {
+            CHECK_EQ(instance->binding->surface_width, 320u);
+            CHECK_EQ(instance->binding->surface_height, 240u);
+        }
+    }
+    CHECK_EQ(env.supervisor.stop("com.aurora.runtime.simulated", error), AURORA_OK);
+}
+
+AURORA_TEST(supervisor_logs_a_cross_module_storage_attempt) {
+    test::Environment env("supervisor-violation");
+    aurora::HostBinding* binding = env.host.createBinding("com.aurora.runtime.simulated");
+    CHECK(binding != nullptr);
+    if (binding == nullptr) return;
+
+    char buffer[512];
+    const AuroraStatus status = binding->services.storage_directory(
+        binding->services.host_context, "com.aurora.runtime.empty", AURORA_STORAGE_SAVES,
+        "steal.sav", buffer, sizeof(buffer));
+    CHECK_EQ(status, AURORA_E_INVALID_ARGUMENT);
+    CHECK(!binding->violation.empty());
+    CHECK_CONTAINS(env.diagnostics.format(), "another module");
+    env.host.releaseBinding(binding);
+}

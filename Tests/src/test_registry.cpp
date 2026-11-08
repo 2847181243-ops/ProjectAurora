@@ -172,3 +172,59 @@ AURORA_TEST(registry_refuses_an_sdk_mismatch) {
         CHECK(sdk_reason);
     }
 }
+
+AURORA_TEST(registry_flags_a_binary_without_a_manifest) {
+    ModuleRegistry registry(test::sdkVersion());
+    std::string error;
+    const bool attached = registry.attachBuiltin(&aurora_module_entry_testdependent, kDependentId, error);
+    CHECK(!attached);
+    CHECK_CONTAINS(error, "no manifest");
+
+    const ModuleEntry* entry = registry.find(kDependentId);
+    CHECK(entry != nullptr);
+    if (entry != nullptr) {
+        CHECK_EQ(entry->state, AURORA_STATE_FAILED);
+        CHECK_CONTAINS(entry->last_error, "without a manifest");
+    }
+}
+
+AURORA_TEST(registry_blocks_a_module_that_needs_firmware) {
+    ModuleRegistry registry(test::sdkVersion());
+    registry.setFirmwareProbe([](const std::string&) { return false; });
+    std::string error;
+    std::string text = dependentManifest(false);
+    const std::string from = "\"capabilities\": {}";
+    const std::size_t position = text.find(from);
+    CHECK(position != std::string::npos);
+    if (position != std::string::npos) {
+        text.replace(position, from.size(), "\"capabilities\": {\"requires_firmware\": true}");
+    }
+    CHECK(registry.addManifestJson(text, "firmware.json", error));
+    CHECK(registry.attachBuiltin(&aurora_module_entry_testdependent, kDependentId, error));
+
+    const ModuleEntry* entry = registry.find(kDependentId);
+    CHECK(entry != nullptr);
+    if (entry != nullptr) {
+        CHECK_EQ(entry->state, AURORA_STATE_BUILT);
+        bool mentioned = false;
+        for (const auto& reason : entry->unmet) {
+            if (reason == "firmware_missing") mentioned = true;
+        }
+        CHECK(mentioned);
+    }
+}
+
+AURORA_TEST(registry_lets_the_user_disable_a_failed_module) {
+    test::Environment env("registry-disable-failed");
+    std::string error;
+    const AuroraGameInfo game = test::gameInfo("/library/boom.bin", "failstart");
+    CHECK_EQ(env.supervisor.start("com.aurora.runtime.faultinjector", game, error), AURORA_E_INIT_FAILED);
+
+    ModuleEntry* entry = env.registry.find("com.aurora.runtime.faultinjector");
+    CHECK(entry != nullptr);
+    if (entry != nullptr) CHECK_EQ(entry->state, AURORA_STATE_FAILED);
+
+    CHECK(env.registry.setEnabled("com.aurora.runtime.faultinjector", false, error));
+    entry = env.registry.find("com.aurora.runtime.faultinjector");
+    if (entry != nullptr) CHECK_EQ(entry->state, AURORA_STATE_DISABLED);
+}

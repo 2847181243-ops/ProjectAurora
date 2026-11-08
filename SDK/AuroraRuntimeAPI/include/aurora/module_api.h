@@ -226,7 +226,13 @@ typedef const AuroraModuleVTable* (*AuroraModuleEntryFn)(void);
 #define AURORA_MODULE_ENTRY(name) \
     extern "C" const AuroraModuleVTable* aurora_module_entry_##name(void)
 
+/* A vtable written against an older minor version may be shorter than today's
+ * struct. Only the fields up to release_instance are required; everything after is
+ * optional and must be read through this accessor, which checks struct_size. */
 AuroraStatus aurora_vtable_validate(const AuroraModuleVTable* vtable);
+
+/* Returns NULL when the module predates the optional field. */
+AuroraStatus (*aurora_vtable_tick(const AuroraModuleVTable* vtable))(void*, double);
 
 #ifdef __cplusplus
 } /* extern "C" */

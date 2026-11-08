@@ -53,10 +53,16 @@ const char* aurora_storage_kind_string(AuroraStorageKind kind) {
     }
 }
 
+#include <stddef.h>
+
 AuroraStatus aurora_vtable_validate(const AuroraModuleVTable* vtable) {
     if (vtable == 0) return AURORA_E_INVALID_ARGUMENT;
     if (vtable->abi_major != AURORA_ABI_MAJOR) return AURORA_E_ABI_MISMATCH;
-    if (vtable->struct_size < sizeof(AuroraModuleVTable)) return AURORA_E_ABI_MISMATCH;
+    /* Append-only rule: a module built against an older minor version reports a
+     * smaller struct_size. It is still valid as long as every required field is
+     * inside it. Requiring the full current size would make the append-only
+     * promise meaningless. */
+    if (vtable->struct_size < offsetof(AuroraModuleVTable, tick)) return AURORA_E_ABI_MISMATCH;
     if (vtable->module_id == 0 || vtable->module_id[0] == '\0') return AURORA_E_INVALID_ARGUMENT;
     if (vtable->create_instance == 0) return AURORA_E_INVALID_ARGUMENT;
     if (vtable->load_game == 0) return AURORA_E_INVALID_ARGUMENT;
@@ -64,4 +70,10 @@ AuroraStatus aurora_vtable_validate(const AuroraModuleVTable* vtable) {
     if (vtable->stop == 0) return AURORA_E_INVALID_ARGUMENT;
     if (vtable->release_instance == 0) return AURORA_E_INVALID_ARGUMENT;
     return AURORA_OK;
+}
+
+AuroraStatus (*aurora_vtable_tick(const AuroraModuleVTable* vtable))(void*, double) {
+    if (vtable == 0) return 0;
+    if (vtable->struct_size < offsetof(AuroraModuleVTable, tick) + sizeof(vtable->tick)) return 0;
+    return vtable->tick;
 }

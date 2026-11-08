@@ -82,6 +82,16 @@ AuroraStatus stopInstance(void* handle) {
     return AURORA_OK;
 }
 
+AuroraStatus tickInstance(void* handle, double) {
+    Instance* instance = static_cast<Instance*>(handle);
+    if (instance == nullptr) return AURORA_E_INVALID_ARGUMENT;
+    if (std::strcmp(instance->mode, "tickfail") == 0) {
+        logLine(instance, AURORA_LOG_ERROR, "failing a frame on purpose");
+        return AURORA_E_IO;
+    }
+    return AURORA_OK;
+}
+
 AuroraStatus queryStatus(void* handle, AuroraModuleInstanceStatus* out_status) {
     if (handle == nullptr || out_status == nullptr) return AURORA_E_INVALID_ARGUMENT;
     Instance* instance = static_cast<Instance*>(handle);
@@ -100,7 +110,7 @@ const AuroraModuleVTable kTable = {
     kModuleId, "1.0.0",
     &createInstance, &loadGame, &startInstance, &pauseInstance, &resumeInstance,
     &stopInstance, &queryStatus, &releaseInstance,
-    nullptr,
+    &tickInstance,
 };
 
 } // namespace

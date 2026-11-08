@@ -13,6 +13,7 @@ bool isFatalStatus(AuroraStatus status) {
         case AURORA_E_INTERNAL:
         case AURORA_E_ABI_MISMATCH:
         case AURORA_E_OUT_OF_MEMORY:
+        case AURORA_E_STATE:
             return true;
         default:
             return false;
@@ -69,7 +70,12 @@ AuroraStatus ModuleSupervisor::start(const std::string& module_id,
     if (status != AURORA_OK || instance.handle == nullptr) {
         error = std::string("create_instance failed: ") + aurora_status_string(status);
         if (instance.handle != nullptr) {
-            vtable->release_instance(instance.handle);
+            try {
+                vtable->release_instance(instance.handle);
+            } catch (...) {
+                host_.diagnostics().record(AURORA_LOG_ERROR, module_id,
+                                           "release_instance threw during startup cleanup");
+            }
         }
         host_.releaseBinding(binding);
         return fail(module_id, status == AURORA_OK ? AURORA_E_INIT_FAILED : status, error, error);
@@ -82,7 +88,12 @@ AuroraStatus ModuleSupervisor::start(const std::string& module_id,
     }
     if (status != AURORA_OK) {
         error = std::string("load_game failed: ") + aurora_status_string(status);
-        vtable->release_instance(instance.handle);
+        try {
+            vtable->release_instance(instance.handle);
+        } catch (...) {
+            host_.diagnostics().record(AURORA_LOG_ERROR, module_id,
+                                       "release_instance threw after a load failure");
+        }
         host_.releaseBinding(binding);
         if (isFatalStatus(status)) return fail(module_id, status, error, error);
         /* A rejected game is a user mistake, not a module defect: stay READY. */
@@ -97,7 +108,12 @@ AuroraStatus ModuleSupervisor::start(const std::string& module_id,
     }
     if (status != AURORA_OK) {
         error = std::string("start failed: ") + aurora_status_string(status);
-        vtable->release_instance(instance.handle);
+        try {
+            vtable->release_instance(instance.handle);
+        } catch (...) {
+            host_.diagnostics().record(AURORA_LOG_ERROR, module_id,
+                                       "release_instance threw after a start failure");
+        }
         host_.releaseBinding(binding);
         return fail(module_id, status, error, error);
     }
@@ -124,11 +140,12 @@ AuroraStatus ModuleSupervisor::tick(const std::string& module_id, double delta_s
         error = "module disappeared from the registry";
         return fail(module_id, AURORA_E_INTERNAL, error, error);
     }
-    if (entry->vtable->tick == nullptr) return AURORA_OK;
+    AuroraStatus (*tick)(void*, double) = aurora_vtable_tick(entry->vtable);
+    if (tick == nullptr) return AURORA_OK;
 
     AuroraStatus status = AURORA_OK;
     try {
-        status = entry->vtable->tick(it->second.handle, delta_seconds);
+        status = tick(it->second.handle, delta_seconds);
     } catch (...) {
         status = AURORA_E_INTERNAL;
     }
@@ -138,9 +155,13 @@ AuroraStatus ModuleSupervisor::tick(const std::string& module_id, double delta_s
     }
     if (entry->vtable->query_status != nullptr) {
         AuroraModuleInstanceStatus snapshot{};
-        if (entry->vtable->query_status(it->second.handle, &snapshot) == AURORA_OK) {
-            it->second.status = snapshot;
+        AuroraStatus query = AURORA_OK;
+        try {
+            query = entry->vtable->query_status(it->second.handle, &snapshot);
+        } catch (...) {
+            query = AURORA_E_INTERNAL;
         }
+        if (query == AURORA_OK) it->second.status = snapshot;
     }
     return AURORA_OK;
 }
@@ -286,12 +307,14 @@ AuroraStatus ModuleSupervisor::fail(const std::string& module_id,
     teardown(module_id);
     ModuleEntry* entry = registry_.find(module_id);
     if (entry != nullptr) {
+        /* Whatever happens, the entry must not be left RUNNING with no instance:
+         * start() would refuse (not READY), stop() would refuse (no instance) and
+         * setEnabled() would refuse (RUNNING) - a module wedged until relaunch. */
         entry->last_error = message;
-        if (isFatalStatus(status)) {
-            const std::vector<AuroraModuleState> path =
-                transitionPath(entry->state, AURORA_STATE_FAILED);
-            for (AuroraModuleState step : path) applyTransition(entry->state, step);
-        }
+        const AuroraModuleState target =
+            isFatalStatus(status) ? AURORA_STATE_FAILED : AURORA_STATE_READY;
+        const std::vector<AuroraModuleState> path = transitionPath(entry->state, target);
+        for (AuroraModuleState step : path) applyTransition(entry->state, step);
     }
     host_.diagnostics().record(AURORA_LOG_ERROR, module_id, message);
     return status;
