@@ -1,8 +1,21 @@
 # ios
 
-sha: 94306d48214a9cdf92c3fd5d0b80e3e88fd0201e
+sha: bd6ad85f55db0c9d724907425e1cf790196d59b4
 status: success
-at: 2026-11-08T16:43:39Z
+at: 2026-11-08T16:49:20Z
 
 ## errors
 
+
+## tails
+
+### gen.log
+wrote Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp with 3 module(s)
+
+### toolchain.log
+[32m==>[0m [1mDownloading bottle manifests[0m
+✔︎ Bottle Manifest xcodegen (2.46.0)
+[32m==>[0m [1mFetching downloads for: [32mxcodegen[39m[0m
+✔︎ Bottle xcodegen (2.46.0)
+[34m==>[0m [1mPouring xcodegen--2.46.0.arm64_tahoe.bottle.1.tar.gz[0m
+🍺  /opt/homebrew/Cellar/xcodegen/2.46.0: 38 files, 7.4MB
