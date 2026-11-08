@@ -98,6 +98,12 @@ jobs:
               EXTRA="-DSDL12TESTS=OFF -DCMAKE_C_FLAGS=-include$PWD/sdl12_gl_stub.h"
               echo "--- SDL_config.h GL settings ---" | tee -a addon.log
               grep -nE "SDL_VIDEO_OPENGL" $PREFIX/include/SDL2/SDL_config.h | head -10 | tee -a addon.log
+              SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
+              GLHDR=$SDKROOT/System/Library/Frameworks/OpenGLES.framework/Headers
+              grep -hoE '\bGL_[A-Z0-9_]+' third_party/lib/src/SDL12_compat.c | sort -u > /tmp/used.txt || true
+              grep -rhoE '#define +GL_[A-Z0-9_]+' $GLHDR/ES2 $GLHDR/ES3 2>/dev/null | sed 's/.*GL_/GL_/' | sort -u > /tmp/have.txt || true
+              echo "--- GL names missing from the ES headers ---" | tee -a addon.log
+              comm -23 /tmp/used.txt /tmp/have.txt | head -40 | tee -a addon.log
               ;;
             SDL_image) EXTRA="-DSDL2IMAGE_VENDORED=ON -DSDL2IMAGE_SAMPLES=OFF -DSDL2IMAGE_AVIF=OFF -DSDL2IMAGE_JXL=OFF -DSDL2IMAGE_WEBP=OFF -DSDL2IMAGE_TIF=OFF" ;;
             SDL_ttf) EXTRA="-DSDL2TTF_VENDORED=ON -DSDL2TTF_SAMPLES=OFF -DSDL2TTF_HARFBUZZ=OFF" ;;
