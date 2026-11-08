@@ -28,6 +28,9 @@ targets:
       - path: ../../Modules/SimulatedRuntime/src
       - path: ../../Modules/FaultInjector/src
       - path: Generated/AuroraBuiltinModules.cpp
+      - path: ../../ModuleManifests
+        buildPhase: resources
+        type: folder
     settings:
       base:
         INFOPLIST_FILE: Sources/Info.plist
@@ -43,6 +46,3 @@ targets:
           - "$(SRCROOT)/Sources"
         OTHER_LDFLAGS:
           - "-lc++"
-    resources:
-      - path: ../../ModuleManifests
-        name: ModuleManifests
