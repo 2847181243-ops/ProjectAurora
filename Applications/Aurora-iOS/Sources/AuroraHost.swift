@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import Foundation
+import Metal
 import SwiftUI
 import UIKit
 
@@ -33,7 +34,14 @@ final class AuroraHost: ObservableObject {
     @Published var frame: UIImage?
     @Published var runningModule: String = ""
     @Published var framesPresented: Int32 = 0
+    @Published var frameWidth: Int = 0
+    @Published var frameHeight: Int = 0
     @Published var lastError: String = ""
+
+    /* Metal keeps the pixels on the GPU: the module writes RGBA and the view
+     * uploads it straight into a texture. The UIImage path is only a fallback for
+     * a device without Metal, which in practice means "never". */
+    let useMetal = MTLCreateSystemDefaultDevice() != nil
 
     private var initialized = false
     private var timer: Timer?
@@ -111,7 +119,9 @@ final class AuroraHost: ObservableObject {
         guard !runningModule.isEmpty else { return }
         aurora_bridge_tick(1.0 / 30.0)
         framesPresented = aurora_bridge_frames_presented()
-        updateFrame()
+        frameWidth = Int(aurora_bridge_frame_width())
+        frameHeight = Int(aurora_bridge_frame_height())
+        if !useMetal { updateFrame() }
     }
 
     private func updateFrame() {

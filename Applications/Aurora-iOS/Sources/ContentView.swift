@@ -114,16 +114,29 @@ private struct ModuleRowView: View {
 private struct FramePanel: View {
     @ObservedObject var host: AuroraHost
 
+    private var aspectRatio: CGFloat {
+        guard host.frameWidth > 0, host.frameHeight > 0 else { return 4.0 / 3.0 }
+        return CGFloat(host.frameWidth) / CGFloat(host.frameHeight)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let image = host.frame {
+            if host.runningModule.isEmpty {
+                Text("No module running")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else if host.useMetal {
+                MetalFrameView(framesPresented: host.framesPresented)
+                    .aspectRatio(aspectRatio, contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else if let image = host.frame {
                 Image(uiImage: image)
                     .resizable()
                     .interpolation(.none)
                     .aspectRatio(image.size.width / image.size.height, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             } else {
-                Text(host.runningModule.isEmpty ? "No module running" : "Waiting for the first frame")
+                Text("Waiting for the first frame")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
