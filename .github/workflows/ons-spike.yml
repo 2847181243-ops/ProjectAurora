@@ -10,8 +10,8 @@ on:
       - 'ci-triggers/ons-spike'
 
 jobs:
-  compile-onscripter:
-    name: ONScripter objects for iOS arm64
+  ons:
+    name: ONScripter for iOS arm64
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,77 +22,81 @@ jobs:
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
           mkdir -p ci-status
-          file="ci-status/ons-spike-run${{ github.run_number }}.md"
-          printf '# ons-spike run ${{ github.run_number }}\n\nsha: %s\nstatus: running\nat: %s\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > "$file"
-          git add "$file"
-          git commit -m "ci: ons-spike started" || true
+          printf '# ons run ${{ github.run_number }}\n\nsha: %s\nstatus: running\nat: %s\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > "ci-status/ons-run${{ github.run_number }}.md"
+          git add ci-status
+          git commit -m "ci: ons started" || true
           git pull --rebase --autostash origin main || true
           git push origin HEAD:main || true
-      - name: clone ONScripter
+
+      - name: build the SDL stack
         run: |
           set -euo pipefail
-          git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
-          ls third_party/onscripter | head -20
+          git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL third_party/SDL
+          git clone --depth 1 https://github.com/libsdl-org/sdl12-compat third_party/sdl12-compat
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_image third_party/SDL_image
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_ttf third_party/SDL_ttf
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer
 
-      - name: fetch the SDL stack written by sdl-spike
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          run_id=$(gh run list --workflow sdl-spike.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
-          echo "sdl run: $run_id"
-          gh run download "$run_id" -n sdl-stack-libs -D sdl-stack
-          find sdl-stack -name "*.a" | head -20
-          find sdl-stack -name "SDL.h" | head -5
+          COMMON="-G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DBUILD_SHARED_LIBS=OFF"
 
-      - name: compile every source file
+          cmake -S third_party/SDL -B b/sdl $COMMON -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON \
+            -DSDL_OPENGL=OFF -DSDL_OPENGLES=ON > stack.log 2>&1
+          cmake --build b/sdl --config Release --target install >> stack.log 2>&1
+
+          cp Modules/ONScripter/sdl12_gl_stub.h .
+          sed -i '' 's/^if(APPLE)$/if(APPLE AND NOT IOS)/' third_party/sdl12-compat/CMakeLists.txt
+          cmake -S third_party/sdl12-compat -B b/compat $COMMON -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL12TESTS=OFF -DSDL12_COMPAT_INSTALL=ON \
+            "-DCMAKE_C_FLAGS=-include$PWD/sdl12_gl_stub.h" >> stack.log 2>&1
+          cmake --build b/compat --config Release --target install >> stack.log 2>&1
+
+          for lib in SDL_image SDL_ttf SDL_mixer; do
+            case $lib in
+              SDL_image) EXTRA="-DSDL2IMAGE_VENDORED=ON -DSDL2IMAGE_SAMPLES=OFF -DSDL2IMAGE_AVIF=OFF -DSDL2IMAGE_JXL=OFF -DSDL2IMAGE_WEBP=OFF -DSDL2IMAGE_TIF=OFF" ;;
+              SDL_ttf) EXTRA="-DSDL2TTF_VENDORED=ON -DSDL2TTF_SAMPLES=OFF -DSDL2TTF_HARFBUZZ=OFF" ;;
+              SDL_mixer) EXTRA="-DSDL2MIXER_VENDORED=ON -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF -DSDL2MIXER_WAVPACK=OFF -DSDL2MIXER_FLAC=OFF -DSDL2MIXER_OPUS=OFF -DSDL2MIXER_GME=OFF" ;;
+            esac
+            cmake -S third_party/$lib -B b/$lib $COMMON -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
+              -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 $EXTRA >> stack.log 2>&1
+            cmake --build b/$lib --config Release --target install >> stack.log 2>&1
+          done
+          find prefix -name "*.a" | sort | tee -a stack.log
+          echo "--- SDL1.2 headers ---" | tee -a stack.log
+          ls prefix/include | head -20 | tee -a stack.log
+
+      - name: compile ONScripter
         continue-on-error: true
         run: |
           set -o pipefail
+          git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
           mkdir -p obj
           : > ons.log
-          ok=0
-          fail=0
+          ok=0; fail=0
           for f in third_party/onscripter/*.cpp Modules/ONScripter/src/ons_engine_onscripter.cpp; do
             out="obj/$(basename "${f%.cpp}").o"
             if clang++ -std=c++14 -arch arm64 -mios-version-min=16.0 -isysroot "$SDK" \
-                -I sdl-stack/prefix/include -I sdl-stack/prefix/include/SDL2 \
-                -I third_party/onscripter -I Modules/ONScripter/src \
+                -I prefix/include -I prefix/include/SDL2 -I third_party/onscripter -I Modules/ONScripter/src \
                 -DSDL_MAIN_HANDLED -D_REENTRANT -DAURORA_WITH_ONSCRIPTER -w \
                 -c "$f" -o "$out" >> ons.log 2>&1; then
               ok=$((ok+1))
             else
-              fail=$((fail+1))
-              echo "FAILED: $(basename "$f")" >> ons.log
+              fail=$((fail+1)); echo "FAILED: $(basename "$f")" >> ons.log
             fi
           done
           echo "compiled=$ok failed=$fail" | tee -a ons.log
-          ls obj | wc -l
 
-      - name: upload logs and objects
+      - name: upload logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ons-spike-output
           path: |
+            stack.log
             ons.log
             obj/
           if-no-files-found: warn
-
-      - name: verdict
-        run: |
-          set -euo pipefail
-          tail -5 ons.log
-          errors=$(grep -E "error:" ons.log | head -15 || true)
-          if [ -n "$errors" ]; then
-            echo "$errors"
-            echo "compilation errors remain"
-            exit 1
-          fi
-          count=$(ls obj/*.o 2>/dev/null | wc -l | tr -d ' ')
-          echo "objects: $count"
-          test "$count" -ge 30
 
       - name: publish status
         if: always()
@@ -101,27 +105,35 @@ jobs:
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
           mkdir -p ci-status
-          file="ci-status/ons-spike-run${{ github.run_number }}.md"
+          file="ci-status/ons-run${{ github.run_number }}.md"
           {
-            echo "# ons-spike run ${{ github.run_number }}"
-            echo ''
+            echo "# ons run ${{ github.run_number }}"
+            echo ""
             echo "sha: $GITHUB_SHA"
             echo "status: ${{ job.status }}"
             echo "at: $(date -u +%FT%TZ)"
-            echo ''
-            echo '## errors'
-            echo ''
-            grep -H -A3 -E "CMake Error|error:|FAILED" *.log 2>/dev/null | head -60
-            echo ''
-            echo '## tails'
-            for f in *.log; do
-              [ -f "$f" ] || continue
-              echo ''
-              echo "### $f"
-              tail -12 "$f"
-            done
+            echo ""
+            echo "## errors"
+            echo ""
+            grep -hE "error:|CMake Error|FAILED:" ons.log stack.log 2>/dev/null | head -40
+            echo ""
+            echo "## compile summary"
+            tail -3 ons.log
           } > "$file"
           git add "$file"
-          git commit -m "ci: ons-spike run ${{ github.run_number }}" || true
+          git commit -m "ci: ons run ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
           git push origin HEAD:main || true
+
+      - name: verdict
+        run: |
+          set -euo pipefail
+          tail -3 ons.log
+          if grep -qE "error:" ons.log; then
+            grep -E "error:" ons.log | head -10
+            echo "ONScripter still has compile errors"
+            exit 1
+          fi
+          count=$(ls obj/*.o 2>/dev/null | wc -l | tr -d ' ')
+          echo "objects: $count"
+          test "$count" -ge 40
