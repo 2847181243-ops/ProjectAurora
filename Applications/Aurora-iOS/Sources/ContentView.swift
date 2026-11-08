@@ -180,6 +180,12 @@ private struct ModuleRowView: View {
 private struct FramePanel: View {
     @ObservedObject var host: AuroraHost
 
+    private var audioStatus: String {
+        aurora_bridge_audio_running() != 0
+            ? "audio \(aurora_bridge_audio_sample_rate() / 1000) kHz"
+            : "audio off"
+    }
+
     private var aspectRatio: CGFloat {
         guard host.frameWidth > 0, host.frameHeight > 0 else { return 4.0 / 3.0 }
         return CGFloat(host.frameWidth) / CGFloat(host.frameHeight)
@@ -228,6 +234,9 @@ private struct FramePanel: View {
                 Text("frames presented: \(host.framesPresented)")
                     .font(.caption)
                     .monospaced()
+                Text(audioStatus)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 if !host.runningModule.isEmpty {
                     Text(host.runningModule)

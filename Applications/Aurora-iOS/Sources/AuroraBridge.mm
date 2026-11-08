@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Project Aurora contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
 #include <algorithm>
@@ -48,6 +49,64 @@ struct BridgeState {
     std::string game_format = "sim";
     std::vector<CachedRow> rows;
 };
+
+/* Audio output. The platform owns the device: modules hand over frames through
+ * AuroraHostServices::audio_submit and this is where they reach CoreAudio. */
+struct AudioOutput {
+    AVAudioEngine* engine = nil;
+    AVAudioPlayerNode* player = nil;
+    AVAudioFormat* format = nil;
+    BOOL running = NO;
+    std::string last_error;
+
+    void start() {
+        if (engine != nil) return;
+        engine = [[AVAudioEngine alloc] init];
+        player = [[AVAudioPlayerNode alloc] init];
+        format = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:48000.0 channels:2];
+        [engine attachNode:player];
+        [engine connect:player to:engine.mainMixerNode format:format];
+
+        NSError* error = nil;
+        AVAudioSession* session = [AVAudioSession sharedInstance];
+        [session setCategory:AVAudioSessionCategoryAmbient error:&error];
+        [session setActive:YES error:&error];
+        if (![engine startAndReturnError:&error]) {
+            last_error = error != nil ? [[error localizedDescription] UTF8String] : "engine failed to start";
+            return;
+        }
+        [player play];
+        running = YES;
+    }
+
+    /* Interleaved float32 only; anything else is counted but not played yet. */
+    void submit(const AuroraAudioBuffer& buffer) {
+        if (!running || buffer.format != AURORA_AUDIO_F32) return;
+        if (buffer.channels < 1 || buffer.channels > 2) return;
+        if (buffer.samples == nullptr || buffer.frame_count == 0) return;
+
+        AVAudioFrameCount frames = buffer.frame_count;
+        AVAudioPCMBuffer* pcm = [[AVAudioPCMBuffer alloc] initWithPCMFormat:format
+                                                             frameCapacity:frames];
+        if (pcm == nil) return;
+        pcm.frameLength = frames;
+
+        const float* source = static_cast<const float*>(buffer.samples);
+        float* left = pcm.floatChannelData[0];
+        float* right = pcm.floatChannelData[1];
+        for (AVAudioFrameCount i = 0; i < frames; ++i) {
+            left[i] = source[i * buffer.channels];
+            right[i] = buffer.channels > 1 ? source[i * buffer.channels + 1]
+                                           : source[i * buffer.channels];
+        }
+        [player scheduleBuffer:pcm completionHandler:nil];
+    }
+};
+
+AudioOutput& audioOutput() {
+    static AudioOutput output;
+    return output;
+}
 
 BridgeState& state() {
     static BridgeState instance;
@@ -163,6 +222,11 @@ int32_t aurora_bridge_init(const char* storage_root, const char* manifest_direct
     s.host->setDefaultSurface(480, 320);
     s.registry = std::make_unique<aurora::ModuleRegistry>(sdk);
     s.registry->setFirmwareProbe([](const std::string&) { return false; });
+
+    audioOutput().start();
+    s.host->setAudioSink([](const AuroraAudioBuffer& buffer) {
+        audioOutput().submit(buffer);
+    });
 
     int manifest_count = 0;
     for (const std::string& directory : bundleManifestDirectories(manifest_directory)) {
@@ -451,6 +515,16 @@ void aurora_bridge_set_touch(int32_t active, float x, float y) {
         instance->binding->surface_width,
         instance->binding->surface_height);
     s.host->setInput(*instance->binding, snapshot);
+}
+
+/* ---- audio ---------------------------------------------------------------- */
+
+int32_t aurora_bridge_audio_running(void) {
+    return audioOutput().running ? 1 : 0;
+}
+
+int32_t aurora_bridge_audio_sample_rate(void) {
+    return audioOutput().format != nil ? static_cast<int32_t>(audioOutput().format.sampleRate) : 0;
 }
 
 /* ---- display -------------------------------------------------------------- */
