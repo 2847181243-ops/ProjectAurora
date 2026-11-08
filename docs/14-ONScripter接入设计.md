@@ -114,3 +114,23 @@ CI 跑下来撞到两堵墙：
 我们的模块只负责生命周期与输入投递，渲染由引擎自己开窗。
 
 代价：引擎版本偏老（2017），不如 EN 分支新；但"能跑起来"的确定性高得多。
+
+
+## 7. 第三次选路：ONScripter-RU（2026-11-09）
+
+2017 那套移植的工程文件已经失效（引用的 `SDL/Xcode-iOS/SDL/SDL.xcodeproj` 根本不存在，
+SDL_image/ttf/mixer 的 iOS 工程路径也是空的），lua 的 `loslib.c` 还在用被 iOS 禁掉的 `system()`。
+继续修它等于重写一套构建系统。
+
+查到的现成经验：
+
+- **umineko-project/onscripter-ru** —— 《海猫》移植组维护的引擎，编译文档明确写了
+  "iOS 8.0 (armv7, armv7s, aarch64)"，构建栈是 Xcode + 自带依赖系统 onscrlib，
+  而且是 **SDL2 原生**（不需要 sdl12-compat，也就没有 SMPEG 那套版本地狱）。
+- uyjulian/onscripter 的 sdl2 分支（仓库已不可访问）。
+
+**决定：以 ONScripter-RU 为基础做第一个可跑引擎。** 我们的 SDL2 静态库已经能编出来了，
+但 RU 附带自己的依赖构建系统，先按它的路子走，跑通后再决定要不要换成我们自己的 SDL2。
+
+风险：onscrlib 是 2018 年的脚本，面向 macOS 10.6/32 位，现代 Xcode 可能编不动；
+需要先做一次 CI 探针，确认它的依赖到底能不能在当前 Xcode 上构建。
