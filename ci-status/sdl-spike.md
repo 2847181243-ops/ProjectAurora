@@ -1,71 +1,81 @@
 # sdl-spike
 
-sha: bd6ad85f55db0c9d724907425e1cf790196d59b4
+sha: a5863085b015c0d251f245117195dae83fecefd4
 status: failure
-at: 2026-11-08T16:56:49Z
+at: 2026-11-08T17:06:00Z
 
 ## errors
 
-compat.log:CMake Error at CMakeLists.txt:60 (message):
-compat.log-  Could not find SDL2 headers
+compat.log:/Users/runner/work/ProjectAurora/ProjectAurora/third_party/sdl12-compat/src/SDL12_compat_objc.m:25:10: fatal error: 'Cocoa/Cocoa.h' file not found
+compat.log-   25 | #include <Cocoa/Cocoa.h>
+compat.log-      |          ^~~~~~~~~~~~~~~
+compat.log-1 error generated.
+--
+compat.log:** BUILD FAILED **
 compat.log-
 compat.log-
+compat.log-The following build commands failed:
 --
-image.log:CMake Error at /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:290 (message):
-image.log-  Could NOT find PrivateSDL2 (missing: SDL2_LIBRARY SDL2_INCLUDE_DIR)
-image.log-  (Required is at least version "2.0.9")
-image.log-Call Stack (most recent call first):
+image.log:CMake Error at CMakeLists.txt:397 (add_subdirectory):
+image.log-  The source directory
+image.log-
+image.log-    /Users/runner/work/ProjectAurora/ProjectAurora/third_party/SDL_image/external/dav1d
 --
-mixer.log:CMake Error at /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:290 (message):
-mixer.log-  Could NOT find PrivateSDL2 (missing: SDL2_LIBRARY SDL2_INCLUDE_DIR)
-mixer.log-  (Required is at least version "2.0.9")
-mixer.log-Call Stack (most recent call first):
+image.log:CMake Error at cmake/PrivateSdlFunctions.cmake:263 (message):
+image.log-  No cmake project for libavif found in external/libavif.
+image.log-
+image.log-  Run the download script in the external folder, or re-configure with
 --
-ttf.log:CMake Error at /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:290 (message):
-ttf.log-  Could NOT find PrivateSDL2 (missing: SDL2_LIBRARY SDL2_INCLUDE_DIR)
-ttf.log-  (Required is at least version "2.0.10")
-ttf.log-Call Stack (most recent call first):
+mixer.log:CMake Error at cmake/PrivateSdlFunctions.cmake:263 (message):
+mixer.log-  No cmake project for ogg found in external/ogg.
+mixer.log-
+mixer.log-  Run the download script in the external folder, or re-configure with
+--
+ttf.log:CMake Error at CMakeLists.txt:277 (message):
+ttf.log-  No freetype sources found.  Install a freetype development package or run
+ttf.log-  the download script in the external folder.
+ttf.log-
 
 ## tails
 
 ### compat.log
--- Detecting C compile features - done
--- The OBJC compiler identification is AppleClang 21.0.0.21000101
--- Detecting OBJC compiler ABI info
--- Detecting OBJC compiler ABI info - done
--- Check for working OBJC compiler: /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang - skipped
--- Could NOT find SDL2 (missing: SDL2_DIR)
--- Could NOT find SDL2 (missing: SDL2_LIBRARY SDL2_INCLUDE_DIR) 
-CMake Error at CMakeLists.txt:60 (message):
-  Could not find SDL2 headers
+    
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -x c -ivfsstatcache /var/folders/h5/t85nd63d71x27_8gl5gw3l_w0000gn/C/com.apple.DeveloperTools/26.6-17F113/Xcode/SDKStatCaches.noindex/iphoneos26.5-23F81a-688ef53f1462e2c8f657fdc38a81448fee66e23052a0157c865c76b268046726.sdkstatcache -target arm64-apple-ios16.0 -fmessage-length\=0 -fdiagnostics-show-note-include-stack -fmacro-backtrace-limit\=0 -fno-color-diagnostics -Wno-trigraphs -Wno-missing-field-initializers -Wno-missing-prototypes -Wno-return-type -Wno-missing-braces -Wparentheses -Wswitch -Wno-unused-function -Wno-unused-label -Wno-unused-parameter -Wno-unused-variable -Wunused-value -Wno-empty-body -Wno-uninitialized -Wno-unknown-pragmas -Wno-shadow -Wno-four-char-constants -Wno-conversion -Wno-constant-conversion -Wno-int-conversion -Wno-bool-conversion -Wno-enum-conversion -Wno-float-conversion -Wno-non-literal-null-conversion -Wno-objc-literal-conversion -Wshorten-64-to-32 -Wpointer-sign -Wno-newline-eof -Wno-implicit-fallthrough -isysroot /Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk -fstrict-aliasing -Wdeprecated-declarations -Wno-sign-conversion -Wno-infinite-recursion -Wno-comma -Wno-block-capture-autoreleasing -Wno-strict-prototypes -Wno-semicolon-before-method-body -Wall -Wdeclaration-after-statement -Werror\=declaration-after-statement @/Users/runner/work/ProjectAurora/ProjectAurora/b/compat/build/SDL.build/Release-iphoneos/Objects-normal/arm64/7187679823f38a2a940e0043cdf9d637-common-args.resp -MMD -MT dependencies -MF /Users/runner/work/ProjectAurora/ProjectAurora/b/compat/build/SDL.build/Release-iphoneos/Objects-normal/arm64/SDL12_compat.d --serialize-diagnostics /Users/runner/work/ProjectAurora/ProjectAurora/b/compat/build/SDL.build/Release-iphoneos/Objects-normal/arm64/SDL12_compat.dia -c /Users/runner/work/ProjectAurora/ProjectAurora/third_party/sdl12-compat/src/SDL12_compat.c -o /Users/runner/work/ProjectAurora/ProjectAurora/b/compat/build/SDL.build/Release-iphoneos/Objects-normal/arm64/SDL12_compat.o
+
+note: Run script build phase 'Generate CMakeFiles/ZERO_CHECK' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ZERO_CHECK' from project 'sdl12_compat')
+note: Run script build phase 'Generate CMakeFiles/ALL_BUILD' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ALL_BUILD' from project 'sdl12_compat')
+note: Run script build phase 'CMake PostBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'SDL' from project 'sdl12_compat')
+** BUILD FAILED **
 
 
--- Configuring incomplete, errors occurred!
+The following build commands failed:
+	CompileC /Users/runner/work/ProjectAurora/ProjectAurora/b/compat/build/SDL.build/Release-iphoneos/Objects-normal/arm64/SDL12_compat_objc.o /Users/runner/work/ProjectAurora/ProjectAurora/third_party/sdl12-compat/src/SDL12_compat_objc.m normal arm64 objective-c com.apple.compilers.llvm.clang.1_0.compiler (in target 'SDL' from project 'sdl12_compat')
+(1 failure)
 
 ### image.log
--- Using private SDL2 find module
-CMake Error at /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:290 (message):
-  Could NOT find PrivateSDL2 (missing: SDL2_LIBRARY SDL2_INCLUDE_DIR)
-  (Required is at least version "2.0.9")
+
+-- SDL2_image: Using vendored libavif
+CMake Error at cmake/PrivateSdlFunctions.cmake:263 (message):
+  No cmake project for libavif found in external/libavif.
+
+  Run the download script in the external folder, or re-configure with
+  -DSDL2IMAGE_VENDORED=OFF to use system packages.
 Call Stack (most recent call first):
-  /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:654 (_FPHSA_FAILURE_MESSAGE)
-  cmake/FindPrivateSDL2.cmake:33 (find_package_handle_standard_args)
-  cmake/PrivateSdlFunctions.cmake:63 (find_package)
-  CMakeLists.txt:193 (sdl_find_sdl2)
+  CMakeLists.txt:411 (sdl_check_project_in_subfolder)
 
 
 -- Configuring incomplete, errors occurred!
 
 ### mixer.log
--- Using private SDL2 find module
-CMake Error at /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:290 (message):
-  Could NOT find PrivateSDL2 (missing: SDL2_LIBRARY SDL2_INCLUDE_DIR)
-  (Required is at least version "2.0.9")
+-- Configuring SDL2_mixer 2.9.0
+-- Using vendored libogg
+CMake Error at cmake/PrivateSdlFunctions.cmake:263 (message):
+  No cmake project for ogg found in external/ogg.
+
+  Run the download script in the external folder, or re-configure with
+  -DSDL2MIXER_VENDORED=OFF to use system packages.
 Call Stack (most recent call first):
-  /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:654 (_FPHSA_FAILURE_MESSAGE)
-  cmake/FindPrivateSDL2.cmake:33 (find_package_handle_standard_args)
-  cmake/PrivateSdlFunctions.cmake:63 (find_package)
-  CMakeLists.txt:213 (sdl_find_sdl2)
+  CMakeLists.txt:367 (sdl_check_project_in_subfolder)
 
 
 -- Configuring incomplete, errors occurred!
@@ -85,15 +95,15 @@ note: Run script build phase 'Generate CMakeFiles/ALL_BUILD' will be run during 
 
 
 ### ttf.log
--- Using private SDL2 find module
-CMake Error at /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:290 (message):
-  Could NOT find PrivateSDL2 (missing: SDL2_LIBRARY SDL2_INCLUDE_DIR)
-  (Required is at least version "2.0.10")
-Call Stack (most recent call first):
-  /opt/homebrew/share/cmake/Modules/FindPackageHandleStandardArgs.cmake:654 (_FPHSA_FAILURE_MESSAGE)
-  cmake/FindPrivateSDL2.cmake:33 (find_package_handle_standard_args)
-  cmake/PrivateSdlFunctions.cmake:63 (find_package)
-  CMakeLists.txt:85 (sdl_find_sdl2)
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Configuring SDL2_ttf 2.25.0
+-- Looking for __GLIBC__
+-- Looking for __GLIBC__ - not found
+-- SDL2_ttf: Using vendored freetype library
+CMake Error at CMakeLists.txt:277 (message):
+  No freetype sources found.  Install a freetype development package or run
+  the download script in the external folder.
 
 
 -- Configuring incomplete, errors occurred!
