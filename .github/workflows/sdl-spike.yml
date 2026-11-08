@@ -16,6 +16,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: mark started
+        run: |
+          set +e
+          mkdir -p ci-status
+          printf '# sdl-spike\n\nsha: %s\nstatus: running\nat: %s\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > ci-status/sdl-spike.md
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          git pull --rebase --autostash origin main || true
+          git add ci-status
+          git commit -m "ci: sdl-spike started" || true
+          git push origin HEAD:main || true
+
       - name: clone sources
         run: |
           set -euo pipefail
