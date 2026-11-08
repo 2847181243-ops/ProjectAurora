@@ -1,8 +1,14 @@
 # sdl-spike
 
+<<<<<<< Updated upstream
 sha: 3422f975ab2f8b2bba673da004f811520ab6f732
 status: failure
 at: 2026-11-08T17:44:59Z
+=======
+sha: 2a35992ae8ff4f401b7b2a4f117344f625903c25
+status: failure
+at: 2026-11-08T17:45:04Z
+>>>>>>> Stashed changes
 
 ## errors
 
@@ -98,12 +104,19 @@ The following build commands failed:
 (1 failure)
 
 ### mixer.log
+<<<<<<< Updated upstream
+=======
+note: Run script build phase 'Generate CMakeFiles/ALL_BUILD' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ALL_BUILD' from project 'SDL2_mixer')
+>>>>>>> Stashed changes
 note: Run script build phase 'CMake PostBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'xmp_shared' from project 'SDL2_mixer')
 note: Run script build phase 'CMake PostBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'wavpack' from project 'SDL2_mixer')
 note: Run script build phase 'CMake PostBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'opusfile' from project 'SDL2_mixer')
 note: Run script build phase 'CMake PostBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'opus' from project 'SDL2_mixer')
 note: Run script build phase 'CMake PostBuild Rules' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ogg' from project 'SDL2_mixer')
+<<<<<<< Updated upstream
 note: Run script build phase 'Generate CMakeFiles/ALL_BUILD' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'ALL_BUILD' from project 'SDL2_mixer')
+=======
+>>>>>>> Stashed changes
 ** BUILD FAILED **
 
 
