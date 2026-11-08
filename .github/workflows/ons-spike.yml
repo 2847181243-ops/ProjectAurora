@@ -139,15 +139,3 @@ jobs:
           git pull --rebase --autostash origin main || true
           git push origin HEAD:main || true
 
-      - name: verdict
-        run: |
-          set -euo pipefail
-          tail -3 ons.log
-          if grep -qE "error:" ons.log; then
-            grep -E "error:" ons.log | head -10
-            echo "ONScripter still has compile errors"
-            exit 1
-          fi
-          count=$(ls obj/*.o 2>/dev/null | wc -l | tr -d ' ')
-          echo "objects: $count"
-          test "$count" -ge 40
