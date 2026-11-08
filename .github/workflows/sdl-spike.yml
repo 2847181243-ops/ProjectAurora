@@ -21,9 +21,9 @@ jobs:
           set -euo pipefail
           git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL          third_party/SDL
           git clone --depth 1           https://github.com/libsdl-org/sdl12-compat third_party/sdl12-compat
-          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_image    third_party/SDL_image
-          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_ttf      third_party/SDL_ttf
-          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_mixer    third_party/SDL_mixer
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_image third_party/SDL_image
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_ttf third_party/SDL_ttf
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer
 
       - name: build SDL2
         continue-on-error: true
@@ -35,6 +35,12 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
             -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON 2>&1 | tee sdl.log
           cmake --build b/sdl --config Release --target install 2>&1 | tee -a sdl.log
+
+      - name: patch sdl12-compat for iOS
+        run: |
+          set -euo pipefail
+          sed -i '' 's/^if(APPLE)$/if(APPLE AND NOT IOS)/' third_party/sdl12-compat/CMakeLists.txt
+          grep -n "APPLE" third_party/sdl12-compat/CMakeLists.txt | head -10
 
       - name: build sdl12-compat
         continue-on-error: true
