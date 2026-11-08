@@ -11,3 +11,4 @@ Applications/Aurora-iOS/Generated/
 Applications/Aurora-iOS/Aurora.xcodeproj/
 
 *.log
+third_party/
