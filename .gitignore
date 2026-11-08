@@ -9,3 +9,5 @@ out/
 AuroraData/
 Applications/Aurora-iOS/Generated/
 Applications/Aurora-iOS/Aurora.xcodeproj/
+
+*.log
