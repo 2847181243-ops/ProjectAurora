@@ -1,0 +1,45 @@
+name: sdl-spike
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-sdl-ios:
+    name: SDL2 + add-ons for iOS arm64
+    runs-on: macos-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: clone SDL2 and friends
+        run: |
+          git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL third_party/SDL2 2>&1 | tail -2
+          git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL_image third_party/SDL2_image 2>&1 | tail -2
+          git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL_ttf third_party/SDL2_ttf 2>&1 | tail -2
+          git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL_mixer third_party/SDL2_mixer 2>&1 | tail -2
+
+      - name: build SDL2
+        run: |
+          set +e
+          cmake -S third_party/SDL2 -B build-sdl -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TESTS=OFF -DSDL_INSTALL=OFF \
+            > sdl-configure.log 2>&1
+          echo "configure exit $?"
+          tail -25 sdl-configure.log
+          cmake --build build-sdl --config Release --target SDL2-static > sdl-build.log 2>&1
+          echo "build exit $?"
+          tail -25 sdl-build.log
+          find build-sdl -name "*.a" | head
+
+      - name: upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sdl-spike-logs
+          path: |
+            sdl-configure.log
+            sdl-build.log
+          if-no-files-found: warn
