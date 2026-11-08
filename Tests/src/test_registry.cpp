@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <string>
 
 #include "aurora/registry.h"

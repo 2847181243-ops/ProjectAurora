@@ -1,5 +1,6 @@
 #include "aurora/state_machine.h"
 
+#include <algorithm>
 #include <deque>
 #include <map>
 #include <set>

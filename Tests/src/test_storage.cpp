@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "aurora/storage.h"
 #include "test_env.h"

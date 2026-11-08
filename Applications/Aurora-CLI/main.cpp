@@ -4,9 +4,12 @@
  * of Aurora runs without UIKit, so module registration, lifecycle and failure
  * handling can be exercised on a build machine long before an iPhone is plugged in.
  */
+#include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <iterator>
 #include <fstream>
 #include <string>
 #include <vector>

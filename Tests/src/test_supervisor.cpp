@@ -1,5 +1,7 @@
+#include <cstdint>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 #include "aurora/supervisor.h"
 #include "test_env.h"
