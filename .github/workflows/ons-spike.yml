@@ -73,7 +73,8 @@ jobs:
           git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/iosons
           git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
           SDK=$(xcrun --sdk iphoneos --show-sdk-path)
-          CXX="clang++ -std=gnu++14 -arch arm64 -mios-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing"
+          cp Modules/ONScripter/sdl12_compat_shim.h .
+          CXX="clang++ -std=gnu++14 -arch arm64 -mios-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing -include$PWD/sdl12_compat_shim.h"
           # SDL 1.2 headers come from sdl12-compat; the add-on headers must be the 1.2 ones,
           # because SDL2's add-on headers pull in SDL2's core headers and collide.
           IOSONS=third_party/iosons
