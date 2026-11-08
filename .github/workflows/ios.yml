@@ -23,6 +23,7 @@ jobs:
         run: xcodegen generate
 
       - name: archive without signing
+        continue-on-error: true
         working-directory: Applications/Aurora-iOS
         run: |
           xcodebuild \
@@ -37,7 +38,13 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             DEVELOPMENT_TEAM="" \
             archive \
-            -archivePath build/Aurora.xcarchive
+            -archivePath build/Aurora.xcarchive 2>&1 | tee archive.log
+
+      - name: fail if the archive failed
+        run: |
+          if grep -q "\*\* ARCHIVE FAILED \*\*" archive.log 2>/dev/null || ! test -d Applications/Aurora-iOS/build/Aurora.xcarchive; then
+            echo "archive failed"; grep -E "error:" archive.log | head -20; exit 1
+          fi
 
       - name: package ipa
         run: |
@@ -45,6 +52,14 @@ jobs:
           cp -R Applications/Aurora-iOS/build/Aurora.xcarchive/Products/Applications/Aurora.app out/Payload/
           cd out && zip -qry Aurora-unsigned.ipa Payload
           ls -la Aurora-unsigned.ipa
+
+      - name: upload archive log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-archive-log
+          path: archive.log
+          if-no-files-found: warn
 
       - uses: actions/upload-artifact@v4
         with:
