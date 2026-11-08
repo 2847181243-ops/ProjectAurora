@@ -195,6 +195,23 @@ private struct FramePanel: View {
                 MetalFrameView(framesPresented: host.framesPresented)
                     .aspectRatio(aspectRatio, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .overlay(
+                        GeometryReader { geometry in
+                            Color.clear
+                                .contentShape(Rectangle())
+                                .gesture(
+                                    DragGesture(minimumDistance: 0)
+                                        .onChanged { value in
+                                            let nx = Float(value.location.x / max(geometry.size.width, 1))
+                                            let ny = Float(value.location.y / max(geometry.size.height, 1))
+                                            aurora_bridge_set_touch(1, nx, ny)
+                                        }
+                                        .onEnded { _ in
+                                            aurora_bridge_set_touch(0, 0, 0)
+                                        }
+                                )
+                        }
+                    )
             } else if let image = host.frame {
                 Image(uiImage: image)
                     .resizable()

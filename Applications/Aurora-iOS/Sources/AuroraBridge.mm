@@ -14,6 +14,7 @@
 #include "aurora/diagnostics.h"
 #include "aurora/host.h"
 #include "aurora/display.h"
+#include "aurora/input_profile.h"
 #include "aurora/library.h"
 #include "aurora/registry.h"
 #include "aurora/supervisor.h"
@@ -429,6 +430,27 @@ int32_t aurora_bridge_library_import(const char* source_path) {
         return -1;
     }
     return 0;
+}
+
+/* ---- input ---------------------------------------------------------------- */
+
+void aurora_bridge_set_touch(int32_t active, float x, float y) {
+    BridgeState& s = state();
+    if (!s.supervisor || !s.host || s.running_module.empty()) return;
+    const aurora::RuntimeInstance* instance = s.supervisor->instance(s.running_module);
+    if (instance == nullptr || instance->binding == nullptr) return;
+
+    aurora::RawInputEvent raw;
+    raw.touch_active = active != 0;
+    raw.touch_x = x;
+    raw.touch_y = y;
+
+    const aurora::InputProfile profile = aurora::defaultProfile();
+    const AuroraInputState snapshot = aurora::applyProfile(
+        profile, raw,
+        instance->binding->surface_width,
+        instance->binding->surface_height);
+    s.host->setInput(*instance->binding, snapshot);
 }
 
 /* ---- display -------------------------------------------------------------- */
