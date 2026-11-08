@@ -19,6 +19,8 @@ add_library(aurora_sdk STATIC
     AuroraStorageAPI/src/storage.cpp
     AuroraDiagnosticsAPI/src/diagnostics.cpp
     AuroraLibrary/src/library.cpp
+    AuroraInputAPI/src/input_profile.cpp
+    AuroraDisplayAPI/src/display.cpp
 )
 target_include_directories(aurora_sdk PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/AuroraModuleSDK/include"
@@ -26,5 +28,7 @@ target_include_directories(aurora_sdk PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/AuroraStorageAPI/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/AuroraDiagnosticsAPI/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/AuroraLibrary/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/AuroraInputAPI/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/AuroraDisplayAPI/include"
 )
 target_link_libraries(aurora_sdk PUBLIC aurora_runtime_api)

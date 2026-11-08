@@ -181,9 +181,43 @@ typedef struct AuroraAudioBuffer {
 - 模块先用 @@@host->struct_size@@@ 判断这两个回调是否存在（1.0 宿主没有）
 - 无输出设备的宿主（测试、CLI）照样接收并计数，模块感知不到差别
 
-## 10. 尚未定义的部分
+## 10. 输入映射（数据驱动）
+
+输入配置是 JSON，不是代码：
+
+$json
+{
+  "name": "default",
+  "bindings": [
+    {"action": "a", "pad_mask": 1, "key_code": 90},
+    {"action": "start", "touch": {"x": 0.4, "y": 0.9, "w": 0.2, "h": 0.1}}
+  ]
+}
+$
+
+- $action$ 是逻辑按钮（a/b/x/y/up/down/left/right/start/select/l1/r1）
+- $pad_mask$ 按 $AuroraButton$ 位；$key_code$ 是键盘码；$touch$ 是归一化区域
+- 平台把 OS 事件转成 $RawInputEvent$，再 $applyProfile()$ 出 $AuroraInputState$
+- 触控坐标会换算成帧缓冲像素，模块拿到的就是它要的坐标系
+
+一套配置对所有模块生效，用户配一次手柄不用每个引擎重来。
+
+## 11. 显示策略
+
+$computeViewport()$ 是个纯函数：给定帧尺寸、视图尺寸、模式，算出画面落在哪。
+
+| 模式 | 行为 |
+|---|---|
+| fit | 完整显示，留边 |
+| fill | 铺满，裁掉溢出 |
+| integer | 整数倍放大，像素不抖 |
+| stretch | 拉伸（只用于调试） |
+
+默认 nearest 采样（像素画），要模糊再开 linear。
+
+## 12. 尚未定义的部分
 
 - 音频：ABI 已定义（1.1），宿主侧已实现并按帧计数；iOS 上接 AVAudioEngine 的输出还没做。
-- 输入映射层：现在只有原始快照，没有键位映射与死区，属于平台侧功能。
+- 输入：映射层已实现（配置文件 + 默认触屏布局），手柄死区与轴映射还没做。
 - 着色器/滤镜链：Display 层还没实现。
 - 帧同步与垂直同步：现在由模块自己控制节奏，tick 由平台驱动。

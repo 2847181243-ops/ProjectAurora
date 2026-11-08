@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "aurora/display.h"
+#include "aurora/input_profile.h"
 #include "aurora/manifest.h"
 #include "aurora/module_api.h"
 
@@ -43,6 +45,8 @@ inline std::string describe(const char* value) { return std::string("\"") + (val
 inline std::string describe(AuroraModuleState value) { return aurora_module_state_string(value); }
 inline std::string describe(AuroraStatus value) { return aurora_status_string(value); }
 inline std::string describe(AdapterKind value) { return adapterKindName(value); }
+inline std::string describe(InputAction value) { return inputActionName(value); }
+inline std::string describe(ScaleMode value) { return scaleModeName(value); }
 
 template <typename A, typename B>
 void checkEqual(const A& left, const B& right, const char* expression, const char* file, int line) {
