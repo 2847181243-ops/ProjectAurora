@@ -94,7 +94,18 @@ jobs:
         run: |
           set +e
           mkdir -p ci-status
-          printf '{"job":"ios","sha":"%s","status":"%s","at":"%s"}\n' "$GITHUB_SHA" "${{ job.status }}" "$(date -u +%FT%TZ)" > ci-status/ios.json
+          {
+            echo '# ios'
+            echo ''
+            echo "sha: $GITHUB_SHA"
+            echo "status: ${{ job.status }}"
+            echo "at: $(date -u +%FT%TZ)"
+            echo ''
+            echo '## errors'
+            echo ''
+            grep -hE "error:|CMake Error|FAILED|ARCHIVE FAILED" *.log 2>/dev/null | head -25
+          } > ci-status/ios.md
+          rm -f ci-status/ios.json
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
           git pull --rebase --autostash origin main || true
