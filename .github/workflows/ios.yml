@@ -89,34 +89,47 @@ jobs:
           fi
           echo "archive ok"
 
+      - name: mark started
+        run: |
+          set +e
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          mkdir -p ci-status
+          file="ci-status/ios-run${{ github.run_number }}.md"
+          printf '# ios run ${{ github.run_number }}\n\nsha: %s\nstatus: running\nat: %s\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > "$file"
+          git add "$file"
+          git commit -m "ci: ios started" || true
+          git pull --rebase --autostash origin main || true
+          git push origin HEAD:main || true
+
       - name: publish status
         if: always()
         run: |
           set +e
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
           mkdir -p ci-status
+          file="ci-status/ios-run${{ github.run_number }}.md"
           {
-            echo "# ios"
-            echo ""
+            echo "# ios run ${{ github.run_number }}"
+            echo ''
             echo "sha: $GITHUB_SHA"
             echo "status: ${{ job.status }}"
             echo "at: $(date -u +%FT%TZ)"
-            echo ""
-            echo "## errors"
-            echo ""
+            echo ''
+            echo '## errors'
+            echo ''
             grep -H -A3 -E "CMake Error|error:|FAILED" *.log 2>/dev/null | head -60
-            echo ""
-            echo "## tails"
+            echo ''
+            echo '## tails'
             for f in *.log; do
               [ -f "$f" ] || continue
-              echo ""
+              echo ''
               echo "### $f"
               tail -12 "$f"
             done
-          } > ci-status/ios.md
-          rm -f ci-status/ios.json
-          git config user.name "ci-bot"
-          git config user.email "ci-bot@users.noreply.github.com"
+          } > "$file"
+          git add "$file"
+          git commit -m "ci: ios run ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
-          git add ci-status
-          git commit -m "ci: ios status" || true
           git push origin HEAD:main || true
