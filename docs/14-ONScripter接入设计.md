@@ -95,3 +95,22 @@ Modules/ONScripter/src/
 否则构建表会指向一个不存在的符号）。
 接引擎时要做的是：把 @@@ons_engine_stub.cpp@@@ 换成真正的 ONScripter 实现，
 并把模块加进 @@@Modules/modules.list@@@。
+
+
+## 6. 依赖栈的路线选择（2026-11-09 实测后改）
+
+原计划：Galladite 版 ONScripter-EN + SDL2 + sdl12-compat + SDL2 的插件库。
+CI 跑下来撞到两堵墙：
+
+1. **头文件互斥**：sdl12-compat 的兼容头是"最小集"，而 SDL2 的 SDL_image/ttf/mixer 头会拉 SDL2 的核心头，
+   同一个编译单元里 `SDL_bool`、`SDL_ltoa` 全体重定义。ONScripter 必须配 SDL **1.2 版**的插件库头。
+2. **SMPEG 版本对不上**：引擎调用
+   `SMPEG_setdisplay(mpeg, surface, lock, cb)`、`SMPEG_scaleXY`、`SMPEG_move`，
+   这是 ONScripter 自己改过的 SMPEG；icculus/smpeg 和 y2017 移植里那份都是回调式 API，签名不同。
+   另外 sdl12-compat 的兼容头还缺 `SDL_AudioFormat`、`SDL_CreateThread` 也变成了三参数。
+
+结论：**改用 yeatse/ONScripter-iOS 那套自洽的栈**（SDL 1.2 + SDL_image/ttf/mixer 1.2 + smpeg + ONScripter），
+它本来就是为了在 iOS 上跑而拼起来的，版本互相匹配。核心换成 SDL 1.2（带 UIKit 后端），
+我们的模块只负责生命周期与输入投递，渲染由引擎自己开窗。
+
+代价：引擎版本偏老（2017），不如 EN 分支新；但"能跑起来"的确定性高得多。
