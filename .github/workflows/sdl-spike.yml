@@ -15,6 +15,9 @@ jobs:
           set -euo pipefail
           git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL          third_party/SDL
           git clone --depth 1           https://github.com/libsdl-org/sdl12-compat third_party/sdl12-compat
+          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_image    third_party/SDL_image
+          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_ttf      third_party/SDL_ttf
+          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL_mixer    third_party/SDL_mixer
 
       - name: build SDL2
         continue-on-error: true
@@ -22,6 +25,7 @@ jobs:
           set -o pipefail
           cmake -S third_party/SDL -B b/sdl -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
             -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TESTS=OFF -DSDL_INSTALL=ON 2>&1 | tee sdl.log
           cmake --build b/sdl --config Release --target install 2>&1 | tee -a sdl.log
@@ -32,9 +36,39 @@ jobs:
           set -o pipefail
           cmake -S third_party/sdl12-compat -B b/compat -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DCMAKE_FIND_ROOT_PATH=$PWD/prefix \
-            -DSDL12TESTS=OFF -DSDL12_COMPAT_INSTALL=OFF 2>&1 | tee compat.log
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL12TESTS=OFF 2>&1 | tee compat.log
           cmake --build b/compat --config Release 2>&1 | tee -a compat.log
+
+      - name: build SDL2_image
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cmake -S third_party/SDL_image -B b/image -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2IMAGE_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2IMAGE_SAMPLES=OFF 2>&1 | tee image.log
+          cmake --build b/image --config Release 2>&1 | tee -a image.log
+
+      - name: build SDL2_ttf
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cmake -S third_party/SDL_ttf -B b/ttf -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2TTF_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2TTF_SAMPLES=OFF 2>&1 | tee ttf.log
+          cmake --build b/ttf --config Release 2>&1 | tee -a ttf.log
+
+      - name: build SDL2_mixer
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cmake -S third_party/SDL_mixer -B b/mixer -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2MIXER_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF 2>&1 | tee mixer.log
+          cmake --build b/mixer --config Release 2>&1 | tee -a mixer.log
 
       - name: upload logs
         if: always()
@@ -42,15 +76,20 @@ jobs:
         with:
           name: sdl-spike-logs
           path: |
-            sdl.log
-            compat.log
+            *.log
           if-no-files-found: warn
 
       - name: verdict
         run: |
           set -euo pipefail
-          echo "## SDL stack" >> "$GITHUB_STEP_SUMMARY"
+          echo "## SDL stack (iOS arm64)" >> "$GITHUB_STEP_SUMMARY"
           find b -name "*.a" | sort | sed 's/^/| /;s/$/ |/' >> "$GITHUB_STEP_SUMMARY"
+          errors=$(grep -hE "error:" *.log 2>/dev/null | grep -v "no symbols" | head -10 || true)
+          if [ -n "$errors" ]; then
+            echo "$errors"
+            echo "build reported errors"
+            exit 1
+          fi
           count=$(find b -name "*.a" | wc -l | tr -d ' ')
           echo "static libraries: $count"
-          test "$count" -ge 2
+          test "$count" -ge 5
