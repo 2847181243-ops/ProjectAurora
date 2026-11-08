@@ -32,20 +32,33 @@ $
 
 它依赖 SDL 1.2 的 $SDL_iPhoneSetEventPump$（SDL2 里没有）。
 
-## 2. 三条路
+## 2. 三条路（读完 executeLabel 源码后修正）
 
-| 方案 | 做法 | 代价 |
+@@@executeLabel()@@@ 的循环是**逐条解析脚本命令**，不是逐帧：
+
+@@@cpp
+while (current_line < current_label_info.num_of_lines) {
+    if (SDL_PumpEvents(), SDL_PeepEvents(NULL, 1, SDL_PEEKEVENT, SDL_QUITMASK))
+        endCommand();
+    int ret = ScriptParser::parseLine();
+    if (ret == RET_NOMATCH) ret = this->parseLine();
+    ...
+}
+@@@
+
+关键在于：引擎的"等待"发生在**命令内部**（显示文字后等点击、等待动画等），
+主循环本身并不按帧返回。所以"每帧调一次 step"不是一个能简单切出来的函数——
+要做就得把 wait/event 那一整套逻辑改成分段状态机，侵入性太大。
+
+| 方案 | 做法 | 结论 |
 |---|---|---|
-| A. 整段跑在后台线程 | 主线程初始化 SDL 视频/音频，后台线程跑 executeLabel | SDL2 的 iOS 事件泵在主线程，跨线程渲染有风险，需要实测 |
-| B. 给引擎加单步接口 | 打补丁把 executeLabel 拆成 stepFrame()，平台每帧调一次 | 要维护上游补丁，但和我们的 tick 模型完全契合 |
-| C. 独立进程/子进程 | iOS 上不可行 | 排除 |
+| A. 引擎跑在自己的线程 | 主线程建 SDL 窗口，引擎线程跑 executeLabel，输入用 SDL_PushEvent 投递 | **采用**：不改上游，先跑起来 |
+| B. 给引擎加单步接口 | 把 executeLabel 拆成每帧返回 | 否决：循环卡在命令内部，改动面比想象大得多 |
+| C. 独立进程 | iOS 不可行 | 排除 |
 
-**倾向 B**，理由：我们的 ABI 本来就是 $tick(inst, dt)$ 驱动的；
-单步接口让 ONScripter 与模拟器模块走同一条路，也让"确定性重放"成为可能。
-补丁范围初步估计在 $ONScripterLabel::executeLabel$ 的主循环入口，
-把"直到 quit 才返回"改成"跑一帧就返回"。
-
-先做 A 验证可行性（不改上游），拿到真机表现后再决定是否投入 B。
+也就是说：ONScripter 这类"自带主循环"的引擎，**平台让出控制权**，
+模块负责自己的线程与窗口；平台只做生命周期、输入投递、音频与存储。
+这与"平台驱动 tick"的模拟器模块是两种形态，ABI 里 @@@tick@@@ 是可选回调正是为此留的口子。
 
 ## 3. 与 Aurora 的接线
 
