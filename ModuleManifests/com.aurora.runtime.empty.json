@@ -1,0 +1,23 @@
+{
+  "module_id": "com.aurora.runtime.empty",
+  "name": "Aurora Empty Module",
+  "version": "1.0.0",
+  "module_type": "other",
+  "platform": "null_runtime",
+  "adapter": "native",
+  "entry_symbol": "aurora_module_entry_empty",
+  "license": "Apache-2.0",
+  "sdk_version": "1.0.0",
+  "minimum_sdk_version": "1.0.0",
+  "supported_formats": [
+    "none"
+  ],
+  "capabilities": {},
+  "dependencies": [],
+  "status": "ready",
+  "upstream": {
+    "project": "Project Aurora",
+    "version": "0.1.0-dev",
+    "commit": "local"
+  }
+}

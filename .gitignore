@@ -1,0 +1,9 @@
+build/
+build-*/
+out/
+*.ppm
+*.ipa
+*.xcarchive
+*.xcresult
+.DS_Store
+AuroraData/

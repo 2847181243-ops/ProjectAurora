@@ -1,0 +1,31 @@
+{
+  "module_id": "com.aurora.runtime.simulated",
+  "name": "Aurora Simulated Runtime",
+  "version": "1.0.0",
+  "module_type": "other",
+  "platform": "simulator",
+  "adapter": "native",
+  "entry_symbol": "aurora_module_entry_simulated",
+  "license": "Apache-2.0",
+  "sdk_version": "1.0.0",
+  "minimum_sdk_version": "1.0.0",
+  "supported_formats": [
+    "sim",
+    "demo"
+  ],
+  "capabilities": {
+    "video_output": true,
+    "touch_input": true,
+    "save_state": true,
+    "game_saves": true,
+    "audio": false,
+    "controller": false
+  },
+  "dependencies": [],
+  "status": "ready",
+  "upstream": {
+    "project": "Project Aurora",
+    "version": "0.1.0-dev",
+    "commit": "local"
+  }
+}

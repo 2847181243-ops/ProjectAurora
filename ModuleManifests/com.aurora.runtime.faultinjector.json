@@ -1,0 +1,30 @@
+{
+  "module_id": "com.aurora.runtime.faultinjector",
+  "name": "Aurora Fault Injector",
+  "version": "1.0.0",
+  "module_type": "other",
+  "platform": "faultlab",
+  "adapter": "native",
+  "entry_symbol": "aurora_module_entry_faultinjector",
+  "license": "Apache-2.0",
+  "sdk_version": "1.0.0",
+  "minimum_sdk_version": "1.0.0",
+  "supported_formats": [
+    "ok",
+    "unsupported",
+    "crash",
+    "failstart",
+    "stopfail"
+  ],
+  "capabilities": {
+    "video_output": false,
+    "save_state": false
+  },
+  "dependencies": [],
+  "status": "ready",
+  "upstream": {
+    "project": "Project Aurora",
+    "version": "0.1.0-dev",
+    "commit": "local"
+  }
+}
