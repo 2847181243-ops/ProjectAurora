@@ -39,6 +39,10 @@ targets:
       - path: ../../ModuleManifests
         buildPhase: resources
         type: folder
+    dependencies:
+      - sdk: AVFoundation.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
     settings:
       base:
         INFOPLIST_FILE: Sources/Info.plist
