@@ -95,15 +95,23 @@ jobs:
           set +e
           mkdir -p ci-status
           {
-            echo '# ios'
-            echo ''
+            echo "# ios"
+            echo ""
             echo "sha: $GITHUB_SHA"
             echo "status: ${{ job.status }}"
             echo "at: $(date -u +%FT%TZ)"
-            echo ''
-            echo '## errors'
-            echo ''
-            grep -hE "error:|CMake Error|FAILED|ARCHIVE FAILED" *.log 2>/dev/null | head -25
+            echo ""
+            echo "## errors"
+            echo ""
+            grep -H -A3 -E "CMake Error|error:|FAILED" *.log 2>/dev/null | head -60
+            echo ""
+            echo "## tails"
+            for f in *.log; do
+              [ -f "$f" ] || continue
+              echo ""
+              echo "### $f"
+              tail -12 "$f"
+            done
           } > ci-status/ios.md
           rm -f ci-status/ios.json
           git config user.name "ci-bot"
