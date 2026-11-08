@@ -94,6 +94,9 @@ jobs:
           case "${{ matrix.lib }}" in
             sdl12-compat)
               sed -i '' 's/^if(APPLE)$/if(APPLE AND NOT IOS)/' third_party/lib/CMakeLists.txt
+              # the shim defaults to a dylib; iOS wants a static archive
+              sed -i '' 's/add_library(SDL SHARED/add_library(SDL STATIC/' third_party/lib/CMakeLists.txt
+              grep -n "add_library(SDL " third_party/lib/CMakeLists.txt | tee -a addon.log
               cp Modules/ONScripter/sdl12_gl_stub.h .
               EXTRA="-DSDL12TESTS=OFF -DCMAKE_C_FLAGS=-include$PWD/sdl12_gl_stub.h"
               echo "--- SDL_config.h GL settings ---" | tee -a addon.log
