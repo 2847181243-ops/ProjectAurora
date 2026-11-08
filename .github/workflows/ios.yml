@@ -89,19 +89,6 @@ jobs:
           fi
           echo "archive ok"
 
-      - name: mark started
-        run: |
-          set +e
-          git config user.name "ci-bot"
-          git config user.email "ci-bot@users.noreply.github.com"
-          mkdir -p ci-status
-          file="ci-status/ios-run${{ github.run_number }}.md"
-          printf '# ios run ${{ github.run_number }}\n\nsha: %s\nstatus: running\nat: %s\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > "$file"
-          git add "$file"
-          git commit -m "ci: ios started" || true
-          git pull --rebase --autostash origin main || true
-          git push origin HEAD:main || true
-
       - name: publish status
         if: always()
         run: |
