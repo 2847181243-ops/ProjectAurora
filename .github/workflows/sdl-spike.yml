@@ -10,124 +10,34 @@ on:
       - 'ci-triggers/sdl-spike'
 
 jobs:
-  build-sdl-stack-ios:
-    name: SDL2 stack for iOS arm64
+  sdl2:
+    name: SDL2 static
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: mark started
-        run: |
-          set +e
-          git config user.name "ci-bot"
-          git config user.email "ci-bot@users.noreply.github.com"
-          mkdir -p ci-status
-          file="ci-status/sdl-spike-run${{ github.run_number }}.md"
-          printf '# sdl-spike run ${{ github.run_number }}\n\nsha: %s\nstatus: running\nat: %s\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > "$file"
-          git add "$file"
-          git commit -m "ci: sdl-spike started" || true
-          git pull --rebase --autostash origin main || true
-          git push origin HEAD:main || true
-      - name: clone sources
+      - name: clone SDL2
+        run: git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL third_party/SDL
+      - name: build SDL2
         run: |
           set -euo pipefail
-          git clone --depth 1 -b SDL2   https://github.com/libsdl-org/SDL          third_party/SDL
-          git clone --depth 1           https://github.com/libsdl-org/sdl12-compat third_party/sdl12-compat
-          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_image third_party/SDL_image
-          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_ttf third_party/SDL_ttf
-          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer
-
-      - name: build SDL2
-        continue-on-error: true
-        run: |
-          set -o pipefail
           cmake -S third_party/SDL -B b/sdl -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON -DSDL_OPENGL=OFF -DSDL_OPENGLES=OFF 2>&1 | tee sdl.log
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON \
+            -DSDL_OPENGL=OFF -DSDL_OPENGLES=OFF 2>&1 | tee sdl.log
           cmake --build b/sdl --config Release --target install 2>&1 | tee -a sdl.log
-
-      - name: patch sdl12-compat for iOS
-        run: |
-          set -euo pipefail
-          sed -i '' 's/^if(APPLE)$/if(APPLE AND NOT IOS)/' third_party/sdl12-compat/CMakeLists.txt
-          grep -n "APPLE" third_party/sdl12-compat/CMakeLists.txt | head -10
-
-      - name: build sdl12-compat
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          cmake -S third_party/sdl12-compat -B b/compat -G Xcode \
-            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL12TESTS=OFF 2>&1 | tee compat.log
-          cmake --build b/compat --config Release 2>&1 | tee -a compat.log
-
-      - name: build SDL2_image
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          cmake -S third_party/SDL_image -B b/image -G Xcode \
-            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL2IMAGE_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2IMAGE_SAMPLES=OFF 2>&1 | tee image.log
-          cmake --build b/image --config Release 2>&1 | tee -a image.log
-
-      - name: build SDL2_ttf
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          cmake -S third_party/SDL_ttf -B b/ttf -G Xcode \
-            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL2TTF_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2TTF_SAMPLES=OFF 2>&1 | tee ttf.log
-          cmake --build b/ttf --config Release 2>&1 | tee -a ttf.log
-
-      - name: build SDL2_mixer
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          cmake -S third_party/SDL_mixer -B b/mixer -G Xcode \
-            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
-            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL2MIXER_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF 2>&1 | tee mixer.log
-          cmake --build b/mixer --config Release 2>&1 | tee -a mixer.log
-
-      - name: upload libraries
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: sdl-stack-libs
+          name: sdl2-prefix
           path: |
-            b/**/*.a
-            prefix/**
-          if-no-files-found: warn
-
-      - name: upload logs
+            prefix/
+            b/sdl/**/*.a
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: sdl-spike-logs
-          path: |
-            *.log
-          if-no-files-found: warn
-
-      - name: verdict
-        run: |
-          set -euo pipefail
-          echo "## SDL stack (iOS arm64)" >> "$GITHUB_STEP_SUMMARY"
-          find b -name "*.a" | sort | sed 's/^/| /;s/$/ |/' >> "$GITHUB_STEP_SUMMARY"
-          errors=$(grep -hE "error:" *.log 2>/dev/null | grep -v "no symbols" | head -10 || true)
-          if [ -n "$errors" ]; then
-            echo "$errors"
-            echo "build reported errors"
-            exit 1
-          fi
-          count=$(find b -name "*.a" | wc -l | tr -d ' ')
-          echo "static libraries: $count"
-          test "$count" -ge 5
-
+          name: sdl2-log
+          path: sdl.log
       - name: publish status
         if: always()
         run: |
@@ -135,9 +45,9 @@ jobs:
           git config user.name "ci-bot"
           git config user.email "ci-bot@users.noreply.github.com"
           mkdir -p ci-status
-          file="ci-status/sdl-spike-run${{ github.run_number }}.md"
+          file="ci-status/sdl2-run${{ github.run_number }}.md"
           {
-            echo "# sdl-spike run ${{ github.run_number }}"
+            echo "# sdl2"
             echo ''
             echo "sha: $GITHUB_SHA"
             echo "status: ${{ job.status }}"
@@ -145,17 +55,85 @@ jobs:
             echo ''
             echo '## errors'
             echo ''
-            grep -H -A3 -E "CMake Error|error:|FAILED" *.log 2>/dev/null | head -60
+            grep -H -A3 -E "CMake Error|error:|FAILED" *.log 2>/dev/null | head -40
             echo ''
             echo '## tails'
-            for f in *.log; do
-              [ -f "$f" ] || continue
-              echo ''
-              echo "### $f"
-              tail -12 "$f"
-            done
+            for f in *.log; do [ -f "$f" ] || continue; echo ""; echo "### $f"; tail -12 "$f"; done
           } > "$file"
           git add "$file"
-          git commit -m "ci: sdl-spike run ${{ github.run_number }}" || true
+          git commit -m "ci: sdl2 ${{ github.run_number }}" || true
+          git pull --rebase --autostash origin main || true
+          git push origin HEAD:main || true
+
+  addon:
+    name: ${{ matrix.lib }}
+    needs: sdl2
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        lib: [sdl12-compat, SDL_image, SDL_ttf, SDL_mixer]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sdl2-prefix
+          path: stack
+      - name: clone ${{ matrix.lib }}
+        run: |
+          set -euo pipefail
+          case "${{ matrix.lib }}" in
+            sdl12-compat) git clone --depth 1 https://github.com/libsdl-org/sdl12-compat third_party/lib ;;
+            *) git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/${{ matrix.lib }} third_party/lib ;;
+          esac
+      - name: build ${{ matrix.lib }}
+        run: |
+          set -euo pipefail
+          PREFIX=$PWD/stack/prefix
+          EXTRA=""
+          case "${{ matrix.lib }}" in
+            sdl12-compat)
+              sed -i '' 's/^if(APPLE)$/if(APPLE AND NOT IOS)/' third_party/lib/CMakeLists.txt
+              EXTRA="-DSDL12TESTS=OFF"
+              ;;
+            SDL_image) EXTRA="-DSDL2IMAGE_VENDORED=ON -DSDL2IMAGE_SAMPLES=OFF -DSDL2IMAGE_AVIF=OFF -DSDL2IMAGE_JXL=OFF" ;;
+            SDL_ttf) EXTRA="-DSDL2TTF_VENDORED=ON -DSDL2TTF_SAMPLES=OFF -DSDL2TTF_HARFBUZZ=OFF" ;;
+            SDL_mixer) EXTRA="-DSDL2MIXER_VENDORED=ON -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF" ;;
+          esac
+          cmake -S third_party/lib -B b/lib -G Xcode \
+            -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+            -DCMAKE_PREFIX_PATH=$PREFIX -DSDL2_DIR=$PREFIX/lib/cmake/SDL2 -DBUILD_SHARED_LIBS=OFF $EXTRA 2>&1 | tee addon.log
+          cmake --build b/lib --config Release 2>&1 | tee -a addon.log
+          find b/lib -name "*.a" | tee -a addon.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.lib }}-log
+          path: addon.log
+      - name: publish status
+        if: always()
+        run: |
+          set +e
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          mkdir -p ci-status
+          file="ci-status/addon-${{ matrix.lib }}-run${{ github.run_number }}.md"
+          {
+            echo "# addon-${{ matrix.lib }}"
+            echo ''
+            echo "sha: $GITHUB_SHA"
+            echo "status: ${{ job.status }}"
+            echo "at: $(date -u +%FT%TZ)"
+            echo ''
+            echo '## errors'
+            echo ''
+            grep -H -A3 -E "CMake Error|error:|FAILED" *.log 2>/dev/null | head -40
+            echo ''
+            echo '## tails'
+            for f in *.log; do [ -f "$f" ] || continue; echo ""; echo "### $f"; tail -12 "$f"; done
+          } > "$file"
+          git add "$file"
+          git commit -m "ci: addon-${{ matrix.lib }} ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
           git push origin HEAD:main || true
