@@ -113,9 +113,19 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_PREFIX_PATH=$PREFIX -DSDL2_DIR=$PREFIX/lib/cmake/SDL2 -DBUILD_SHARED_LIBS=OFF $EXTRA 2>&1 | tee addon.log
-          cmake --build b/lib --config Release 2>&1 | tee -a addon.log || true
+          set +e
+          cmake --build b/lib --config Release 2>&1 | tee -a addon.log
+          build_rc=${PIPESTATUS[0]}
+          set -e
           grep -oE "undeclared identifier 'GL_[A-Z0-9_]+'" addon.log | sed "s/.*'\(GL_[A-Z0-9_]*\)'/\1/" | sort -u | tee -a addon.log || true
           find b/lib -name "*.a" | tee -a addon.log || true
+          if [ "$build_rc" -ne 0 ]; then echo "build failed (rc=$build_rc)"; exit 1; fi
+      - name: verify the library
+        run: |
+          set -euo pipefail
+          count=$(find b/lib -name "*.a" | wc -l | tr -d ' ')
+          echo "static libraries: $count"
+          test "$count" -ge 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -234,6 +234,10 @@ typedef double GLclampd;
 #define GL_NORMAL_ARRAY 0x8075
 #endif
 
+#ifndef GL_UNPACK_ROW_LENGTH
+#define GL_UNPACK_ROW_LENGTH 0x0CF2
+#endif
+
 #ifndef GLAPIENTRY
 #define GLAPIENTRY
 #endif
