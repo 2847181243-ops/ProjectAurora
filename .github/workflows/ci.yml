@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: module boundaries
+        run: python3 BuildSystem/check_module_boundaries.py
+
       - name: configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 
