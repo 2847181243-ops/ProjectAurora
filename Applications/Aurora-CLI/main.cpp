@@ -34,6 +34,7 @@ void printUsage() {
         "usage:\n"
         "  aurora-cli list [--manifests DIR] [--data DIR]\n"
         "  aurora-cli scan <directory> [--manifests DIR] [--data DIR]\n"
+        "  aurora-cli library [--manifests DIR] [--data DIR]\n"
         "  aurora-cli run <module-id> [--frames N] [--format F] [--out FILE.ppm]\n"
         "                [--manifests DIR] [--data DIR] [--disable ID]\n"
         "\n"
@@ -186,6 +187,27 @@ int main(int argc, char** argv) {
         }
     }
 
+    if (options.command == "library") {
+        const std::string libraryPath = joinPath(options.data, "Library/library.json");
+        std::vector<aurora::GameEntry> games;
+        std::string error;
+        if (!aurora::loadGames(libraryPath, games, error)) {
+            std::printf("no library yet (%s)\n", error.c_str());
+            return 1;
+        }
+        std::printf("%-30s %-34s %s\n", "TITLE", "MODULE", "PATH");
+        for (const auto& game : games) {
+            const aurora::ModuleEntry* module = game.module_id.empty()
+                ? nullptr : registry.find(game.module_id);
+            const char* state = module == nullptr ? "-" : aurora_module_state_string(module->state);
+            std::printf("%-30s %-34s %s [%s]\n", game.title.c_str(),
+                        game.module_id.empty() ? "(unmatched)" : game.module_id.c_str(),
+                        game.path.c_str(), state);
+        }
+        std::printf("\n%zu item(s)\n", games.size());
+        return 0;
+    }
+
     if (options.command == "scan") {
         if (options.moduleId.empty()) {
             std::printf("scan needs a directory\n");
@@ -193,6 +215,15 @@ int main(int argc, char** argv) {
         }
         aurora::GameLibrary library(registry);
         const std::vector<aurora::GameEntry> games = library.scan(options.moduleId);
+
+        const std::string libraryPath = joinPath(options.data, "Library/library.json");
+        std::filesystem::create_directories(std::filesystem::path(libraryPath).parent_path());
+        std::string saveError;
+        if (aurora::saveGames(libraryPath, games, saveError)) {
+            std::printf("library saved: %s\n", libraryPath.c_str());
+        } else {
+            std::printf("library NOT saved: %s\n", saveError.c_str());
+        }
         std::printf("%-30s %-34s %-22s %s\n", "TITLE", "MODULE", "DETECTED", "PATH");
         for (const auto& game : games) {
             const aurora::ModuleEntry* module = game.module_id.empty()
