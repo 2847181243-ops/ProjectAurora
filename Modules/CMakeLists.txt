@@ -1,39 +1,46 @@
-# One target per module. Switching one off must not disturb the others.
+# One target per module, driven by modules.list.
 #
-# The two sample modules are always on. The fault injector is on for tests.
+# Turning a module off is a cache option; leaving it out of modules.list is a
+# source change. Both produce the same effect: the generated build table has no
+# entry, so the platform reports the module as DISCOVERED instead of pretending.
 
-option(AURORA_MODULE_EMPTY "Build the empty sample module" ON)
-option(AURORA_MODULE_SIMULATED "Build the simulated runtime module" ON)
-option(AURORA_MODULE_FAULTINJECTOR "Build the fault injector used by the tests" ON)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/modules.list" AURORA_MODULE_LINES)
 
-if(AURORA_MODULE_EMPTY)
-    aurora_add_module(aurora_module_empty
-        "com.aurora.runtime.empty"
-        "aurora_module_entry_empty"
-        SOURCES EmptyModule/src/empty_module.cpp)
-endif()
+foreach(line IN LISTS AURORA_MODULE_LINES)
+    string(STRIP "${line}" line)
+    if(line STREQUAL "" OR line MATCHES "^#")
+        continue()
+    endif()
+    string(REPLACE "|" ";" parts "${line}")
+    list(GET parts 0 module_id)
+    list(GET parts 1 entry_symbol)
+    list(GET parts 2 module_dir)
 
-if(AURORA_MODULE_SIMULATED)
-    aurora_add_module(aurora_module_simulated
-        "com.aurora.runtime.simulated"
-        "aurora_module_entry_simulated"
-        SOURCES SimulatedRuntime/src/simulated_runtime.cpp)
-endif()
+    string(TOUPPER "${module_dir}" option_suffix)
+    option(AURORA_MODULE_${option_suffix} "Build the ${module_dir} module" ON)
+    if(NOT AURORA_MODULE_${option_suffix})
+        message(STATUS "module skipped by option: ${module_id}")
+        continue()
+    endif()
 
-if(AURORA_MODULE_FAULTINJECTOR)
-    aurora_add_module(aurora_module_faultinjector
-        "com.aurora.runtime.faultinjector"
-        "aurora_module_entry_faultinjector"
-        SOURCES FaultInjector/src/fault_injector.cpp)
-endif()
+    file(GLOB module_sources "${CMAKE_CURRENT_SOURCE_DIR}/${module_dir}/src/*.cpp")
+    if(NOT module_sources)
+        message(FATAL_ERROR "module ${module_dir} lists no sources")
+    endif()
+
+    string(REPLACE "." "_" target_suffix "${module_id}")
+    aurora_add_module(aurora_module_${target_suffix}
+        "${module_id}"
+        "${entry_symbol}"
+        SOURCES ${module_sources})
+endforeach()
 
 aurora_emit_builtin_table("${CMAKE_BINARY_DIR}/generated/AuroraBuiltinModules.cpp")
 
 add_library(aurora_builtin_modules STATIC "${CMAKE_BINARY_DIR}/generated/AuroraBuiltinModules.cpp")
 target_link_libraries(aurora_builtin_modules PUBLIC aurora_runtime_api)
 
-foreach(target aurora_module_empty aurora_module_simulated aurora_module_faultinjector)
-    if(TARGET ${target})
-        target_link_libraries(aurora_builtin_modules PUBLIC ${target})
-    endif()
+get_property(module_targets GLOBAL PROPERTY AURORA_MODULE_TARGETS)
+foreach(target IN LISTS module_targets)
+    target_link_libraries(aurora_builtin_modules PUBLIC ${target})
 endforeach()

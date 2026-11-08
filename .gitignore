@@ -7,3 +7,5 @@ out/
 *.xcresult
 .DS_Store
 AuroraData/
+Applications/Aurora-iOS/Generated/
+Applications/Aurora-iOS/Aurora.xcodeproj/

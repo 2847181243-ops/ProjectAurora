@@ -1,0 +1,53 @@
+name: ios
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  unsigned-ipa:
+    name: unsigned ipa
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: generate module table
+        run: python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp
+
+      - name: install xcodegen
+        run: brew install xcodegen
+
+      - name: generate project
+        working-directory: Applications/Aurora-iOS
+        run: xcodegen generate
+
+      - name: archive without signing
+        working-directory: Applications/Aurora-iOS
+        run: |
+          xcodebuild \
+            -project Aurora.xcodeproj \
+            -scheme Aurora \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            archive \
+            -archivePath build/Aurora.xcarchive
+
+      - name: package ipa
+        run: |
+          mkdir -p out/Payload
+          cp -R Applications/Aurora-iOS/build/Aurora.xcarchive/Products/Applications/Aurora.app out/Payload/
+          cd out && zip -qry Aurora-unsigned.ipa Payload
+          ls -la Aurora-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aurora-unsigned-ipa
+          path: out/Aurora-unsigned.ipa
+          if-no-files-found: error

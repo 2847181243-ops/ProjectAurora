@@ -1,0 +1,6 @@
+# module_id|entry_symbol|source_directory
+# One line per module. This is the single source of truth for "what this build
+# links"; CMake and the iOS table generator both read it, so they cannot drift.
+com.aurora.runtime.empty|aurora_module_entry_empty|EmptyModule
+com.aurora.runtime.simulated|aurora_module_entry_simulated|SimulatedRuntime
+com.aurora.runtime.faultinjector|aurora_module_entry_faultinjector|FaultInjector

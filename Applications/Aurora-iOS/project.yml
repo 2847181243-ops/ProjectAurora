@@ -1,0 +1,48 @@
+# XcodeGen description. The Xcode project is generated, never committed: a
+# project.pbxproj that several people edit by hand is a merge conflict generator.
+name: Aurora
+options:
+  bundleIdPrefix: com.aurora
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    CLANG_CXX_LANGUAGE_STANDARD: "c++17"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+
+targets:
+  Aurora:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: ../../SDK/AuroraRuntimeAPI/src
+      - path: ../../SDK/AuroraModuleSDK/src
+      - path: ../../SDK/AuroraStorageAPI/src
+      - path: ../../SDK/AuroraDiagnosticsAPI/src
+      - path: ../../Modules/EmptyModule/src
+      - path: ../../Modules/SimulatedRuntime/src
+      - path: ../../Modules/FaultInjector/src
+      - path: Generated/AuroraBuiltinModules.cpp
+    settings:
+      base:
+        INFOPLIST_FILE: Sources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.aurora.app
+        SWIFT_OBJC_BRIDGING_HEADER: Sources/Aurora-Bridging-Header.h
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        HEADER_SEARCH_PATHS:
+          - "$(SRCROOT)/../../SDK/AuroraRuntimeAPI/include"
+          - "$(SRCROOT)/../../SDK/AuroraModuleSDK/include"
+          - "$(SRCROOT)/../../SDK/AuroraStorageAPI/include"
+          - "$(SRCROOT)/../../SDK/AuroraDiagnosticsAPI/include"
+          - "$(SRCROOT)/Sources"
+        OTHER_LDFLAGS:
+          - "-lc++"
+    resources:
+      - path: ../../ModuleManifests
+        name: ModuleManifests

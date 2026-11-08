@@ -15,7 +15,9 @@ function(aurora_add_module target module_id entry_symbol)
     target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}/SDK/AuroraRuntimeAPI/include")
     set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
     # A module may only include the public ABI header. Anything else is a layering bug.
-    target_compile_definitions(${target} PRIVATE AURORA_MODULE_ID="@@{module_id}")
+    target_compile_definitions(${target} PRIVATE AURORA_MODULE_ID="${module_id}")
+
+    set_property(GLOBAL APPEND PROPERTY AURORA_MODULE_TARGETS ${target})
 
     set(registry "${AURORA_MODULE_REGISTRY}")
     list(APPEND registry "${module_id}|${entry_symbol}")
