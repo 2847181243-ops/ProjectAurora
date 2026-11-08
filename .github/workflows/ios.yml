@@ -73,10 +73,15 @@ jobs:
 
       - name: verdict
         run: |
-          if grep -hE "error:|ARCHIVE FAILED|BUILD FAILED" *.log Applications/Aurora-iOS/*.log 2>/dev/null | head -20; then
-            echo "build reported errors"; exit 1
+          set -euo pipefail
+          matches=$(grep -hE "error:|ARCHIVE FAILED|BUILD FAILED" *.log Applications/Aurora-iOS/*.log 2>/dev/null | head -20 || true)
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "build reported errors"
+            exit 1
           fi
           if [ ! -d Applications/Aurora-iOS/build/Aurora.xcarchive ]; then
-            echo "no xcarchive produced"; exit 1
+            echo "no xcarchive produced"
+            exit 1
           fi
           echo "archive ok"
