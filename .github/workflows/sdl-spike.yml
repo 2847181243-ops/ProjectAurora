@@ -33,7 +33,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
             -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_TESTS=OFF -DSDL_INSTALL=ON 2>&1 | tee sdl.log
+            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON 2>&1 | tee sdl.log
           cmake --build b/sdl --config Release --target install 2>&1 | tee -a sdl.log
 
       - name: build sdl12-compat
@@ -43,7 +43,7 @@ jobs:
           cmake -S third_party/sdl12-compat -B b/compat -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL12TESTS=OFF 2>&1 | tee compat.log
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL12TESTS=OFF 2>&1 | tee compat.log
           cmake --build b/compat --config Release 2>&1 | tee -a compat.log
 
       - name: build SDL2_image
@@ -53,7 +53,7 @@ jobs:
           cmake -S third_party/SDL_image -B b/image -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2IMAGE_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2IMAGE_SAMPLES=OFF 2>&1 | tee image.log
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL2IMAGE_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2IMAGE_SAMPLES=OFF 2>&1 | tee image.log
           cmake --build b/image --config Release 2>&1 | tee -a image.log
 
       - name: build SDL2_ttf
@@ -63,7 +63,7 @@ jobs:
           cmake -S third_party/SDL_ttf -B b/ttf -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2TTF_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2TTF_SAMPLES=OFF 2>&1 | tee ttf.log
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL2TTF_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2TTF_SAMPLES=OFF 2>&1 | tee ttf.log
           cmake --build b/ttf --config Release 2>&1 | tee -a ttf.log
 
       - name: build SDL2_mixer
@@ -73,7 +73,7 @@ jobs:
           cmake -S third_party/SDL_mixer -B b/mixer -G Xcode \
             -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
-            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2MIXER_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF 2>&1 | tee mixer.log
+            -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL2MIXER_VENDORED=ON -DBUILD_SHARED_LIBS=OFF -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_CMD=OFF 2>&1 | tee mixer.log
           cmake --build b/mixer --config Release 2>&1 | tee -a mixer.log
 
       - name: upload libraries
