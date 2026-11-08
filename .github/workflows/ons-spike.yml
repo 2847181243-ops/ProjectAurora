@@ -99,6 +99,19 @@ jobs:
             obj/
           if-no-files-found: warn
 
+      - name: verdict
+        run: |
+          set -euo pipefail
+          tail -3 ons.log
+          ok=$(ls obj/*.o 2>/dev/null | wc -l | tr -d ' ')
+          failed=$(grep -c "^FAILED:" ons.log || true)
+          echo "compiled=$ok failed=$failed"
+          if [ "$failed" -gt 0 ]; then
+            echo "source files still failing: $failed"
+            exit 1
+          fi
+          test "$ok" -ge 40
+
       - name: publish status
         if: always()
         run: |
