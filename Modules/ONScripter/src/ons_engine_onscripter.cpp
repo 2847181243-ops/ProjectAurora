@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/* The real side of the ONScripter seam.
- *
- * Only compiled when AURORA_WITH_ONSCRIPTER is defined and the engine sources are
- * on the include path. ONScripterLabel owns a blocking loop, so this runs on the
- * thread the module created and never returns until the script ends or a quit
- * event arrives.
- */
+/* The real side of the ONScripter seam. */
 #if defined(AURORA_WITH_ONSCRIPTER)
 
 #include <atomic>
@@ -22,11 +16,11 @@ namespace ons {
 namespace {
 
 std::atomic<bool> g_quit_requested{false};
+ONScripterLabel* g_engine = nullptr;
 
-/* ONScripter reads events from the SDL queue, so a quit request is just an event. */
 void pushQuit() {
     SDL_Event event;
-    memset(&event, 0, sizeof(event));
+    std::memset(&event, 0, sizeof(event));
     event.type = SDL_QUIT;
     SDL_PushEvent(&event);
 }
@@ -35,26 +29,31 @@ void pushQuit() {
 
 bool engineAvailable() { return true; }
 
-int runBlocking(const Config& config) {
+int initEngine(const Config& config) {
     g_quit_requested.store(false);
-
-    ONScripterLabel engine;
-    engine.setArchivePath(config.game_directory.c_str());
-    engine.setSavePath(config.save_directory.c_str());
-
-    if (engine.init() != 0) {
-        return 2; /* initialisation failed: missing script, bad archive, ... */
+    if (g_engine == nullptr) {
+        g_engine = new ONScripterLabel();
     }
+    g_engine->setArchivePath(config.game_directory.c_str());
+    g_engine->setSavePath(config.save_directory.c_str());
+    /* SDL video must come up on the main thread on iOS, so init happens here and
+     * not inside the loop thread. */
+    return g_engine->init() == 0 ? 0 : 2;
+}
 
-    engine.executeLabel();
-    pushQuit();
-    SDL_Quit();
+int runLoop() {
+    if (g_engine == nullptr) return 3;
+    g_engine->executeLabel();
     return 0;
 }
 
 void requestStop() {
     g_quit_requested.store(true);
     pushQuit();
+}
+
+void shutdownEngine() {
+    SDL_Quit();
 }
 
 } // namespace ons

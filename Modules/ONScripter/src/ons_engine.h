@@ -7,28 +7,32 @@
 /* The seam between Aurora and ONScripter.
  *
  * ONScripter owns a blocking main loop that stops inside commands, so the module
- * hands it a thread and only keeps the lifecycle. Everything engine specific lives
- * behind this interface, which keeps the module itself free of engine headers.
+ * hands it a thread and only keeps the lifecycle. The split matters on iOS: SDL
+ * must be initialised on the main thread, while the loop can run anywhere.
  */
 namespace aurora {
 namespace ons {
 
 struct Config {
-    std::string game_directory;  /* where the .txt / .nsa / .sar files live */
-    std::string save_directory;  /* writable, module-owned */
+    std::string game_directory;
+    std::string save_directory;
     std::string log_directory;
 };
 
-/* False when this build was compiled without the engine (AURORA_WITH_ONSCRIPTER
- * unset). The module then reports UNSUPPORTED instead of pretending. */
+/* False when this build was compiled without the engine. */
 bool engineAvailable();
 
-/* Blocks until the script ends or requestStop() is called. Returns 0 on a clean
- * exit, non-zero when the engine failed to initialise or crashed out. */
-int runBlocking(const Config& config);
+/* Main thread: opens the script and brings up SDL. Returns 0 on success. */
+int initEngine(const Config& config);
 
-/* Safe to call from any thread; makes the next event pump return. */
+/* Worker thread: runs the script until it ends or requestStop() is called. */
+int runLoop();
+
+/* Any thread: asks the event pump to return. */
 void requestStop();
+
+/* Main thread: tears SDL down after the loop returned. */
+void shutdownEngine();
 
 } // namespace ons
 } // namespace aurora

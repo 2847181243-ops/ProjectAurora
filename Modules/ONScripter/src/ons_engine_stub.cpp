@@ -1,6 +1,4 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-/* Used when the build does not link ONScripter. Keeps the module honest: it can
- * register and be inspected, but starting it reports UNSUPPORTED. */
 #ifndef AURORA_WITH_ONSCRIPTER
 
 #include "ons_engine.h"
@@ -9,10 +7,10 @@ namespace aurora {
 namespace ons {
 
 bool engineAvailable() { return false; }
-
-int runBlocking(const Config&) { return -1; }
-
+int initEngine(const Config&) { return -1; }
+int runLoop() { return -1; }
 void requestStop() {}
+void shutdownEngine() {}
 
 } // namespace ons
 } // namespace aurora

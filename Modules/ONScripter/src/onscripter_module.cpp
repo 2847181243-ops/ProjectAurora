@@ -77,11 +77,19 @@ AuroraStatus startInstance(void* handle) {
         return AURORA_E_UNSUPPORTED;
     }
 
+    /* SDL has to come up on the caller's thread (main on iOS); only the script
+     * loop moves to the worker. */
+    const int initCode = aurora::ons::initEngine(instance->config);
+    if (initCode != 0) {
+        logLine(instance, AURORA_LOG_ERROR, "engine initialisation failed (" + std::to_string(initCode) + ")");
+        return AURORA_E_INIT_FAILED;
+    }
+
     instance->result.store(0);
     instance->running.store(true);
-    const aurora::ons::Config config = instance->config;
-    instance->worker = std::thread([instance, config]() {
-        const int code = aurora::ons::runBlocking(config);
+    instance->worker = std::thread([instance]() {
+        const int code = aurora::ons::runLoop();
+        aurora::ons::shutdownEngine();
         instance->result.store(code);
         instance->running.store(false);
     });
