@@ -44,6 +44,11 @@ final class AuroraHost: ObservableObject {
     @Published var games: [GameRow] = []
     @Published var frame: UIImage?
     @Published var runningModule: String = ""
+    @Published var diagnostics: String = ""
+
+    func refreshDiagnostics() {
+        diagnostics = String(cString: aurora_bridge_diagnostics(25))
+    }
     @Published var framesPresented: Int32 = 0
     @Published var frameWidth: Int = 0
     @Published var frameHeight: Int = 0
@@ -168,6 +173,7 @@ final class AuroraHost: ObservableObject {
     }
 
     private func tick() {
+        refreshDiagnostics()
         guard !runningModule.isEmpty else { return }
         aurora_bridge_tick(1.0 / 30.0)
         framesPresented = aurora_bridge_frames_presented()

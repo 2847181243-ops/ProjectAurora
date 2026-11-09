@@ -60,6 +60,9 @@ int32_t aurora_bridge_library_import(const char* source_path);
  * default profile so the module sees buttons and frame-pixel coordinates. */
 void aurora_bridge_set_touch(int32_t active, float x, float y);
 
+/* Last log lines, so a device without a debugger can still be diagnosed. */
+const char* aurora_bridge_diagnostics(int32_t max_lines);
+
 /* Audio status, for the UI to show honestly whether sound is live. */
 int32_t aurora_bridge_audio_running(void);
 int32_t aurora_bridge_audio_sample_rate(void);

@@ -43,6 +43,7 @@ struct BridgeState {
     std::unique_ptr<aurora::ModuleSupervisor> supervisor;
     std::string running_module;
     std::string last_error;
+    std::string diagnostics_text;
     std::string games_root;
     std::vector<aurora::GameEntry> games;
     std::string game_path = "/library/demo.sim";
@@ -527,6 +528,33 @@ void aurora_bridge_set_touch(int32_t active, float x, float y) {
         instance->binding->surface_width,
         instance->binding->surface_height);
     s.host->setInput(*instance->binding, snapshot);
+}
+
+/* ---- diagnostics ---------------------------------------------------------- */
+
+const char* aurora_bridge_diagnostics(int32_t max_lines) {
+    BridgeState& s = state();
+    if (s.diagnostics == nullptr) return "";
+    const std::string all = s.diagnostics->format();
+    if (max_lines <= 0) { s.diagnostics_text = all; return s.diagnostics_text.c_str(); }
+
+    std::vector<std::string> lines;
+    std::size_t start = 0;
+    while (start <= all.size()) {
+        const std::size_t end = all.find('\n', start);
+        if (end == std::string::npos) { lines.push_back(all.substr(start)); break; }
+        lines.push_back(all.substr(start, end - start));
+        start = end + 1;
+    }
+    const std::size_t first = lines.size() > static_cast<std::size_t>(max_lines)
+        ? lines.size() - static_cast<std::size_t>(max_lines) : 0;
+    std::string joined;
+    for (std::size_t i = first; i < lines.size(); ++i) {
+        if (!joined.empty()) joined += "\n";
+        joined += lines[i];
+    }
+    s.diagnostics_text = joined;
+    return s.diagnostics_text.c_str();
 }
 
 /* ---- audio ---------------------------------------------------------------- */

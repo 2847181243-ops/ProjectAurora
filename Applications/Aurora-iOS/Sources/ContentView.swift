@@ -249,6 +249,18 @@ private struct FramePanel: View {
                 Text(host.lastError)
                     .font(.caption2)
                     .foregroundStyle(.red)
+
+                Section {
+                    Text(host.diagnostics.isEmpty ? "(no records yet)" : host.diagnostics)
+                        .font(.caption2)
+                        .monospaced()
+                        .textSelection(.enabled)
+                } header: {
+                    Text("Log")
+                } footer: {
+                    Text("The module's own log lines, newest last.")
+                        .font(.caption2)
+                }
             }
         }
     }
