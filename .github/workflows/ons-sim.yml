@@ -155,6 +155,7 @@ jobs:
           persist-credentials: false
 
       - uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: aurora-onscripter-sim
           path: onslib
@@ -162,6 +163,9 @@ jobs:
       - name: generate the module table
         continue-on-error: true
         run: |
+          echo "--- onslib ---"
+          ls onslib 2>/dev/null | head -10
+          ls onslib/lib 2>/dev/null | head -10
           mkdir -p Applications/Aurora-iOS/Generated
           python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp
           ls -la Applications/Aurora-iOS/Generated
