@@ -133,6 +133,9 @@ jobs:
               echo "### $f"
               tail -20 "$f"
             done
+            echo ''
+            echo '## archive tail'
+            tail -70 Applications/Aurora-iOS/archive.log 2>/dev/null
           } > "$file"
           git add "$file"
           git commit -m "ci: ios run ${{ github.run_number }}" || true
