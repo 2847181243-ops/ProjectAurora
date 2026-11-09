@@ -134,3 +134,20 @@ SDL_image/ttf/mixer 的 iOS 工程路径也是空的），lua 的 `loslib.c` 还
 
 风险：onscrlib 是 2018 年的脚本，面向 macOS 10.6/32 位，现代 Xcode 可能编不动；
 需要先做一次 CI 探针，确认它的依赖到底能不能在当前 Xcode 上构建。
+
+
+## 8. 依赖栈全部打通（2026-11-09）
+
+@@@ons-spike@@@ 现在一次构建产出全部 17 个静态库：
+引擎 @@@libaurora_onscripter.a@@@，核心 @@@libSDL2.a@@@ / @@@libSDL-1.2.a@@@，
+插件 @@@libSDL_image.a@@@ / @@@libSDL_ttf.a@@@ / @@@libSDL_mixer.a@@@，
+依赖 @@@libpng.a@@@ / @@@libjpeg.a@@@ / @@@libfreetype.a@@@ / @@@libogg.a@@@ / @@@libvorbis*.a@@@。
+
+踩过的三个坑记在这里：
+
+1. **libjpeg-turbo 的 CMake 在 Xcode 生成器下会空变量**
+   （@@@string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} ...)@@@）→ 必须显式传
+   @@@-DCMAKE_SYSTEM_PROCESSOR=arm64@@@ 和 @@@-DCMAKE_BUILD_TYPE=Release@@@。
+2. **浅克隆没有 git tag**，而它从 tag 推版本号 → 钉 @@@--branch 3.0.4@@@。
+3. **sdl12-compat 留了两个外部钩子**给应用实现：@@@error_dialog@@@ 和
+   @@@SDL12COMPAT_NSLog@@@（后者本来在 Cocoa 胶水里，iOS 不编那份）。
