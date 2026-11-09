@@ -43,9 +43,8 @@ OSStatus readCallback(void* client, SInt64 position, UInt32 request_count, void*
     return noErr;
 }
 
-OSStatus lengthCallback(void* client, SInt64* length) {
-    *length = static_cast<MemoryReader*>(client)->size;
-    return noErr;
+SInt64 sizeCallback(void* client) {
+    return static_cast<MemoryReader*>(client)->size;
 }
 
 /* Decodes the whole stream to 16 bit stereo at its native sample rate. */
@@ -54,7 +53,7 @@ bool decode(const std::vector<Uint8>& encoded, SMPEG* mpeg) {
     MemoryReader reader{encoded.data(), static_cast<SInt64>(encoded.size()), 0};
     OSStatus status = AudioFileOpenWithCallbacks(&reader, readCallback,
                                                 (AudioFile_WriteProc)nullptr,
-                                                lengthCallback,
+                                                sizeCallback,
                                                 (AudioFile_SetSizeProc)nullptr,
                                                 0, &file);
     if (status != noErr || file == nullptr) {
