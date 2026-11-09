@@ -10,6 +10,10 @@
 #include "ONScripterLabel.h"
 #include "ons_engine.h"
 
+/* sdl12-compat's headers only cover the SDL 1.2 API, so declare the SDL2 entry
+ * point we need ourselves; the symbol comes from the SDL2 we link. */
+extern "C" void SDL_SetMainReady(void);
+
 namespace aurora {
 namespace ons {
 
