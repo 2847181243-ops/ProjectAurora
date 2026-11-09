@@ -160,6 +160,7 @@ jobs:
           path: onslib
 
       - name: build the app for the simulator
+        continue-on-error: true
         run: |
           set -euo pipefail
           cd Applications/Aurora-iOS
@@ -172,6 +173,7 @@ jobs:
           find build -name "Aurora.app" -maxdepth 6 | head -3
 
       - name: boot a simulator and start the engine
+        continue-on-error: true
         run: |
           set -o pipefail
           DEVICE=$(xcrun simctl list devices available | grep -E "^ +iPhone" | head -1 | sed -E 's/ \(([0-9A-F-]+)\).*/\1/')
@@ -217,9 +219,15 @@ jobs:
             echo ''
             grep -E "onscripter|aurora|error" sim.log 2>/dev/null | head -30
             echo ''
-            echo '## build errors'
+            echo '## app build tail'
             echo ''
-            grep -E "error:" Applications/Aurora-iOS/build.log 2>/dev/null | head -10
+            tail -25 Applications/Aurora-iOS/build.log 2>/dev/null
+            echo ''
+            echo '## xcodegen tail'
+            tail -10 Applications/Aurora-iOS/gen.log 2>/dev/null
+            echo ''
+            echo '## simulator tail'
+            tail -25 sim.log 2>/dev/null
           } > "$file"
           git add "$file"
           git commit -m "ci: ons-simrun run ${{ github.run_number }}" || true
