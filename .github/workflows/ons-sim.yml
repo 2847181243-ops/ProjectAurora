@@ -96,8 +96,15 @@ jobs:
           void IMG_QuitJPG(void) {}
           STUBS
           $CC -I prefix/include/SDL -c /tmp/jpg_stub.c -o obj/addons/jpg_stub.o >> ons.log 2>&1 || echo "FAILED: jpg_stub" >> ons.log
+          cat > /tmp/img_stubs.c <<'STUBS'
+          int IMG_InitTIF(void) { return 0; }
+          void IMG_QuitTIF(void) {}
+          int IMG_InitWEBP(void) { return 0; }
+          void IMG_QuitWEBP(void) {}
+          STUBS
+          $CC -c /tmp/img_stubs.c -o obj/addons/img_stubs.o >> ons.log 2>&1 || echo "FAILED: img_stubs" >> ons.log
           mkdir -p lib include/aurora-ons
-          libtool -static -o prefix/lib/libSDL_image.a obj/addons/IMG*.o obj/addons/jpg_stub.o
+          libtool -static -o prefix/lib/libSDL_image.a obj/addons/IMG*.o obj/addons/jpg_stub.o obj/addons/img_stubs.o
           libtool -static -o prefix/lib/libSDL_ttf.a obj/addons/SDL_ttf.o
           libtool -static -o prefix/lib/libSDL_mixer.a obj/addons/mix_*.o
           # The app link names -ljpeg; give it an empty archive instead of the library
