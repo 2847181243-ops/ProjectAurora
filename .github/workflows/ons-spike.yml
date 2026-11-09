@@ -81,13 +81,13 @@ jobs:
           {
             # libjpeg-turbo stringifies CMAKE_BUILD_TYPE, which the Xcode generator leaves empty.
             cmake -S third_party/libjpeg -B b/jpeg $COMMON -DCMAKE_BUILD_TYPE=Release \
-              -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_SIMD=OFF -DWITH_TURBOJPEG=OFF -DWITH_JPEG8=ON \
+              -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_SIMD=OFF -DWITH_TURBOJPEG=OFF -DWITH_TOOLS=OFF -DWITH_JPEG8=ON \
               -DCMAKE_SYSTEM_PROCESSOR=arm64
             cmake --build b/jpeg --config Release --target install
           } > jpeg.log 2>&1 || echo "FAILED: libjpeg" >> jpeg.log
           # The Xcode install target drops the archives but not the headers.
-          cp third_party/libjpeg/src/jpeglib.h third_party/libjpeg/src/jmorecfg.h \
-             third_party/libjpeg/src/jerror.h prefix/include/ 2>>jpeg.log || true
+          cp third_party/libjpeg/jpeglib.h third_party/libjpeg/jmorecfg.h \
+             third_party/libjpeg/jerror.h prefix/include/ 2>>jpeg.log || true
           cp b/jpeg/jconfig.h prefix/include/ 2>>jpeg.log || true
           ls prefix/include/jpeglib.h >> jpeg.log 2>&1 || echo "no jpeglib.h" >> jpeg.log
 
