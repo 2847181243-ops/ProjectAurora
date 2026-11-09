@@ -28,7 +28,7 @@ jobs:
           git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_ttf third_party/SDL_ttf
           git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer
 
-          COMMON="-G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$PWD/prefix"
+          COMMON="-G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$PWD/prefix"
 
           cmake -S third_party/SDL -B b/sdl $COMMON -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON -DSDL_OPENGL=OFF -DSDL_OPENGLES=ON > stack.log 2>&1
           cmake --build b/sdl --config Release --target install >> stack.log 2>&1
@@ -66,8 +66,8 @@ jobs:
           git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
 
           SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
-          CC="clang -arch arm64 -arch x86_64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -O2"
-          CXX="clang++ -std=gnu++14 -arch arm64 -arch x86_64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing"
+          CC="clang -arch x86_64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -O2"
+          CXX="clang++ -std=gnu++14 -arch x86_64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing"
           INC="-I Modules/ONScripter/smpeg -I prefix/include -I prefix/include/SDL -I third_party/iosons/SDL_image -I third_party/iosons/SDL_ttf -I third_party/iosons/SDL_mixer"
           mkdir -p obj
           : > ons.log
@@ -179,7 +179,7 @@ jobs:
           xcodegen generate > gen.log 2>&1
           xcodebuild -project Aurora.xcodeproj -scheme Aurora -configuration Debug \
             -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
-            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+            ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
             build > build.log 2>&1
           find build -name "Aurora.app" -maxdepth 6 | head -3
