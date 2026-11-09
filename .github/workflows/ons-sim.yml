@@ -159,6 +159,9 @@ jobs:
           name: aurora-onscripter-sim
           path: onslib
 
+      - name: generate the module table
+        run: python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp
+
       - name: build the app for the simulator
         continue-on-error: true
         run: |
