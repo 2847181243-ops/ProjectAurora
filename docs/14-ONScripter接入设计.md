@@ -149,5 +149,6 @@ SDL_image/ttf/mixer 的 iOS 工程路径也是空的），lua 的 `loslib.c` 还
    （@@@string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} ...)@@@）→ 必须显式传
    @@@-DCMAKE_SYSTEM_PROCESSOR=arm64@@@ 和 @@@-DCMAKE_BUILD_TYPE=Release@@@。
 2. **浅克隆没有 git tag**，而它从 tag 推版本号 → 钉 @@@--branch 3.0.4@@@。
-3. **sdl12-compat 留了两个外部钩子**给应用实现：@@@error_dialog@@@ 和
+3. **freetype 的 HarfBuzz 可变字体模块（hvf）要单独关**：`FT_DISABLE_HARFBUZZ` 不管它，得 `FT_DISABLE_HVF`。
+4. **sdl12-compat 留了两个外部钩子**给应用实现：@@@error_dialog@@@ 和
    @@@SDL12COMPAT_NSLog@@@（后者本来在 Cocoa 胶水里，iOS 不编那份）。
