@@ -226,7 +226,10 @@ jobs:
           : > sim.log
           xcrun simctl launch --console-pty "$DEVICE" com.aurora.app >> sim.log 2>&1 &
           PID=$!
-          sleep 45
+          sleep 20
+          xcrun simctl io "$DEVICE" screenshot shot-1.png || true
+          sleep 15
+          xcrun simctl io "$DEVICE" screenshot shot-2.png || true
           kill "$PID" 2>/dev/null || true
           xcrun simctl terminate "$DEVICE" com.aurora.app 2>/dev/null || true
           # Even when the console stays silent, the device log tells us why.
@@ -243,6 +246,7 @@ jobs:
             Applications/Aurora-iOS/gen.log
             Applications/Aurora-iOS/build.log
             sim.log
+            shot-*.png
           if-no-files-found: warn
 
       - name: publish status
