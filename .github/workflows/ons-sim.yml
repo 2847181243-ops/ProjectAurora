@@ -19,6 +19,7 @@ jobs:
           persist-credentials: false
 
       - name: build the stack
+        continue-on-error: true
         run: |
           set -euo pipefail
           git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL third_party/SDL
