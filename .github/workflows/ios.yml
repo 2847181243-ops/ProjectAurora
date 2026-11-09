@@ -131,7 +131,7 @@ jobs:
               [ -f "$f" ] || continue
               echo ''
               echo "### $f"
-              tail -12 "$f"
+              tail -20 "$f"
             done
           } > "$file"
           git add "$file"
