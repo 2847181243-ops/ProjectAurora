@@ -43,6 +43,10 @@ targets:
       - path: ../../ModuleManifests
         buildPhase: resources
         type: folder
+      # The smoke-test game, so a CI run can start the engine without a human.
+      - path: ../../TestGames
+        buildPhase: resources
+        type: folder
     postBuildScripts:
       - name: embed SDL2 dylib
         script: |
