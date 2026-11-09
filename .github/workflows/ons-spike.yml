@@ -57,6 +57,82 @@ jobs:
           ls prefix/lib | tee -a stack.log
           test -f prefix/lib/libSDL-1.2.a
 
+      - name: build image, font and audio dependencies
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          COMMON="-G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$PWD/prefix"
+          SDKROOT=$(xcrun --sdk iphoneos --show-sdk-path)
+
+          git clone --depth 1 https://github.com/pnggroup/libpng third_party/libpng
+          git clone --depth 1 https://github.com/libjpeg-turbo/libjpeg-turbo third_party/libjpeg
+          git clone --depth 1 https://github.com/freetype/freetype third_party/freetype
+          git clone --depth 1 https://github.com/xiph/ogg third_party/ogg
+          git clone --depth 1 https://github.com/xiph/vorbis third_party/vorbis
+
+          {
+            cmake -S third_party/libpng -B b/png $COMMON -DPNG_SHARED=OFF -DPNG_STATIC=ON -DPNG_TESTS=OFF -DPNG_TOOLS=OFF -DZLIB_INCLUDE_DIR=$SDKROOT/usr/include -DZLIB_LIBRARY=$SDKROOT/usr/lib/libz.tbd
+            cmake --build b/png --config Release --target install
+          } > png.log 2>&1 || echo "FAILED: libpng" >> png.log
+
+          {
+            cmake -S third_party/libjpeg -B b/jpeg $COMMON -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_SIMD=OFF -DWITH_TURBOJPEG=OFF
+            cmake --build b/jpeg --config Release --target install
+          } > jpeg.log 2>&1 || echo "FAILED: libjpeg" >> jpeg.log
+
+          {
+            cmake -S third_party/freetype -B b/ft $COMMON -DFT_DISABLE_PNG=ON -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BROTLI=ON
+            cmake --build b/ft --config Release --target install
+          } > freetype.log 2>&1 || echo "FAILED: freetype" >> freetype.log
+
+          {
+            cmake -S third_party/ogg -B b/ogg $COMMON
+            cmake --build b/ogg --config Release --target install
+          } > ogg.log 2>&1 || echo "FAILED: ogg" >> ogg.log
+
+          {
+            cmake -S third_party/vorbis -B b/vorbis $COMMON -DOGG_INCLUDE_DIR=$PWD/prefix/include -DOGG_LIBRARY=$PWD/prefix/lib/libogg.a
+            cmake --build b/vorbis --config Release --target install
+          } > vorbis.log 2>&1 || echo "FAILED: vorbis" >> vorbis.log
+
+          ls prefix/lib | sort | tee -a stack.log
+
+      - name: build the SDL 1.2 add-ons
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          git clone --depth 1 -b SDL-1.2 https://github.com/libsdl-org/SDL_image third_party/SDL_image12
+          git clone --depth 1 -b SDL-1.2 https://github.com/libsdl-org/SDL_ttf third_party/SDL_ttf12
+          git clone --depth 1 -b SDL-1.2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer12
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          CC="clang -arch arm64 -mios-version-min=16.0 -isysroot $SDK -w -O2"
+          INC="-I prefix/include -I prefix/include/SDL -I prefix/include/freetype2"
+          mkdir -p obj/addons
+          : > addons.log
+
+          # SDL_image: bmp, gif, jpg, lbm, pcx, png, pnm, tga, xpm (tif/xcf/webp need extra deps)
+          IMG=third_party/SDL_image12
+          for f in IMG IMG_xxx IMG_bmp IMG_gif IMG_jpg IMG_lbm IMG_pcx IMG_png IMG_pnm IMG_tga IMG_xpm; do
+            $CC $INC -I "$IMG" -DLOAD_BMP -DLOAD_GIF -DLOAD_JPG -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -DLOAD_TGA -DLOAD_XPM \
+              -c "$IMG/$f.c" -o "obj/addons/$f.o" >> addons.log 2>&1 || echo "FAILED: image/$f" >> addons.log
+          done
+
+          # SDL_ttf: one file plus freetype
+          $CC $INC -c third_party/SDL_ttf12/SDL_ttf.c -o obj/addons/SDL_ttf.o >> addons.log 2>&1 || echo "FAILED: ttf" >> addons.log
+
+          # SDL_mixer: wave/aiff/voc/ogg only
+          MIX=third_party/SDL_mixer12
+          for f in mixer music wave load_aiff load_voc load_ogg music_ogg dynamic_ogg effects_internal effect_position effect_stereoreverse; do
+            [ -f "$MIX/$f.c" ] || continue
+            $CC $INC -I "$MIX" -DWAV_MUSIC -DAIFF_MUSIC -DVOC_MUSIC -DOGG_MUSIC -DVORBIS_HEADER \
+              -c "$MIX/$f.c" -o "obj/addons/$f.o" >> addons.log 2>&1 || echo "FAILED: mixer/$f" >> addons.log
+          done
+
+          libtool -static -o prefix/lib/libSDL_image.a obj/addons/IMG*.o
+          libtool -static -o prefix/lib/libSDL_ttf.a obj/addons/SDL_ttf.o
+          libtool -static -o prefix/lib/libSDL_mixer.a obj/addons/mixer.o obj/addons/music.o obj/addons/wave.o obj/addons/load_*.o obj/addons/music_ogg.o obj/addons/dynamic_ogg.o obj/addons/effect*.o obj/addons/effects_internal.o
+          ls -la prefix/lib/libSDL_*.a | tee -a addons.log
+
       - name: compile the engine
         continue-on-error: true
         run: |
