@@ -49,6 +49,9 @@ const char* aurora_bridge_library_title(int32_t index);
 const char* aurora_bridge_library_module(int32_t index);
 const char* aurora_bridge_library_state(int32_t index);
 const char* aurora_bridge_library_detail(int32_t index);
+/* What to hand the module when the user picks this entry. */
+const char* aurora_bridge_library_path(int32_t index);
+const char* aurora_bridge_library_format(int32_t index);
 /* Copies a picked folder or file into the games root. Returns 0 on success. */
 int32_t aurora_bridge_library_import(const char* source_path);
 

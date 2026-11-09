@@ -12,6 +12,8 @@ struct GameRow: Identifiable {
     let module: String
     let state: String
     let detail: String
+    let path: String
+    let format: String
 }
 
 struct ModuleRow: Identifiable {
@@ -111,12 +113,15 @@ final class AuroraHost: ObservableObject {
         var index: Int32 = 0
         while index < count {
             let title = String(cString: aurora_bridge_library_title(index))
+            let module = String(cString: aurora_bridge_library_module(index))
             list.append(GameRow(
-                id: "\(index)-\(title)-(String(cString: aurora_bridge_library_module(index)))",
+                id: "\(index)-\(title)",
                 title: title,
-                module: String(cString: aurora_bridge_library_module(index)),
+                module: module,
                 state: String(cString: aurora_bridge_library_state(index)),
-                detail: String(cString: aurora_bridge_library_detail(index))
+                detail: String(cString: aurora_bridge_library_detail(index)),
+                path: String(cString: aurora_bridge_library_path(index)),
+                format: String(cString: aurora_bridge_library_format(index))
             ))
             index += 1
         }
@@ -138,7 +143,12 @@ final class AuroraHost: ObservableObject {
     }
 
     func run(_ row: ModuleRow) {
-        let status = aurora_bridge_start(row.id, nil, nil)
+        /* Hand the module the first game that belongs to it: ONScripter cannot
+         * start without knowing which script directory to open. */
+        let game = games.first { $0.module == row.id }
+        let status = game == nil
+            ? aurora_bridge_start(row.id, nil, nil)
+            : aurora_bridge_start(row.id, game!.path, game!.format)
         if status != 0 {
             lastError = String(cString: aurora_bridge_last_error())
         }

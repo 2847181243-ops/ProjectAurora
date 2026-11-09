@@ -459,6 +459,18 @@ const char* aurora_bridge_library_state(int32_t index) {
     return aurora_module_state_string(module->state);
 }
 
+const char* aurora_bridge_library_path(int32_t index) {
+    BridgeState& s = state();
+    if (index < 0 || static_cast<std::size_t>(index) >= s.games.size()) return "";
+    return s.games[static_cast<std::size_t>(index)].path.c_str();
+}
+
+const char* aurora_bridge_library_format(int32_t index) {
+    BridgeState& s = state();
+    if (index < 0 || static_cast<std::size_t>(index) >= s.games.size()) return "";
+    return s.games[static_cast<std::size_t>(index)].format.c_str();
+}
+
 const char* aurora_bridge_library_detail(int32_t index) {
     static std::string detail;
     BridgeState& s = state();
