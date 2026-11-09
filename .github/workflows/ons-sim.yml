@@ -1,0 +1,145 @@
+name: ons-sim
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ci-triggers/ons-sim'
+
+jobs:
+  ons-sim:
+    name: ONScripter for the iOS simulator
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: build the stack
+        run: |
+          set -euo pipefail
+          git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL third_party/SDL
+          git clone --depth 1 https://github.com/libsdl-org/sdl12-compat third_party/sdl12-compat
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_image third_party/SDL_image
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_ttf third_party/SDL_ttf
+          git clone --depth 1 --recurse-submodules --shallow-submodules -b SDL2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer
+
+          COMMON="-G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=$PWD/prefix"
+
+          cmake -S third_party/SDL -B b/sdl $COMMON -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON -DSDL_OPENGL=OFF -DSDL_OPENGLES=ON > stack.log 2>&1
+          cmake --build b/sdl --config Release --target install >> stack.log 2>&1
+
+          cp Modules/ONScripter/sdl12_gl_stub.h .
+          sed -i '' 's/^if(APPLE)$/if(APPLE AND NOT IOS)/' third_party/sdl12-compat/CMakeLists.txt
+          sed -i '' 's/add_library(SDL SHARED/add_library(SDL STATIC/' third_party/sdl12-compat/CMakeLists.txt
+          cmake -S third_party/sdl12-compat -B b/compat $COMMON -DCMAKE_PREFIX_PATH=$PWD/prefix -DSDL2_DIR=$PWD/prefix/lib/cmake/SDL2 -DSDL12TESTS=OFF -DSDL12DEVEL=ON "-DCMAKE_C_FLAGS=-include$PWD/sdl12_gl_stub.h" >> stack.log 2>&1
+          cmake --build b/compat --config Release --target install >> stack.log 2>&1
+
+          git clone --depth 1 https://github.com/pnggroup/libpng third_party/libpng
+          git clone --depth 1 --branch 3.0.4 https://github.com/libjpeg-turbo/libjpeg-turbo third_party/libjpeg || git clone https://github.com/libjpeg-turbo/libjpeg-turbo third_party/libjpeg
+          git clone --depth 1 https://github.com/freetype/freetype third_party/freetype
+          git clone --depth 1 https://github.com/xiph/ogg third_party/ogg
+          git clone --depth 1 https://github.com/xiph/vorbis third_party/vorbis
+
+          SDKROOT=$(xcrun --sdk iphonesimulator --show-sdk-path)
+          cmake -S third_party/libpng -B b/png $COMMON -DPNG_SHARED=OFF -DPNG_STATIC=ON -DPNG_TESTS=OFF -DPNG_TOOLS=OFF -DZLIB_INCLUDE_DIR=$SDKROOT/usr/include -DZLIB_LIBRARY=$SDKROOT/usr/lib/libz.tbd >> stack.log 2>&1
+          cmake --build b/png --config Release --target install >> stack.log 2>&1
+          cmake -S third_party/libjpeg -B b/jpeg $COMMON -DCMAKE_BUILD_TYPE=Release -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_SIMD=OFF -DWITH_TURBOJPEG=OFF -DWITH_TOOLS=OFF -DWITH_JPEG8=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 >> stack.log 2>&1
+          cmake --build b/jpeg --config Release --target install >> stack.log 2>&1
+          cp third_party/libjpeg/jpeglib.h third_party/libjpeg/jmorecfg.h third_party/libjpeg/jerror.h prefix/include/ || true
+          cp b/jpeg/jconfig.h prefix/include/ || true
+          cmake -S third_party/freetype -B b/ft $COMMON -DFT_DISABLE_PNG=ON -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BROTLI=ON -DFT_DISABLE_HVF=ON >> stack.log 2>&1
+          cmake --build b/ft --config Release --target install >> stack.log 2>&1
+          cmake -S third_party/ogg -B b/ogg $COMMON >> stack.log 2>&1
+          cmake --build b/ogg --config Release --target install >> stack.log 2>&1
+          cmake -S third_party/vorbis -B b/vorbis $COMMON -DOGG_INCLUDE_DIR=$PWD/prefix/include -DOGG_LIBRARY=$PWD/prefix/lib/libogg.a >> stack.log 2>&1
+          cmake --build b/vorbis --config Release --target install >> stack.log 2>&1
+
+          git clone --depth 1 -b SDL-1.2 https://github.com/libsdl-org/SDL_image third_party/SDL_image12
+          git clone --depth 1 -b SDL-1.2 https://github.com/libsdl-org/SDL_ttf third_party/SDL_ttf12
+          git clone --depth 1 -b SDL-1.2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer12
+          git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/iosons
+          git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
+
+          SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
+          CC="clang -arch arm64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -O2"
+          CXX="clang++ -std=gnu++14 -arch arm64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing"
+          INC="-I Modules/ONScripter/smpeg -I prefix/include -I prefix/include/SDL -I third_party/iosons/SDL_image -I third_party/iosons/SDL_ttf -I third_party/iosons/SDL_mixer"
+          mkdir -p obj
+          : > ons.log
+
+          $CXX $INC -I Modules/ONScripter/src -c Modules/ONScripter/smpeg/aurora_smpeg.mm -o obj/aurora_smpeg.o >> ons.log 2>&1 || echo "FAILED: shim" >> ons.log
+
+          IMG=third_party/SDL_image12
+          sed -i '' '/{ "TIF"/d; /{ "XCF"/d; /{ "XV"/d; /{ "WEBP"/d' "$IMG/IMG.c"
+          for f in IMG IMG_xxx IMG_bmp IMG_gif IMG_jpg IMG_lbm IMG_pcx IMG_png IMG_pnm IMG_tga IMG_xpm; do
+            $CC $INC -I "$IMG" -DSDL_IMAGE_USE_COMMON_BACKEND -DLOAD_BMP -DLOAD_GIF -DLOAD_JPG -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -DLOAD_TGA -DLOAD_XPM -c "$IMG/$f.c" -o "obj/$f.o" >> ons.log 2>&1 || echo "FAILED: image/$f" >> ons.log
+          done
+          $CC -c third_party/SDL_ttf12/SDL_ttf.c -I prefix/include -I prefix/include/freetype2 -o obj/SDL_ttf.o >> ons.log 2>&1 || echo "FAILED: ttf" >> ons.log
+          MIX=third_party/SDL_mixer12
+          for f in mixer music wave load_aiff load_voc load_ogg music_ogg dynamic_ogg effects_internal effect_position effect_stereoreverse; do
+            [ -f "$MIX/$f.c" ] || continue
+            $CC $INC -I "$MIX" -DAIFF_MUSIC -DVOC_MUSIC -DOGG_MUSIC -DVORBIS_HEADER -c "$MIX/$f.c" -o "obj/mix_$f.o" >> ons.log 2>&1 || echo "FAILED: mixer/$f" >> ons.log
+          done
+
+          for f in third_party/onscripter/*.cpp Modules/ONScripter/src/ons_engine_onscripter.cpp Modules/ONScripter/engine/ons_platform_symbols.cpp; do
+            case "$(basename "$f")" in
+              nscriptdecode.cpp|AVIWrapper.cpp|LUAHandler.cpp|MadWrapper.cpp|X11_messagebox.cpp) continue ;;
+            esac
+            $CXX $INC -I third_party/onscripter -I Modules/ONScripter/src -DSDL_MAIN_HANDLED -D_REENTRANT -DAURORA_WITH_ONSCRIPTER -c "$f" -o "obj/$(basename "${f%.cpp}").o" >> ons.log 2>&1 || echo "FAILED: $(basename "$f")" >> ons.log
+          done
+
+          mkdir -p lib include/aurora-ons
+          libtool -static -o lib/libaurora_onscripter.a obj/*.o
+          cp Modules/ONScripter/smpeg/*.h include/aurora-ons/ 2>/dev/null || true
+          cp Modules/ONScripter/src/*.h include/aurora-ons/ 2>/dev/null || true
+          grep -c "^FAILED" ons.log | tee -a ons.log || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aurora-onscripter-sim
+          path: |
+            lib/libaurora_onscripter.a
+            include/aurora-ons/
+            prefix/include/
+            prefix/lib/*.a
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ons-sim-logs
+          path: |
+            ons.log
+            stack.log
+
+      - name: publish status
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          mkdir -p ci-status
+          file="ci-status/ons-sim-run${{ github.run_number }}.md"
+          {
+            echo "# ons-sim run ${{ github.run_number }}"
+            echo ""
+            echo "sha: $GITHUB_SHA"
+            echo "status: ${{ job.status }}"
+            echo "at: $(date -u +%FT%TZ)"
+            echo ""
+            echo "## compile summary"
+            tail -3 ons.log 2>/dev/null
+            echo ""
+            echo "## stack tail"
+            tail -5 stack.log 2>/dev/null
+          } > "$file"
+          git add "$file"
+          git commit -m "ci: ons-sim run ${{ github.run_number }}" || true
+          git pull --rebase --autostash origin main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true
