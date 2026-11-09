@@ -229,6 +229,9 @@ jobs:
           sleep 45
           kill "$PID" 2>/dev/null || true
           xcrun simctl terminate "$DEVICE" com.aurora.app 2>/dev/null || true
+          # Even when the console stays silent, the device log tells us why.
+          xcrun simctl spawn "$DEVICE" log show --style compact --last 3m \
+            --predicate 'processImagePath CONTAINS "Aurora"' >> sim.log 2>&1 || true
           echo "--- sim.log ---"
           tail -60 sim.log
 
