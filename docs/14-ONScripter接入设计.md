@@ -206,3 +206,17 @@ Adding path: .../RuntimeModules/com.aurora.runtime.onscripter/Saves/
 
 还没验证完的：SDL 初始化之后的部分（窗口、渲染、脚本执行）。
 真机安装仍然需要本人 Apple ID 口令，模拟器验证是它的替代证据。
+
+
+### 模拟器实拍（2026-11-09）
+
+![ONScripter 在模拟器里运行](evidence/onscripter-simulator-running.png)
+
+截图里可以看到：库列表识别出 @@@minimal-ons@@@（@@@filename:0.utf@@@），
+模块列表里 ONScripter 状态是 **RUNNING**，按钮变成 Stop。
+配合日志里的 @@@video driver: uikit surface: 640x480@@@ 和引擎线程行，
+说明模块确实加载并执行了这个脚本。
+
+还没做到的：**游戏画面没有出现在屏幕上**。App 自己的列表占满屏幕，
+SDL 建立的那层 UIWindow 没有可见地叠在上面。这是下一步要解决的
+（要么让 SDL 的视图嵌进 SwiftUI，要么把 UIImage 路径接上）。
