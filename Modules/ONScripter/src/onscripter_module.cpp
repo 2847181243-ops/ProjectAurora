@@ -92,7 +92,6 @@ AuroraStatus startInstance(void* handle) {
     instance->running.store(true);
     instance->worker = std::thread([instance]() {
         const int code = aurora::ons::runLoop();
-        aurora::ons::shutdownEngine();
         instance->result.store(code);
         instance->running.store(false);
     });
@@ -112,6 +111,8 @@ AuroraStatus stopInstance(void* handle) {
     if (instance == nullptr) return AURORA_E_INVALID_ARGUMENT;
     aurora::ons::requestStop();
     if (instance->worker.joinable()) instance->worker.join();
+    /* SDL_Quit destroys the UIKit window, which has to happen on the main thread. */
+    aurora::ons::shutdownEngine();
     instance->running.store(false);
     logLine(instance, AURORA_LOG_INFO, "engine thread stopped");
     return AURORA_OK;
@@ -134,6 +135,7 @@ void releaseInstance(void* handle) {
     if (instance->worker.joinable()) {
         aurora::ons::requestStop();
         instance->worker.join();
+        aurora::ons::shutdownEngine();
     }
     delete instance;
 }
