@@ -143,3 +143,84 @@ jobs:
           git commit -m "ci: ons-sim run ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
           git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true
+
+  sim-run:
+    name: run the app in the simulator
+    needs: ons-sim
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: aurora-onscripter-sim
+          path: onslib
+
+      - name: build the app for the simulator
+        run: |
+          set -euo pipefail
+          cd Applications/Aurora-iOS
+          brew install xcodegen >/dev/null 2>&1 || true
+          xcodegen generate > gen.log 2>&1
+          xcodebuild -project Aurora.xcodeproj -scheme Aurora -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build > build.log 2>&1
+          find build -name "Aurora.app" -maxdepth 6 | head -3
+
+      - name: boot a simulator and start the engine
+        run: |
+          set -o pipefail
+          DEVICE=$(xcrun simctl list devices available | grep -E "^ +iPhone" | head -1 | sed -E 's/ \(([0-9A-F-]+)\).*/\1/')
+          echo "device: $DEVICE"
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b || true
+          APP=$(find Applications/Aurora-iOS/build -name "Aurora.app" -maxdepth 6 | head -1)
+          echo "app: $APP"
+          xcrun simctl install "$DEVICE" "$APP"
+          SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.onscripter \
+            timeout 40 xcrun simctl launch --console-pty "$DEVICE" com.aurora.app 2>&1 | tee sim.log || true
+          echo "--- output ---"
+          tail -40 sim.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ons-sim-run-logs
+          path: |
+            Applications/Aurora-iOS/gen.log
+            Applications/Aurora-iOS/build.log
+            sim.log
+          if-no-files-found: warn
+
+      - name: publish status
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          mkdir -p ci-status
+          file="ci-status/ons-simrun-run${{ github.run_number }}.md"
+          {
+            echo "# ons-simrun run ${{ github.run_number }}"
+            echo ""
+            echo "sha: $GITHUB_SHA"
+            echo "status: ${{ job.status }}"
+            echo "at: $(date -u +%FT%TZ)"
+            echo ""
+            echo '## engine output'
+            echo ''
+            grep -E "onscripter|aurora|error" sim.log 2>/dev/null | head -30
+            echo ''
+            echo '## build errors'
+            echo ''
+            grep -E "error:" Applications/Aurora-iOS/build.log 2>/dev/null | head -10
+          } > "$file"
+          git add "$file"
+          git commit -m "ci: ons-simrun run ${{ github.run_number }}" || true
+          git pull --rebase --autostash origin main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true
