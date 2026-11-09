@@ -100,6 +100,11 @@ jobs:
           libtool -static -o prefix/lib/libSDL_image.a obj/addons/IMG*.o obj/addons/jpg_stub.o
           libtool -static -o prefix/lib/libSDL_ttf.a obj/addons/SDL_ttf.o
           libtool -static -o prefix/lib/libSDL_mixer.a obj/addons/mix_*.o
+          # The app link names -ljpeg; give it an empty archive instead of the library
+          # we deliberately skipped on this SDK.
+          echo 'void aurora_sim_jpeg_placeholder(void) {}' > /tmp/empty.c
+          $CC -c /tmp/empty.c -o /tmp/empty.o >> ons.log 2>&1 || true
+          libtool -static -o prefix/lib/libjpeg.a /tmp/empty.o
           libtool -static -o lib/libaurora_onscripter.a obj/*.o
           cp Modules/ONScripter/smpeg/*.h include/aurora-ons/ 2>/dev/null || true
           cp Modules/ONScripter/src/*.h include/aurora-ons/ 2>/dev/null || true
