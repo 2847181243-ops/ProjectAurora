@@ -16,6 +16,7 @@ struct SMPEG {
     size_t position = 0;         // in frames
     int volume = 100;
     bool playing = false;
+    bool looping = false;
     bool failed = false;
     bool has_audio = false;
     std::string error;
@@ -51,7 +52,11 @@ OSStatus lengthCallback(void* client, SInt64* length) {
 bool decode(const std::vector<Uint8>& encoded, SMPEG* mpeg) {
     AudioFileID file = nullptr;
     MemoryReader reader{encoded.data(), static_cast<SInt64>(encoded.size()), 0};
-    OSStatus status = AudioFileOpenWithCallbacks(&reader, readCallback, nullptr, lengthCallback, nullptr, 0, &file);
+    OSStatus status = AudioFileOpenWithCallbacks(&reader, readCallback,
+                                                (AudioFile_WriteProc)nullptr,
+                                                lengthCallback,
+                                                (AudioFile_SetSizeProc)nullptr,
+                                                0, &file);
     if (status != noErr || file == nullptr) {
         mpeg->error = "audio file could not be opened";
         return false;
@@ -148,9 +153,9 @@ SMPEG* SMPEG_new_rwops(SDL_RWops* src, SMPEG_Info* info, int) {
 
 void SMPEG_delete(SMPEG* mpeg) { delete mpeg; }
 
-const char* SMPEG_error(SMPEG* mpeg) {
+char* SMPEG_error(SMPEG* mpeg) {
     if (mpeg == nullptr) return "no stream";
-    return mpeg->error.empty() ? nullptr : mpeg->error.c_str();
+    return mpeg->error.empty() ? nullptr : const_cast<char*>(mpeg->error.c_str());
 }
 
 void SMPEG_getinfo(SMPEG* mpeg, SMPEG_Info* info) {
@@ -198,6 +203,10 @@ void SMPEG_rewind(SMPEG* mpeg) {
     if (mpeg != nullptr) mpeg->position = 0;
 }
 
+void SMPEG_loop(SMPEG* mpeg, int repeat) {
+    if (mpeg != nullptr) mpeg->looping = repeat != 0;
+}
+
 SMPEGstatus SMPEG_status(SMPEG* mpeg) {
     if (mpeg == nullptr || !mpeg->has_audio) return SMPEG_ERROR;
     if (!mpeg->playing) return SMPEG_STOPPED;
@@ -210,9 +219,13 @@ int SMPEG_playAudio(SMPEG* mpeg, Uint8* stream, int len) {
     const size_t available = mpeg->pcm.size() - (mpeg->position * 4);
     const size_t wanted = static_cast<size_t>(len) < available ? static_cast<size_t>(len) : available;
     if (wanted == 0) {
-        std::memset(stream, 0, len);
-        mpeg->playing = false;
-        return 0;
+        if (mpeg->looping && !mpeg->pcm.empty()) {
+            mpeg->position = 0;
+        } else {
+            std::memset(stream, 0, len);
+            mpeg->playing = false;
+            return 0;
+        }
     }
 
     const Uint8* source = mpeg->pcm.data() + mpeg->position * 4;

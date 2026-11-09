@@ -40,7 +40,7 @@ typedef struct SMPEG_Info {
 SMPEG* SMPEG_new_rwops(SDL_RWops* src, SMPEG_Info* info, int sdl_audio);
 void SMPEG_delete(SMPEG* mpeg);
 
-const char* SMPEG_error(SMPEG* mpeg);
+char* SMPEG_error(SMPEG* mpeg);
 void SMPEG_getinfo(SMPEG* mpeg, SMPEG_Info* info);
 
 void SMPEG_wantedSpec(SMPEG* mpeg, SDL_AudioSpec* wanted);
@@ -54,6 +54,7 @@ void SMPEG_play(SMPEG* mpeg);
 void SMPEG_pause(SMPEG* mpeg);
 void SMPEG_stop(SMPEG* mpeg);
 void SMPEG_rewind(SMPEG* mpeg);
+void SMPEG_loop(SMPEG* mpeg, int repeat);
 
 SMPEGstatus SMPEG_status(SMPEG* mpeg);
 int SMPEG_playAudio(SMPEG* mpeg, Uint8* stream, int len);
