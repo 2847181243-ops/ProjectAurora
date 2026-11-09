@@ -183,7 +183,7 @@ jobs:
           fi
 
           ok=0; fail=0
-          for f in third_party/onscripter/*.cpp Modules/ONScripter/src/ons_engine_onscripter.cpp; do
+          for f in third_party/onscripter/*.cpp Modules/ONScripter/src/ons_engine_onscripter.cpp Modules/ONScripter/engine/ons_platform_symbols.cpp; do
             case "$(basename "$f")" in
               nscriptdecode.cpp|AVIWrapper.cpp|LUAHandler.cpp|MadWrapper.cpp|X11_messagebox.cpp) continue ;;
             esac

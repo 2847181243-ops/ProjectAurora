@@ -38,6 +38,7 @@ targets:
           # Engine side of the module ships inside the prebuilt library.
           - "ONScripter/smpeg/*.mm"
           - "ONScripter/src/ons_engine_onscripter.cpp"
+          - "ONScripter/engine/*.cpp"
       - path: Generated/AuroraBuiltinModules.cpp
       - path: ../../ModuleManifests
         buildPhase: resources
@@ -88,6 +89,7 @@ targets:
           - "-lfreetype"
           - "-logg"
           - "-lvorbis"
+          - "-lvorbisfile"
           - "-lbz2"
           - "-lz"
           - "-liconv"
