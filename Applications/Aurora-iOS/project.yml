@@ -80,6 +80,9 @@ targets:
           - "-lSDL-1.2"
           - "-lSDL2"
           - "-lSDLmain"
+          - "-lbz2"
+          - "-lz"
+          - "-liconv"
         LIBRARY_SEARCH_PATHS:
           - "$(SRCROOT)/../../onslib/lib"
           - "$(SRCROOT)/../../onslib/prefix/lib"
