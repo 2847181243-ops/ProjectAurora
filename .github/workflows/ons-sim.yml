@@ -74,7 +74,7 @@ jobs:
           for f in IMG IMG_xxx IMG_bmp IMG_gif IMG_lbm IMG_pcx IMG_png IMG_pnm IMG_tga IMG_xpm; do
             $CC $INC -I "$IMG" -DSDL_IMAGE_USE_COMMON_BACKEND -DLOAD_BMP -DLOAD_GIF -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -DLOAD_TGA -DLOAD_XPM -c "$IMG/$f.c" -o "obj/addons/$f.o" >> ons.log 2>&1 || echo "FAILED: image/$f" >> ons.log
           done
-          $CC -c third_party/SDL_ttf12/SDL_ttf.c -I prefix/include -I prefix/include/freetype2 -o obj/addons/SDL_ttf.o >> ons.log 2>&1 || echo "FAILED: ttf" >> ons.log
+          $CC -c third_party/SDL_ttf12/SDL_ttf.c -I prefix/include/SDL -I prefix/include/freetype2 -o obj/addons/SDL_ttf.o >> ons.log 2>&1 || echo "FAILED: ttf" >> ons.log
           MIX=third_party/SDL_mixer12
           for f in mixer music wave load_aiff load_voc load_ogg music_ogg dynamic_ogg effects_internal effect_position effect_stereoreverse; do
             [ -f "$MIX/$f.c" ] || continue
