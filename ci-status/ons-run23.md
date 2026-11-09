@@ -1,5 +1,28 @@
 # ons run 23
 
 sha: e5537d54847ddbe1352e9037515fa76e2dc581df
-status: running
-at: 2026-11-09T03:22:43Z
+status: success
+at: 2026-11-09T03:32:08Z
+
+## errors
+
+
+## stack tail
+libogg.a
+libpng
+libpng.a
+libpng18.a
+libSDL-1.2.a
+libSDL.dylib
+libSDL2_test.a
+libSDL2.a
+libSDL2main.a
+libSDLmain.a
+libvorbis.a
+libvorbisenc.a
+libvorbisfile.a
+pkgconfig
+png.framework
+
+## summary
+compiled=37 failed=0
