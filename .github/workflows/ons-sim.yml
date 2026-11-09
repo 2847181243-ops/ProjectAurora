@@ -205,18 +205,23 @@ jobs:
       - name: boot a simulator and start the engine
         continue-on-error: true
         run: |
-          set -o pipefail
-          DEVICE=$(xcrun simctl list devices available | grep -E "^ +iPhone" | head -1 | sed -E 's/ \(([0-9A-F-]+)\).*/\1/')
-          echo "device: $DEVICE"
+          set -x
+          DEVICE=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')
+          echo "device=$DEVICE"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b || true
-          APP=$(find Applications/Aurora-iOS/build -name "Aurora.app" -maxdepth 6 | head -1)
-          echo "app: $APP"
-          xcrun simctl install "$DEVICE" "$APP"
-          SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.onscripter \
-            timeout 40 xcrun simctl launch --console-pty "$DEVICE" com.aurora.app 2>&1 | tee sim.log || true
-          echo "--- output ---"
-          tail -40 sim.log
+          APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 6 | head -1)
+          echo "app=$APP"
+          xcrun simctl install "$DEVICE" "$APP" || true
+          export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.onscripter
+          : > sim.log
+          xcrun simctl launch --console-pty "$DEVICE" com.aurora.app >> sim.log 2>&1 &
+          PID=$!
+          sleep 45
+          kill "$PID" 2>/dev/null || true
+          xcrun simctl terminate "$DEVICE" com.aurora.app 2>/dev/null || true
+          echo "--- sim.log ---"
+          tail -60 sim.log
 
       - uses: actions/upload-artifact@v4
         if: always()
