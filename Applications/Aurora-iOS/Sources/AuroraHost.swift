@@ -46,6 +46,25 @@ final class AuroraHost: ObservableObject {
     @Published var runningModule: String = ""
     @Published var diagnostics: String = ""
 
+    /* Automated runs (CI simulator, scripted device checks) set AURORA_AUTOSTART to
+     * a module id; the bundled smoke-test game is copied in first. */
+    private func autostartIfRequested() {
+        guard let module = ProcessInfo.processInfo.environment["AURORA_AUTOSTART"], !module.isEmpty else { return }
+        if let bundled = Bundle.main.resourceURL?.appendingPathComponent("TestGames/minimal-ons") {
+            let destination = URL(fileURLWithPath: gamesRoot).appendingPathComponent("minimal-ons")
+            try? FileManager.default.createDirectory(at: URL(fileURLWithPath: gamesRoot), withIntermediateDirectories: true)
+            try? FileManager.default.copyItem(at: bundled, to: destination)
+        }
+        rescanLibrary()
+        if let game = games.first(where: { $0.module == module }) {
+            _ = aurora_bridge_start(module, game.path, game.format)
+            NSLog("[aurora] autostart \(module) with \(game.path)")
+        } else {
+            NSLog("[aurora] autostart: no library entry for \(module)")
+        }
+        refresh()
+    }
+
     func refreshDiagnostics() {
         diagnostics = String(cString: aurora_bridge_diagnostics(25))
     }
@@ -72,6 +91,8 @@ final class AuroraHost: ObservableObject {
 
         _ = aurora_bridge_init(root.path, nil)
         refresh()
+
+        autostartIfRequested()
 
         let ticker = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             self?.tick()

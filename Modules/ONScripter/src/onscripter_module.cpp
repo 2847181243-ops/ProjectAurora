@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <atomic>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <new>
@@ -25,6 +26,8 @@ struct Instance {
 };
 
 void logLine(Instance* instance, AuroraLogLevel level, const std::string& message) {
+    /* Mirrored to stderr so `simctl launch --console` shows it without a debugger. */
+    std::fprintf(stderr, "[onscripter] %s\n", message.c_str());
     if (instance->host != nullptr && instance->host->write_log != nullptr) {
         instance->host->write_log(instance->host->host_context, kModuleId, level, message.c_str());
     }
