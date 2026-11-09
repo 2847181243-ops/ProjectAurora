@@ -176,3 +176,33 @@ App 现在能把整条栈装进去：iOS 构建产物里的可执行文件 2.07 
 2. 把 @@@TestGames/minimal-ons/@@@ 放进 App 的 @@@Documents/Games/@@@（文件 App 或 iTunes 文件共享）。
 3. App 里 Rescan → 库列表应出现 @@@0.txt@@@ → 选中 ONScripter 模块 → Start。
 4. 预期看到两行 ASCII 文本，点两下结束。
+
+
+## 10. 运行时验证进展（2026-11-09，模拟器）
+
+为了不把"跑起来"这件事全押在人工装包上，加了 @@@ons-sim@@@ 工作流：
+用 @@@iphonesimulator@@@ SDK 编一套 x86_64 的完整栈，再在 CI 的 macOS runner 上
+启动模拟器、装 App、用 @@@AURORA_AUTOSTART@@@ 自动拉起 ONScripter 模块，
+最后把引擎的 stderr 和系统日志写进 @@@ci-status/@@@@。
+
+已经实测到的（第 19 轮）：
+
+@@@
+[onscripter] script directory: .../AuroraData/Games/minimal-ons
+Script found: .../AuroraData/Games/minimal-ons/0.txt
+Adding path: .../RuntimeModules/com.aurora.runtime.onscripter/Saves/
+***[Fatal] Init Error: Couldn't initialize SDL ***
+@@@
+
+也就是说：导入 → 库识别 → 模块加载 → 脚本定位 → 存档目录，整条管线通了；
+卡在 @@@SDL_Init@@@。原因是 SDL2 要求 @@@"main 由 SDL 提供"@@@，嵌入宿主时要先
+@@@SDL_SetMainReady()@@@。这一条已加，但 sdl12-compat 的兼容头没有它的声明，
+得自己 @@@extern "C"@@@ 声明一次（符号来自链接的 SDL2）。
+
+顺带在这个过程里发现一个真机也会中的问题：**sdl12-compat 在 Apple 上不做静态链接**，
+它用 @@@dlopen("@executable_path/libSDL2-2.0.0.dylib")@@@ 找 SDL2，所以全静态链接会
+在运行时直接报 @@@"Failed loading SDL2 library"@@@。现在 SDL2 同时产出动态库，
+打包时放到可执行文件旁边。
+
+还没验证完的：SDL 初始化之后的部分（窗口、渲染、脚本执行）。
+真机安装仍然需要本人 Apple ID 口令，模拟器验证是它的替代证据。
