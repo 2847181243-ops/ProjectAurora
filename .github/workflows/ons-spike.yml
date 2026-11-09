@@ -138,9 +138,10 @@ jobs:
 
           # SDL_mixer: wave/aiff/voc/ogg only
           MIX=third_party/SDL_mixer12
-          for f in mixer music wave load_aiff load_voc load_ogg music_ogg music_wav music_aiff music_voc dynamic_ogg effects_internal effect_position effect_stereoreverse; do
+          ls "$MIX"/*.c | tee -a addons.log
+          for f in mixer music wave load_aiff load_voc load_ogg music_ogg dynamic_ogg effects_internal effect_position effect_stereoreverse; do
             [ -f "$MIX/$f.c" ] || continue
-            $CC $INC -I "$MIX" -DWAV_MUSIC -DAIFF_MUSIC -DVOC_MUSIC -DOGG_MUSIC -DVORBIS_HEADER \
+            $CC $INC -I "$MIX" -DAIFF_MUSIC -DVOC_MUSIC -DOGG_MUSIC -DVORBIS_HEADER \
               -c "$MIX/$f.c" -o "obj/addons/$f.o" >> addons.log 2>&1 || echo "FAILED: mixer/$f" >> addons.log
           done
 
@@ -156,7 +157,7 @@ jobs:
           libtool -static -o prefix/lib/libSDL_mixer.a \
             obj/addons/mixer.o obj/addons/music.o obj/addons/wave.o \
             obj/addons/load_aiff.o obj/addons/load_voc.o obj/addons/load_ogg.o \
-            obj/addons/music_ogg.o obj/addons/music_wav.o obj/addons/music_aiff.o obj/addons/music_voc.o \
+            obj/addons/music_ogg.o \
             obj/addons/dynamic_ogg.o \
             obj/addons/effect_position.o obj/addons/effect_stereoreverse.o obj/addons/effects_internal.o
           ls obj/addons | tee -a addons.log
