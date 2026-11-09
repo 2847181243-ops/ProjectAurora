@@ -1,0 +1,86 @@
+# ons-simrun run 22
+
+sha: 5e775511ba9c7c3fd92a8b99cf17862f1228375d
+status: success
+at: 2026-11-09T13:26:47Z
+
+## engine output
+
+[onscripter] script directory: /Users/runner/Library/Developer/CoreSimulator/Devices/98A0BFA3-CEC3-4FD6-9916-5A2149774DBF/data/Containers/Data/Application/A5643C68-8A6B-4AC4-8AF2-10759D158E8C/Library/Application Support/AuroraData/Games/minimal-ons
+Adding path: /Users/runner/Library/Developer/CoreSimulator/Devices/98A0BFA3-CEC3-4FD6-9916-5A2149774DBF/data/Containers/Data/Application/A5643C68-8A6B-4AC4-8AF2-10759D158E8C/Library/Application Support/AuroraData/RuntimeModules/com.aurora.runtime.onscripter/Saves/
+[onscripter] video driver: uikit surface: 640x480
+[onscripter] engine thread started
+2026-11-09 13:26:14.757 Aurora[3400:15298] [aurora] autostart com.aurora.runtime.onscripter with /Users/runner/Library/Developer/CoreSimulator/Devices/98A0BFA3-CEC3-4FD6-9916-5A2149774DBF/data/Containers/Data/Application/A5643C68-8A6B-4AC4-8AF2-10759D158E8C/Library/Application Support/AuroraData/Games/minimal-ons
+ ***[Warning] Parse Issue at line 5 (*start:1) - command [aurora] is not supported yet!! ***
+	(String buffer: [aurora])
+	48  Aurora.debug.dylib                  0x000000010ad37077 _ZN6aurora3ons7runLoopEv + 39
+com.aurora.app: 3400
+
+## app build tail
+
+2026-11-09 13:25:02.283 appintentsmetadataprocessor[1737:8750] Starting appintentsmetadataprocessor export
+2026-11-09 13:25:02.292 appintentsmetadataprocessor[1737:8750] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+
+AppIntentsSSUTraining (in target 'Aurora' from project 'Aurora')
+    cd /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS
+    /Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/appintentsnltrainingprocessor --infoplist-path /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app/Info.plist --temp-dir-path /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/Aurora.build/Debug-iphonesimulator/Aurora.build/ssu --bundle-id com.aurora.app --product-path /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app --extracted-metadata-path /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app/Metadata.appintents --metadata-file-list /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/Aurora.build/Debug-iphonesimulator/Aurora.build/Aurora.DependencyMetadataFileList --source-file /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app/Info.plist --archive-ssu-assets
+2026-11-09 13:25:02.318 appintentsnltrainingprocessor[1738:8752] Parsing options for appintentsnltrainingprocessor
+2026-11-09 13:25:02.318 appintentsnltrainingprocessor[1738:8752] Starting AppIntents SSU YAML Generation
+2026-11-09 13:25:02.324 appintentsnltrainingprocessor[1738:8752] No AppShortcuts found - Skipping.
+
+RegisterExecutionPolicyException /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app (in target 'Aurora' from project 'Aurora')
+    cd /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS
+    builtin-RegisterExecutionPolicyException /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app
+
+Validate /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app (in target 'Aurora' from project 'Aurora')
+    cd /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS
+    builtin-validationUtility /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app (in target 'Aurora' from project 'Aurora')
+    cd /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS
+    /usr/bin/touch -c /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Products/Debug-iphonesimulator/Aurora.app
+
+note: Run script build phase 'embed SDL2 dylib' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Aurora' from project 'Aurora')
+** BUILD SUCCEEDED **
+
+
+## xcodegen tail
+⚙️  Generating plists...
+⚙️  Generating project...
+⚙️  Writing project...
+Created project at /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/Aurora.xcodeproj
+
+## undefined symbols
+
+## onslib
+include
+lib
+prefix
+libaurora_onscripter.a
+
+## simulator tail
+	34  libSDL2-2.0.0.dylib                 0x000000010ab76386 UIKit_DestroyWindow + 390
+	35  libSDL2-2.0.0.dylib                 0x000000010ab5c284 SDL_DestroyWindow + 308
+	36  Aurora.debug.dylib                  0x000000010ada4e40 EndVidModeCreate + 192
+	37  Aurora.debug.dylib                  0x000000010ad8cad7 SDL_QuitSubSystem + 279
+	38  Aurora.debug.dylib                  0x000000010ad64ae9 _ZL16SDL_Quit_Wrapperv + 9
+	39  libsystem_c.dylib                   0x000000010da00d24 __cxa_finalize_ranges + 423
+	40  libsystem_c.dylib                   0x000000010da01046 exit + 22
+	41  Aurora.debug.dylib                  0x000000010ad3db24 _ZN15ONScripterLabel10endCommandEv + 52
+	42  Aurora.debug.dylib                  0x000000010ad4e184 _ZN15ONScripterLabel12runEventLoopEv + 1716
+	43  Aurora.debug.dylib                  0x000000010ad4dab5 _ZN15ONScripterLabel12waitEventSubEi + 293
+	44  Aurora.debug.dylib                  0x000000010ad4e243 _ZN15ONScripterLabel9waitEventEi + 35
+	45  Aurora.debug.dylib                  0x000000010ad45c98 _ZN15ONScripterLabel12clickCommandEv + 168
+	46  Aurora.debug.dylib                  0x000000010ad6a985 _ZN15ONScripterLabel9parseLineEv + 453
+	47  Aurora.debug.dylib                  0x000000010ad6a64c _ZN15ONScripterLabel12executeLabelEv + 668
+	48  Aurora.debug.dylib                  0x000000010ad37077 _ZN6aurora3ons7runLoopEv + 39
+	49  Aurora.debug.dylib                  0x000000010acea319 _ZZN12_GLOBAL__N_113startInstanceEPvENK3$_0clEv + 25
+	50  Aurora.debug.dylib                  0x000000010acea2d5 _ZNSt3__18__invokeB9dee210106IJZN12_GLOBAL__N_113startInstanceEPvE3$_0EEENS_20__invoke_result_implIvJDpT_EE4typeEDpOS5_ + 21
+	51  Aurora.debug.dylib                  0x000000010acea22d _ZNSt3__116__thread_executeB9dee210106INS_10unique_ptrINS_15__thread_structENS_14default_deleteIS2_EEEEZN12_GLOBAL__N_113startInstanceEPvE3$_0JEJEEEvRNS_5tupleIJT_T0_DpT1_EEENS_15__tuple_indicesI	52  Aurora.debug.dylib                  0x000000010ace9f2c _ZNSt3__114__thread_proxyB9dee210106INS_5tupleIJNS_10unique_ptrINS_15__thread_structENS_14default_deleteIS3_EEEEZN12_GLOBAL__N_113startInstanceEPvE3$_0EEEEES8_S8_ + 92
+	53  libsystem_pthread.dylib             0x000000010e2d8d49 _pthread_start + 115
+	54  libsystem_pthread.dylib             0x000000010e2d482f thread_start + 15
+)
+libc++abi: terminating due to uncaught exception of type NSException
+com.aurora.app: 3400
+getpwuid_r did not find a match for uid 501
+Timestamp               Ty Process[PID:TID]
