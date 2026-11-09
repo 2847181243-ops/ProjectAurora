@@ -135,7 +135,7 @@ jobs:
             done
             echo ''
             echo '## archive tail'
-            tail -70 Applications/Aurora-iOS/archive.log 2>/dev/null
+            awk '/Undefined symbols for architecture/{flag=1} flag{print; n++} n>25{exit}' Applications/Aurora-iOS/archive.log 2>/dev/null
           } > "$file"
           git add "$file"
           git commit -m "ci: ios run ${{ github.run_number }}" || true

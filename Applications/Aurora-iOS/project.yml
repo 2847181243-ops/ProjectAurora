@@ -44,6 +44,15 @@ targets:
         type: folder
     dependencies:
       - sdk: AVFoundation.framework
+      - sdk: AudioToolbox.framework
+      - sdk: CoreAudio.framework
+      - sdk: CoreFoundation.framework
+      - sdk: CoreGraphics.framework
+      - sdk: CoreMotion.framework
+      - sdk: GameController.framework
+      - sdk: OpenGLES.framework
+      - sdk: QuartzCore.framework
+      - sdk: UIKit.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
     settings:
