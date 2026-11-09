@@ -31,6 +31,9 @@ bool engineAvailable() { return true; }
 
 int initEngine(const Config& config) {
     g_quit_requested.store(false);
+    /* SDL2 refuses to start when main() is not its own wrapper; a host app that
+     * embeds the engine has to say so explicitly. */
+    SDL_SetMainReady();
     if (g_engine == nullptr) {
         g_engine = new ONScripterLabel();
     }
