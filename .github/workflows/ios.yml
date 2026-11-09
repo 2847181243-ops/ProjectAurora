@@ -127,7 +127,7 @@ jobs:
             grep -H -A3 -E "CMake Error|error:|FAILED" *.log 2>/dev/null | head -60
             echo ''
             echo '## tails'
-            for f in *.log; do
+            for f in *.log Applications/Aurora-iOS/*.log; do
               [ -f "$f" ] || continue
               echo ''
               echo "### $f"
