@@ -206,7 +206,15 @@ jobs:
         continue-on-error: true
         run: |
           set -x
+          echo "--- available devices ---"
+          xcrun simctl list devices available | head -20
           DEVICE=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')
+          if [ -z "${DEVICE:-}" ]; then
+            RUNTIME=$(xcrun simctl list runtimes | awk -F '[()]' '/iOS/{print $2; exit}')
+            TYPE=$(xcrun simctl list devicetypes | awk -F '[()]' '/iPhone/{print $2; exit}')
+            echo "creating a device: type=$TYPE runtime=$RUNTIME"
+            DEVICE=$(xcrun simctl create aurora-sim "$TYPE" "$RUNTIME")
+          fi
           echo "device=$DEVICE"
           xcrun simctl boot "$DEVICE" || true
           xcrun simctl bootstatus "$DEVICE" -b || true
