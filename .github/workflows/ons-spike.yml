@@ -87,7 +87,7 @@ jobs:
           } > jpeg.log 2>&1 || echo "FAILED: libjpeg" >> jpeg.log
 
           {
-            cmake -S third_party/freetype -B b/ft $COMMON -DFT_DISABLE_PNG=ON -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BROTLI=ON
+            cmake -S third_party/freetype -B b/ft $COMMON -DFT_DISABLE_PNG=ON -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BROTLI=ON -DFT_DISABLE_HVF=ON
             cmake --build b/ft --config Release --target install
           } > freetype.log 2>&1 || echo "FAILED: freetype" >> freetype.log
 
