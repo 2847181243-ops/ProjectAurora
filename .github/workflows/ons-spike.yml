@@ -194,8 +194,7 @@ jobs:
         with:
           name: ons-spike-output
           path: |
-            stack.log
-            ons.log
+            *.log
             obj/
           if-no-files-found: warn
 
