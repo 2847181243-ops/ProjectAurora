@@ -4,3 +4,4 @@
 com.aurora.runtime.empty|aurora_module_entry_empty|EmptyModule
 com.aurora.runtime.simulated|aurora_module_entry_simulated|SimulatedRuntime
 com.aurora.runtime.faultinjector|aurora_module_entry_faultinjector|FaultInjector
+com.aurora.runtime.onscripter|aurora_module_entry_onscripter|ONScripter

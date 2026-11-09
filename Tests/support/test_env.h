@@ -55,6 +55,7 @@ inline void loadShippedManifests(ModuleRegistry& registry) {
         "com.aurora.runtime.simulated.json",
         "com.aurora.runtime.faultinjector.json",
         "com.aurora.runtime.ppsspp.json",
+        "com.aurora.runtime.onscripter.json",
     };
     for (const char* file : files) {
         const std::string text = shippedManifest(file);
