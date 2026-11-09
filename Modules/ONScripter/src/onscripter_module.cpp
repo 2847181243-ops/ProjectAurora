@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <atomic>
 #include <cstring>
+#include <filesystem>
 #include <new>
 #include <string>
 #include <thread>
@@ -49,7 +50,14 @@ AuroraStatus createInstance(const AuroraHostServices* host, void** out_instance)
 AuroraStatus loadGame(void* handle, const AuroraGameInfo* game) {
     if (handle == nullptr || game == nullptr || game->game_path == nullptr) return AURORA_E_INVALID_ARGUMENT;
     Instance* instance = static_cast<Instance*>(handle);
-    instance->config.game_directory = game->game_path;
+    /* The library may hand over the script file itself (0.txt, nscript.dat).
+     * ONScripter wants the directory that holds the archive. */
+    std::error_code ec;
+    std::filesystem::path candidate(game->game_path);
+    if (std::filesystem::is_regular_file(candidate, ec)) {
+        candidate = candidate.parent_path();
+    }
+    instance->config.game_directory = candidate.generic_string();
     instance->config.save_directory = storagePath(instance, AURORA_STORAGE_SAVES, "");
     instance->config.log_directory = storagePath(instance, AURORA_STORAGE_LOGS, "");
     if (instance->config.save_directory.empty()) {
