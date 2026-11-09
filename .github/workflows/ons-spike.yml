@@ -15,8 +15,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: mark started
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set +e
           git config user.name "ci-bot"
@@ -26,7 +30,7 @@ jobs:
           git add ci-status
           git commit -m "ci: ons started" || true
           git pull --rebase --autostash origin main || true
-          git push origin HEAD:main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true
 
       - name: build SDL2 and sdl12-compat
         run: |
@@ -114,6 +118,8 @@ jobs:
 
       - name: publish status
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set +e
           git config user.name "ci-bot"
@@ -140,4 +146,4 @@ jobs:
           git add "$file"
           git commit -m "ci: ons run ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
-          git push origin HEAD:main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true

@@ -15,6 +15,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: clone SDL2
         run: git clone --depth 1 -b SDL2 https://github.com/libsdl-org/SDL third_party/SDL
       - name: build SDL2
@@ -40,6 +42,8 @@ jobs:
           path: sdl.log
       - name: publish status
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set +e
           git config user.name "ci-bot"
@@ -63,7 +67,7 @@ jobs:
           git add "$file"
           git commit -m "ci: sdl2 ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
-          git push origin HEAD:main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true
 
   addon:
     name: ${{ matrix.lib }}
@@ -75,6 +79,8 @@ jobs:
         lib: [sdl12-compat, SDL_image, SDL_ttf, SDL_mixer]
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: sdl2-prefix
@@ -159,4 +165,4 @@ jobs:
           git add "$file"
           git commit -m "ci: addon-${{ matrix.lib }} ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
-          git push origin HEAD:main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true

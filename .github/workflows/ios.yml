@@ -14,6 +14,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # Every build step keeps its own log and does not abort the job, so a
       # failure is still diagnosable from the uploaded artifacts.
@@ -91,6 +93,8 @@ jobs:
 
       - name: publish status
         if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set +e
           git config user.name "ci-bot"
@@ -119,4 +123,4 @@ jobs:
           git add "$file"
           git commit -m "ci: ios run ${{ github.run_number }}" || true
           git pull --rebase --autostash origin main || true
-          git push origin HEAD:main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true
