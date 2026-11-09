@@ -40,7 +40,6 @@ jobs:
           cmake --build b/compat --config Release --target install >> stack.log 2>&1
 
           git clone --depth 1 https://github.com/pnggroup/libpng third_party/libpng
-          git clone --depth 1 --branch 3.0.4 https://github.com/libjpeg-turbo/libjpeg-turbo third_party/libjpeg || git clone https://github.com/libjpeg-turbo/libjpeg-turbo third_party/libjpeg
           git clone --depth 1 https://github.com/freetype/freetype third_party/freetype
           git clone --depth 1 https://github.com/xiph/ogg third_party/ogg
           git clone --depth 1 https://github.com/xiph/vorbis third_party/vorbis
@@ -48,10 +47,6 @@ jobs:
           SDKROOT=$(xcrun --sdk iphonesimulator --show-sdk-path)
           cmake -S third_party/libpng -B b/png $COMMON -DPNG_SHARED=OFF -DPNG_STATIC=ON -DPNG_TESTS=OFF -DPNG_TOOLS=OFF -DZLIB_INCLUDE_DIR=$SDKROOT/usr/include -DZLIB_LIBRARY=$SDKROOT/usr/lib/libz.tbd >> stack.log 2>&1
           cmake --build b/png --config Release --target install >> stack.log 2>&1
-          cmake -S third_party/libjpeg -B b/jpeg $COMMON -DCMAKE_BUILD_TYPE=Release -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_SIMD=OFF -DWITH_TURBOJPEG=OFF -DWITH_TOOLS=OFF -DWITH_JPEG8=ON -DCMAKE_SYSTEM_PROCESSOR=arm64 >> stack.log 2>&1
-          cmake --build b/jpeg --config Release --target install >> stack.log 2>&1
-          cp third_party/libjpeg/jpeglib.h third_party/libjpeg/jmorecfg.h third_party/libjpeg/jerror.h prefix/include/ || true
-          cp b/jpeg/jconfig.h prefix/include/ || true
           cmake -S third_party/freetype -B b/ft $COMMON -DFT_DISABLE_PNG=ON -DFT_DISABLE_BZIP2=ON -DFT_DISABLE_HARFBUZZ=ON -DFT_DISABLE_BROTLI=ON -DFT_DISABLE_HVF=ON >> stack.log 2>&1
           cmake --build b/ft --config Release --target install >> stack.log 2>&1
           cmake -S third_party/ogg -B b/ogg $COMMON >> stack.log 2>&1
@@ -75,9 +70,9 @@ jobs:
           $CXX $INC -I Modules/ONScripter/src -c Modules/ONScripter/smpeg/aurora_smpeg.mm -o obj/aurora_smpeg.o >> ons.log 2>&1 || echo "FAILED: shim" >> ons.log
 
           IMG=third_party/SDL_image12
-          sed -i '' '/{ "TIF"/d; /{ "XCF"/d; /{ "XV"/d; /{ "WEBP"/d' "$IMG/IMG.c"
-          for f in IMG IMG_xxx IMG_bmp IMG_gif IMG_jpg IMG_lbm IMG_pcx IMG_png IMG_pnm IMG_tga IMG_xpm; do
-            $CC $INC -I "$IMG" -DSDL_IMAGE_USE_COMMON_BACKEND -DLOAD_BMP -DLOAD_GIF -DLOAD_JPG -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -DLOAD_TGA -DLOAD_XPM -c "$IMG/$f.c" -o "obj/$f.o" >> ons.log 2>&1 || echo "FAILED: image/$f" >> ons.log
+          sed -i '' '/{ "TIF"/d; /{ "XCF"/d; /{ "XV"/d; /{ "WEBP"/d; /{ "JPG"/d' "$IMG/IMG.c"
+          for f in IMG IMG_xxx IMG_bmp IMG_gif IMG_lbm IMG_pcx IMG_png IMG_pnm IMG_tga IMG_xpm; do
+            $CC $INC -I "$IMG" -DSDL_IMAGE_USE_COMMON_BACKEND -DLOAD_BMP -DLOAD_GIF -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -DLOAD_TGA -DLOAD_XPM -c "$IMG/$f.c" -o "obj/$f.o" >> ons.log 2>&1 || echo "FAILED: image/$f" >> ons.log
           done
           $CC -c third_party/SDL_ttf12/SDL_ttf.c -I prefix/include -I prefix/include/freetype2 -o obj/SDL_ttf.o >> ons.log 2>&1 || echo "FAILED: ttf" >> ons.log
           MIX=third_party/SDL_mixer12
@@ -93,6 +88,14 @@ jobs:
             $CXX $INC -I third_party/onscripter -I Modules/ONScripter/src -DSDL_MAIN_HANDLED -D_REENTRANT -DAURORA_WITH_ONSCRIPTER -c "$f" -o "obj/$(basename "${f%.cpp}").o" >> ons.log 2>&1 || echo "FAILED: $(basename "$f")" >> ons.log
           done
 
+          cat > /tmp/jpg_stub.c <<'STUBS'
+          #include <SDL.h>
+          int IMG_isJPG(SDL_RWops *src) { (void)src; return 0; }
+          SDL_Surface *IMG_LoadJPG_RW(SDL_RWops *src) { (void)src; return 0; }
+          int IMG_InitJPG(void) { return 0; }
+          void IMG_QuitJPG(void) {}
+          STUBS
+          $CC -I prefix/include/SDL -c /tmp/jpg_stub.c -o obj/jpg_stub.o >> ons.log 2>&1 || echo "FAILED: jpg_stub" >> ons.log
           mkdir -p lib include/aurora-ons
           libtool -static -o lib/libaurora_onscripter.a obj/*.o
           cp Modules/ONScripter/smpeg/*.h include/aurora-ons/ 2>/dev/null || true
@@ -237,6 +240,10 @@ jobs:
             echo ''
             echo '## xcodegen tail'
             tail -10 Applications/Aurora-iOS/gen.log 2>/dev/null
+            echo ''
+            echo '## onslib'
+            ls onslib 2>/dev/null | head -5
+            ls onslib/lib 2>/dev/null | head -5
             echo ''
             echo '## simulator tail'
             tail -25 sim.log 2>/dev/null
