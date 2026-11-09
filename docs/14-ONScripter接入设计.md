@@ -152,3 +152,27 @@ SDL_image/ttf/mixer 的 iOS 工程路径也是空的），lua 的 `loslib.c` 还
 3. **freetype 的 HarfBuzz 可变字体模块（hvf）要单独关**：`FT_DISABLE_HARFBUZZ` 不管它，得 `FT_DISABLE_HVF`。
 4. **sdl12-compat 留了两个外部钩子**给应用实现：@@@error_dialog@@@ 和
    @@@SDL12COMPAT_NSLog@@@（后者本来在 Cocoa 胶水里，iOS 不编那份）。
+
+
+## 9. 链接成功，等真机验证（2026-11-09）
+
+App 现在能把整条栈装进去：iOS 构建产物里的可执行文件 2.07 MB，
+用字符串检索确认含有 @@@com.aurora.runtime.onscripter@@@、@@@ONScripterLabel@@@、@@@SDL_Init@@@。
+
+在此之前链接卡过的符号，按出现顺序记一遍，免得以后重复踩：
+
+| 缺的符号 | 原因 |
+|---|---|
+| @@@error_dialog@@@ / @@@SDL12COMPAT_NSLog@@@ | sdl12-compat 留给应用实现的两个钩子 |
+| @@@HVF_*@@@ | freetype 的可变字体模块，@@@FT_DISABLE_HARFBUZZ@@@ 关不掉，要 @@@FT_DISABLE_HVF@@@ |
+| @@@IMG_Load*@@@ | SDL_image 在 Apple 上默认编掉纯 C 加载器，要 @@@SDL_IMAGE_USE_COMMON_BACKEND@@@ |
+| @@@IMG_InitTIF/WEBP@@@ | @@@IMG_Init@@@ 无条件引用，我们没编这两个加载器 → 补空实现 |
+| @@@ov_*@@@ | 只链了 @@@libvorbis@@@，少了 @@@libvorbisfile@@@ |
+| @@@getResource@@@ | 引擎预期由平台构建提供，我们返回 @@@nullptr@@@ |
+
+### 真机验证步骤
+
+1. 用 Sideloadly 签这个 ipa 并安装（需要本人 Apple ID 口令，我这边没法代填）。
+2. 把 @@@TestGames/minimal-ons/@@@ 放进 App 的 @@@Documents/Games/@@@（文件 App 或 iTunes 文件共享）。
+3. App 里 Rescan → 库列表应出现 @@@0.txt@@@ → 选中 ONScripter 模块 → Start。
+4. 预期看到两行 ASCII 文本，点两下结束。
