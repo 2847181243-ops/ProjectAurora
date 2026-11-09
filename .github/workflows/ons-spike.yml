@@ -145,11 +145,11 @@ jobs:
           done
 
           cat > /tmp/img_stubs.c <<'STUBS'
-int IMG_InitTIF(void) { return 0; }
-void IMG_QuitTIF(void) {}
-int IMG_InitWEBP(void) { return 0; }
-void IMG_QuitWEBP(void) {}
-STUBS
+          int IMG_InitTIF(void) { return 0; }
+          void IMG_QuitTIF(void) {}
+          int IMG_InitWEBP(void) { return 0; }
+          void IMG_QuitWEBP(void) {}
+          STUBS
           $CC -c /tmp/img_stubs.c -o /tmp/img_stubs.o >> addons.log 2>&1 || echo "FAILED: img_stubs" >> addons.log
           libtool -static -o prefix/lib/libSDL_image.a obj/addons/IMG*.o /tmp/img_stubs.o
           libtool -static -o prefix/lib/libSDL_ttf.a obj/addons/SDL_ttf.o
