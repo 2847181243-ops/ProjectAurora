@@ -40,7 +40,7 @@ jobs:
           COMMON="-G Xcode -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO -DBUILD_SHARED_LIBS=OFF"
 
           cmake -S third_party/SDL -B b/sdl $COMMON -DCMAKE_INSTALL_PREFIX=$PWD/prefix \
-            -DSDL_SHARED=OFF -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON \
+            -DSDL_SHARED=ON -DSDL_STATIC=ON -DSDL_FRAMEWORK=OFF -DSDL_TESTS=OFF -DSDL_INSTALL=ON \
             -DSDL_OPENGL=OFF -DSDL_OPENGLES=ON > stack.log 2>&1
           cmake --build b/sdl --config Release --target install >> stack.log 2>&1
 
@@ -217,6 +217,7 @@ jobs:
             include/aurora-ons/
             prefix/include/
             prefix/lib/*.a
+            prefix/lib/*.dylib
 
       - name: upload logs
         if: always()

@@ -43,6 +43,17 @@ targets:
       - path: ../../ModuleManifests
         buildPhase: resources
         type: folder
+    postBuildScripts:
+      - name: embed SDL2 dylib
+        script: |
+          # sdl12-compat dlopen()s "@executable_path/libSDL2-2.0.0.dylib".
+          SRC="${SRCROOT}/../../onslib/prefix/lib/libSDL2-2.0.0.dylib"
+          if [ -f "$SRC" ]; then
+            cp "$SRC" "${TARGET_BUILD_DIR}/${EXECUTABLE_FOLDER_PATH}/"
+          else
+            echo "warning: no SDL2 dylib at $SRC"
+          fi
+        basedOnDependencyAnalysis: false
     dependencies:
       - sdk: AVFoundation.framework
       - sdk: AudioToolbox.framework
