@@ -93,6 +93,10 @@ AuroraStatus startInstance(void* handle) {
         instance->result.store(code);
         instance->running.store(false);
     });
+    const std::string video = aurora::ons::describeVideo();
+    if (!video.empty()) {
+        logLine(instance, AURORA_LOG_INFO, video);
+    }
     logLine(instance, AURORA_LOG_INFO, "engine thread started");
     return AURORA_OK;
 }

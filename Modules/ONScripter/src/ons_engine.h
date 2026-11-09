@@ -31,6 +31,10 @@ int runLoop();
 /* Any thread: asks the event pump to return. */
 void requestStop();
 
+/* Human readable description of what the video backend gave us; empty when the
+ * engine could not report it. */
+std::string describeVideo();
+
 /* Main thread: tears SDL down after the loop returned. */
 void shutdownEngine();
 

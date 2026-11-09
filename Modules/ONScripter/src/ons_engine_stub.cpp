@@ -11,6 +11,7 @@ int initEngine(const Config&) { return -1; }
 int runLoop() { return -1; }
 void requestStop() {}
 void shutdownEngine() {}
+std::string describeVideo() { return ""; }
 
 } // namespace ons
 } // namespace aurora

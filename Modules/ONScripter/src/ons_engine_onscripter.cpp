@@ -52,6 +52,21 @@ void requestStop() {
     pushQuit();
 }
 
+std::string describeVideo() {
+    const char* driver = SDL_VideoDriverName(nullptr, 0);
+    char name[64] = {0};
+    SDL_VideoDriverName(name, sizeof(name));
+    SDL_Surface* surface = SDL_GetVideoSurface();
+    std::string text = "video driver: ";
+    text += name[0] != 0 ? name : (driver != nullptr ? driver : "unknown");
+    if (surface != nullptr) {
+        text += " surface: " + std::to_string(surface->w) + "x" + std::to_string(surface->h);
+    } else {
+        text += " surface: none";
+    }
+    return text;
+}
+
 void shutdownEngine() {
     SDL_Quit();
 }
