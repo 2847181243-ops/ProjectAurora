@@ -118,6 +118,10 @@ jobs:
 
           # SDL_image: bmp, gif, jpg, lbm, pcx, png, pnm, tga, xpm (tif/xcf/webp need extra deps)
           IMG=third_party/SDL_image12
+          ls "$IMG"/*.c | tee -a addons.log
+          # The format table names every loader unconditionally, so drop the ones
+          # whose dependencies we do not build.
+          sed -i '' '/{ "TIF"/d; /{ "XCF"/d; /{ "XV"/d; /{ "WEBP"/d' "$IMG/IMG.c"
           for f in IMG IMG_xxx IMG_bmp IMG_gif IMG_jpg IMG_lbm IMG_pcx IMG_png IMG_pnm IMG_tga IMG_xpm; do
             $CC $INC -I "$IMG" -DLOAD_BMP -DLOAD_GIF -DLOAD_JPG -DLOAD_LBM -DLOAD_PCX -DLOAD_PNG -DLOAD_PNM -DLOAD_TGA -DLOAD_XPM \
               -c "$IMG/$f.c" -o "obj/addons/$f.o" >> addons.log 2>&1 || echo "FAILED: image/$f" >> addons.log
