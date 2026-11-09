@@ -35,6 +35,8 @@ targets:
           - "**/CMakeLists.txt"
           - "**/*.md"
           - "**/modules.list"
+          # The audio shim is compiled into the prebuilt engine library.
+          - "ONScripter/smpeg/*.mm"
       - path: Generated/AuroraBuiltinModules.cpp
       - path: ../../ModuleManifests
         buildPhase: resources
@@ -51,6 +53,9 @@ targets:
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         HEADER_SEARCH_PATHS:
+          - "$(SRCROOT)/../../onslib/include/aurora-ons"
+          - "$(SRCROOT)/../../onslib/include"
+          - "$(SRCROOT)/../../onslib/include/SDL"
           - "$(SRCROOT)/../../SDK/AuroraRuntimeAPI/include"
           - "$(SRCROOT)/../../SDK/AuroraModuleSDK/include"
           - "$(SRCROOT)/../../SDK/AuroraStorageAPI/include"
@@ -61,3 +66,12 @@ targets:
           - "$(SRCROOT)/Sources"
         OTHER_LDFLAGS:
           - "-lc++"
+          - "-laurora_onscripter"
+          - "-lSDL-1.2"
+          - "-lSDL2"
+          - "-lSDLmain"
+        LIBRARY_SEARCH_PATHS:
+          - "$(SRCROOT)/../../onslib/lib"
+          - "$(SRCROOT)/../../onslib/prefix/lib"
+        GCC_PREPROCESSOR_DEFINITIONS:
+          - "AURORA_WITH_ONSCRIPTER=1"

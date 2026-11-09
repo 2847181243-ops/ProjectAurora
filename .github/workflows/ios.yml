@@ -19,6 +19,20 @@ jobs:
 
       # Every build step keeps its own log and does not abort the job, so a
       # failure is still diagnosable from the uploaded artifacts.
+      - name: fetch the engine
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          run_id=$(gh run list --workflow ons-spike.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)
+          echo "ons run: ${run_id:-none}"
+          if [ -n "${run_id:-}" ]; then
+            gh run download "$run_id" -n aurora-onscripter -D onslib || echo "artifact download failed"
+          fi
+          ls -la onslib 2>/dev/null || true
+          ls onslib/lib 2>/dev/null || true
+
       - name: generate module table
         continue-on-error: true
         run: python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp 2>&1 | tee gen.log
