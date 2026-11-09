@@ -1,0 +1,111 @@
+name: krkr-spike
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ci-triggers/krkr-spike'
+
+jobs:
+  engine:
+    name: KiriKiri2 engine for iOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: mark started
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          mkdir -p ci-status
+          printf '# krkr run ${{ github.run_number }}\n\nsha: %s\nstatus: running\nat: %s\n' "$GITHUB_SHA" "$(date -u +%FT%TZ)" > "ci-status/krkr-run${{ github.run_number }}.md"
+          git add ci-status
+          git commit -m "ci: krkr started" || true
+          git pull --rebase --autostash origin main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true
+
+      - name: clone the engine
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/reAAAq/KrKr2-Next third_party/krkr
+          ls third_party/krkr | head -20
+
+      - name: prepare vcpkg
+        run: |
+          set -euo pipefail
+          if [ -n "${VCPKG_INSTALLATION_ROOT:-}" ] && [ -x "${VCPKG_INSTALLATION_ROOT}/vcpkg" ]; then
+            echo "using the runner vcpkg at $VCPKG_INSTALLATION_ROOT"
+            echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> "$GITHUB_ENV"
+          else
+            echo "bootstrapping vcpkg"
+            git clone --depth 1 https://github.com/microsoft/vcpkg third_party/vcpkg
+            third_party/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+            echo "VCPKG_ROOT=$PWD/third_party/vcpkg" >> "$GITHUB_ENV"
+          fi
+
+      - name: configure for iOS
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd third_party/krkr
+          /usr/bin/time -p cmake --preset 'iOS Release Config' 2>&1 | tee ../../krkr-configure.log
+          echo "exit=$?" >> ../../krkr-configure.log
+
+      - name: build engine_api
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd third_party/krkr
+          /usr/bin/time -p cmake --build out/ios/release --target engine_api -j 6 2>&1 | tee ../../krkr-build.log
+          find out/ios/release -name "*.a" | head -10
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: krkr-logs
+          path: |
+            krkr-configure.log
+            krkr-build.log
+          if-no-files-found: warn
+
+      - name: publish status
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          git config user.name "ci-bot"
+          git config user.email "ci-bot@users.noreply.github.com"
+          mkdir -p ci-status
+          file="ci-status/krkr-run${{ github.run_number }}.md"
+          {
+            echo "# krkr run ${{ github.run_number }}"
+            echo ""
+            echo "sha: $GITHUB_SHA"
+            echo "status: ${{ job.status }}"
+            echo "at: $(date -u +%FT%TZ)"
+            echo ""
+            echo "## configure errors"
+            grep -E "CMake Error|error:|ERROR:" krkr-configure.log 2>/dev/null | head -12
+            echo ""
+            echo "## configure timing"
+            tail -4 krkr-configure.log 2>/dev/null
+            echo ""
+            echo "## build errors"
+            grep -E "error:|FAILED:" krkr-build.log 2>/dev/null | head -15
+            echo ""
+            echo "## build timing"
+            tail -4 krkr-build.log 2>/dev/null
+          } > "$file"
+          git add "$file"
+          git commit -m "ci: krkr run ${{ github.run_number }}" || true
+          git pull --rebase --autostash origin main || true
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main || true
