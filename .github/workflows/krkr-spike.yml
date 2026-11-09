@@ -38,6 +38,13 @@ jobs:
           git clone --depth 1 https://github.com/reAAAq/KrKr2-Next third_party/krkr
           ls third_party/krkr | head -20
 
+      - name: install build tools
+        run: |
+          set -euo pipefail
+          brew install ninja autoconf automake autoconf-archive libtool pkg-config || true
+          ninja --version
+          autoconf --version | head -1
+
       - name: prepare vcpkg
         run: |
           set -euo pipefail
@@ -50,7 +57,14 @@ jobs:
             third_party/vcpkg/bootstrap-vcpkg.sh -disableMetrics
             echo "VCPKG_ROOT=$PWD/third_party/vcpkg" >> "$GITHUB_ENV"
           fi
+          echo "VCPKG_BINARY_SOURCES=clear;files,$PWD/krkr-vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+          mkdir -p krkr-vcpkg-cache
 
+      - uses: actions/cache@v4
+        with:
+          path: krkr-vcpkg-cache
+          key: krkr-vcpkg-${${{ runner.os }}-${${{ hashFiles('.github/workflows/krkr-spike.yml') }}
+          restore-keys: krkr-vcpkg-${${{ runner.os }}-
       - name: configure for iOS
         continue-on-error: true
         run: |
