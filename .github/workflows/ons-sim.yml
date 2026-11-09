@@ -249,6 +249,9 @@ jobs:
             echo '## xcodegen tail'
             tail -10 Applications/Aurora-iOS/gen.log 2>/dev/null
             echo ''
+            echo '## undefined symbols'
+            awk '/Undefined symbols for architecture/{flag=1} flag{print; n++} n>20{exit}' Applications/Aurora-iOS/build.log 2>/dev/null
+            echo ''
             echo '## onslib'
             ls onslib 2>/dev/null | head -5
             ls onslib/lib 2>/dev/null | head -5
