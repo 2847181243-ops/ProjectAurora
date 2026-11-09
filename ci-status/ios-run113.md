@@ -1,0 +1,77 @@
+# ios run 113
+
+sha: e5537d54847ddbe1352e9037515fa76e2dc581df
+status: failure
+at: 2026-11-09T03:23:34Z
+
+## errors
+
+
+## tails
+
+### gen.log
+wrote Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp with 4 module(s)
+
+### toolchain.log
+[32m==>[0m [1mDownloading bottle manifests[0m
+✔︎ Bottle Manifest xcodegen (2.46.0)
+[32m==>[0m [1mFetching downloads for: [32mxcodegen[39m[0m
+✔︎ Bottle xcodegen (2.46.0)
+[34m==>[0m [1mPouring xcodegen--2.46.0.arm64_tahoe.bottle.1.tar.gz[0m
+🍺  /opt/homebrew/Cellar/xcodegen/2.46.0: 38 files, 7.4MB
+
+### Applications/Aurora-iOS/archive.log
+  "_ov_info", referenced from:
+      _Mix_InitOgg in libSDL_mixer.a[8](dynamic_ogg.o)
+  "_ov_open_callbacks", referenced from:
+      _Mix_InitOgg in libSDL_mixer.a[8](dynamic_ogg.o)
+  "_ov_pcm_total", referenced from:
+      _Mix_InitOgg in libSDL_mixer.a[8](dynamic_ogg.o)
+  "_ov_read", referenced from:
+      _Mix_InitOgg in libSDL_mixer.a[8](dynamic_ogg.o)
+  "_ov_time_seek", referenced from:
+      _Mix_InitOgg in libSDL_mixer.a[8](dynamic_ogg.o)
+ld: symbol(s) not found for architecture arm64
+/Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/Aurora.xcodeproj: Aurora: clang++: error: linker command failed with exit code 1 (use -v to see invocation)
+
+** ARCHIVE FAILED **
+
+
+The following build commands failed:
+	Ld /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app/Aurora normal (in target 'Aurora' from project 'Aurora')
+	Archiving project Aurora with scheme Aurora
+(2 failures)
+
+### Applications/Aurora-iOS/project.log
+⚙️  Generating plists...
+⚙️  Generating project...
+⚙️  Writing project...
+Created project at /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/Aurora.xcodeproj
+
+## archive tail
+Undefined symbols for architecture arm64:
+  "_IMG_Load", referenced from:
+      ONScripterLabel::initSDL() in libaurora_onscripter.a[31](ONScripterLabel.o)
+  "_IMG_LoadBMP_RW", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_LoadCUR_RW", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_LoadGIF_RW", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_LoadICO_RW", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_LoadJPG_RW", referenced from:
+      loadImage(char*, bool*, SDL_Surface*, BaseReader*) in libaurora_onscripter.a[14](Layer.o)
+      ONScripterLabel::createSurfaceFromFile(char*, int*) in libaurora_onscripter.a[27](ONScripterLabel_image.o)
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_LoadPNG_RW", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_LoadTGA_RW", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_isBMP", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_isCUR", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_isGIF", referenced from:
+      _supported in libSDL_image.a[12](IMG.o)
+  "_IMG_isICO", referenced from:
