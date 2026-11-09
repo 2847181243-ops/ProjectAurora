@@ -92,6 +92,26 @@ jobs:
           done
           echo "compiled=$ok failed=$fail" | tee -a ons.log
 
+      - name: archive the engine
+        run: |
+          set -euo pipefail
+          mkdir -p lib include/aurora-ons
+          libtool -static -o lib/libaurora_onscripter.a obj/*.o
+          cp Modules/ONScripter/smpeg/*.h include/aurora-ons/
+          cp Modules/ONScripter/src/*.h include/aurora-ons/
+          ls -la lib
+          lipo -info lib/libaurora_onscripter.a
+
+      - name: upload the engine
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-onscripter
+          path: |
+            lib/libaurora_onscripter.a
+            include/aurora-ons/
+            prefix/include/
+            prefix/lib/*.a
+
       - name: upload logs
         if: always()
         uses: actions/upload-artifact@v4
