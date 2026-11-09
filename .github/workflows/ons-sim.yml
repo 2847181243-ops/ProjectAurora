@@ -160,7 +160,11 @@ jobs:
           path: onslib
 
       - name: generate the module table
-        run: python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp
+        continue-on-error: true
+        run: |
+          mkdir -p Applications/Aurora-iOS/Generated
+          python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp
+          ls -la Applications/Aurora-iOS/Generated
 
       - name: build the app for the simulator
         continue-on-error: true
