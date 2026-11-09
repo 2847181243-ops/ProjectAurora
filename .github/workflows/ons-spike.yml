@@ -138,7 +138,7 @@ jobs:
 
           # SDL_mixer: wave/aiff/voc/ogg only
           MIX=third_party/SDL_mixer12
-          for f in mixer music wave load_aiff load_voc load_ogg music_ogg dynamic_ogg effects_internal effect_position effect_stereoreverse; do
+          for f in mixer music wave load_aiff load_voc load_ogg music_ogg music_wav music_aiff music_voc dynamic_ogg effects_internal effect_position effect_stereoreverse; do
             [ -f "$MIX/$f.c" ] || continue
             $CC $INC -I "$MIX" -DWAV_MUSIC -DAIFF_MUSIC -DVOC_MUSIC -DOGG_MUSIC -DVORBIS_HEADER \
               -c "$MIX/$f.c" -o "obj/addons/$f.o" >> addons.log 2>&1 || echo "FAILED: mixer/$f" >> addons.log
@@ -153,7 +153,7 @@ jobs:
           $CC -c /tmp/img_stubs.c -o /tmp/img_stubs.o >> addons.log 2>&1 || echo "FAILED: img_stubs" >> addons.log
           libtool -static -o prefix/lib/libSDL_image.a obj/addons/IMG*.o /tmp/img_stubs.o
           libtool -static -o prefix/lib/libSDL_ttf.a obj/addons/SDL_ttf.o
-          libtool -static -o prefix/lib/libSDL_mixer.a obj/addons/mixer.o obj/addons/music.o obj/addons/wave.o obj/addons/load_*.o obj/addons/music_ogg.o obj/addons/dynamic_ogg.o obj/addons/effect*.o obj/addons/effects_internal.o
+          libtool -static -o prefix/lib/libSDL_mixer.a obj/addons/*.o 2>/dev/null || libtool -static -o prefix/lib/libSDL_mixer.a obj/addons/mixer.o obj/addons/music.o obj/addons/wave.o obj/addons/load_*.o obj/addons/music_*.o obj/addons/dynamic_ogg.o obj/addons/effect*.o obj/addons/effects_internal.o
           ls obj/addons | tee -a addons.log
           ls -la prefix/lib/libSDL_*.a | tee -a addons.log
 
