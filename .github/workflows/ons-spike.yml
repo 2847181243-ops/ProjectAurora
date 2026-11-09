@@ -81,7 +81,8 @@ jobs:
           {
             # libjpeg-turbo stringifies CMAKE_BUILD_TYPE, which the Xcode generator leaves empty.
             cmake -S third_party/libjpeg -B b/jpeg $COMMON -DCMAKE_BUILD_TYPE=Release \
-              -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_SIMD=OFF -DWITH_TURBOJPEG=OFF -DWITH_JPEG8=ON
+              -DENABLE_SHARED=OFF -DENABLE_STATIC=ON -DWITH_SIMD=OFF -DWITH_TURBOJPEG=OFF -DWITH_JPEG8=ON \
+              -DCMAKE_SYSTEM_PROCESSOR=arm64
             cmake --build b/jpeg --config Release --target install
           } > jpeg.log 2>&1 || echo "FAILED: libjpeg" >> jpeg.log
 
