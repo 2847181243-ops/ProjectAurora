@@ -70,17 +70,17 @@ jobs:
           set -euo pipefail
           F=third_party/krkr/cpp/plugins/CMakeLists.txt
           python3 - "$F" <<'PY'
-          import sys
+          import re, sys
           path = sys.argv[1]
           text = open(path, encoding='utf-8').read()
           # The Cubism SDK is proprietary and absent here; upstream still creates the
-          # target unconditionally, which fails on an empty source glob.
+          # target unconditionally, which fails on an empty source glob. Turn it into an
+          # interface target and downgrade every per-target property to INTERFACE.
           text = text.replace('add_library(CubismFramework STATIC ${CUBISM_FW_SOURCES})',
                               'add_library(CubismFramework INTERFACE)')
-          text = text.replace('target_link_libraries(CubismFramework PRIVATE',
-                              'target_link_libraries(CubismFramework INTERFACE')
-          text = text.replace('target_include_directories(CubismFramework PRIVATE',
-                              'target_include_directories(CubismFramework INTERFACE')
+          text = re.sub(
+              r'(target_(?:sources|include_directories|compile_definitions|compile_options|link_options|link_directories|link_libraries)\(\s*CubismFramework\s+)(PUBLIC|PRIVATE)',
+              r'\1INTERFACE', text)
           open(path, 'w', encoding='utf-8').write(text)
           print('patched CubismFramework into an interface target')
           PY
