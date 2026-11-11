@@ -41,9 +41,11 @@ jobs:
       - name: install build tools
         run: |
           set -euo pipefail
-          brew install ninja autoconf automake autoconf-archive libtool pkg-config || true
+          brew install ninja autoconf automake autoconf-archive libtool pkg-config bison flex || true
           ninja --version
           autoconf --version | head -1
+          echo "BISON_BIN=$(brew --prefix bison)/bin" >> "$GITHUB_ENV"
+          "$(brew --prefix bison)/bin/bison" --version | head -1
 
       - name: prepare vcpkg
         run: |
@@ -90,7 +92,13 @@ jobs:
         run: |
           set -o pipefail
           cd third_party/krkr
-          /usr/bin/time -p cmake --preset 'iOS Release Config' 2>&1 | tee ../../krkr-configure.log
+          BISON_EXEC="$(brew --prefix bison)/bin/bison"
+          FLEX_EXEC="$(brew --prefix flex)/bin/flex"
+          echo "bison: $BISON_EXEC ($($BISON_EXEC --version | head -1))"
+          /usr/bin/time -p cmake --preset 'iOS Release Config' \
+            -DPATH="$BISON_BIN:$PATH" \
+            -DBISON_EXECUTABLE="$BISON_EXEC" \
+            -DFLEX_EXECUTABLE="$FLEX_EXEC" 2>&1 | tee ../../krkr-configure.log
           echo "exit=$?" >> ../../krkr-configure.log
 
       - name: build engine_api
