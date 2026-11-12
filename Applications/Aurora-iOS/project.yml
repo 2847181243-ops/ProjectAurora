@@ -70,6 +70,13 @@ targets:
       - sdk: OpenGLES.framework
       - sdk: QuartzCore.framework
       - sdk: UIKit.framework
+      - sdk: Security.framework
+      - sdk: SystemConfiguration.framework
+      - sdk: ImageIO.framework
+      - sdk: CoreVideo.framework
+      - sdk: CoreText.framework
+      - sdk: Accelerate.framework
+      - sdk: IOSurface.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
     settings:
@@ -80,6 +87,8 @@ targets:
         CODE_SIGN_STYLE: Manual
         DEVELOPMENT_TEAM: ""
         HEADER_SEARCH_PATHS:
+          - "$(SRCROOT)/../../krkrlib"
+          - "$(SRCROOT)/../../krkrlib/include"
           - "$(SRCROOT)/../../onslib/include/aurora-ons"
           - "$(SRCROOT)/../../onslib/include"
           - "$(SRCROOT)/../../onslib/include/SDL"
@@ -106,11 +115,16 @@ targets:
           - "-logg"
           - "-lvorbis"
           - "-lvorbisfile"
+          - "-lkrkrell"
+          - "-lsqlite3"
+          - "-lresolv"
           - "-lbz2"
           - "-lz"
           - "-liconv"
         LIBRARY_SEARCH_PATHS:
+          - "$(SRCROOT)/../../krkrlib"
           - "$(SRCROOT)/../../onslib/lib"
           - "$(SRCROOT)/../../onslib/prefix/lib"
         GCC_PREPROCESSOR_DEFINITIONS:
           - "AURORA_WITH_ONSCRIPTER=1"
+          - "AURORA_WITH_KRKR=1"
