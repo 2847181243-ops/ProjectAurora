@@ -87,6 +87,8 @@ targets:
         DEVELOPMENT_TEAM: ""
         HEADER_SEARCH_PATHS:
           - "$(SRCROOT)/../../krkrlib"
+          - "$(SRCROOT)/../../krkrlib/third_party/krkr/bridge/engine_api/include"
+          - "$(SRCROOT)/../../krkrlib/include"
           - "$(SRCROOT)/../../krkrlib/include"
           - "$(SRCROOT)/../../onslib/include/aurora-ons"
           - "$(SRCROOT)/../../onslib/include"
