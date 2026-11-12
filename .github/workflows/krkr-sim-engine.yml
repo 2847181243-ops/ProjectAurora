@@ -87,6 +87,9 @@ jobs:
           T=third_party/krkr/vcpkg/triplets/arm64-iphonesimulator.cmake
           sed 's/^set(VCPKG_OSX_SYSROOT.*/set(VCPKG_OSX_SYSROOT iphonesimulator)/' \
             third_party/krkr/vcpkg/triplets/arm64-ios.cmake > "$T"
+          # The upstream triplet never sets VCPKG_OSX_SYSROOT, so the sed above is a
+          # no-op: vcpkg would keep building for the device sysroot. Append it.
+          echo 'set(VCPKG_OSX_SYSROOT iphonesimulator)' >> "$T"
           cat "$T"
 
       - name: configure for the simulator
