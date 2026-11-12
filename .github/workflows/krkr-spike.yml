@@ -87,6 +87,11 @@ jobs:
           print('patched CubismFramework into an interface target')
           PY
           grep -n 'CubismFramework' "$F" | head -12
+          # Drop the Live2D plugin translation unit everywhere it is listed.
+          for f in $(grep -rl 'krkrlive2d\.cpp' cpp --include=CMakeLists.txt); do
+            sed -i '' '/krkrlive2d\.cpp/d' "$f"
+            echo "removed krkrlive2d.cpp from $f"
+          done
       - name: configure for iOS
         continue-on-error: true
         run: |
