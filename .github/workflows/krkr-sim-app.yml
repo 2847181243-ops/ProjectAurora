@@ -1,0 +1,101 @@
+name: krkr-sim-app
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ci-triggers/krkr-sim-app'
+
+jobs:
+  run:
+    name: run KiriKiri in the iOS simulator
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: fetch the ONScripter simulator stack
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          run_id=$(gh run list --workflow ons-sim.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          echo "ons-sim run: $run_id"
+          [ -n "$run_id" ] && gh run download "$run_id" -n aurora-onscripter-sim -D onslib
+          ls onslib | head -5; ls onslib/lib 2>/dev/null | head -5
+
+      - name: fetch the KiriKiri simulator engine
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          run_id=$(gh run list --workflow krkr-sim-engine.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          echo "krkr-sim run: $run_id"
+          [ -n "$run_id" ] && gh run download "$run_id" -n krkr-ios-sim-engine -D krkrlib
+          # the project links -lkrkrell, so give the simulator build the same name
+          if [ -f krkrlib/libkrkrell-sim.a ]; then mv krkrlib/libkrkrell-sim.a krkrlib/libkrkrell.a; fi
+          ls -la krkrlib | head -10
+
+      - name: generate the module table
+        run: |
+          set +e
+          mkdir -p Applications/Aurora-iOS/Generated
+          python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp
+
+      - name: build the app for the simulator
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          cd Applications/Aurora-iOS
+          brew install xcodegen >/dev/null 2>&1 || true
+          xcodegen generate > gen.log 2>&1
+          xcodebuild -project Aurora.xcodeproj -scheme Aurora -configuration Debug \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            build > build.log 2>&1 || true
+          tail -20 build.log
+          find build -name 'Aurora.app' -maxdepth 6 | head -3
+
+      - name: boot a simulator and start KiriKiri
+        continue-on-error: true
+        run: |
+          set -x
+          xcrun simctl list devices available | head -20
+          DEVICE=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')
+          if [ -z "${DEVICE:-}" ]; then
+            RUNTIME=$(xcrun simctl list runtimes | awk -F '[()]' '/iOS/{print $2; exit}')
+            TYPE=$(xcrun simctl list devicetypes | awk -F '[()]' '/iPhone/{print $2; exit}')
+            DEVICE=$(xcrun simctl create aurora-sim "$TYPE" "$RUNTIME")
+          fi
+          echo "device=$DEVICE"
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b || true
+          APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 6 | head -1)
+          echo "app=$APP"
+          xcrun simctl install "$DEVICE" "$APP" || true
+          export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.kirikiri
+          xcrun simctl launch --console-pty "$DEVICE" com.aurora.app > sim.log 2>&1 &
+          sleep 25
+          xcrun simctl io "$DEVICE" screenshot shot-1.png || true
+          sleep 10
+          xcrun simctl io "$DEVICE" screenshot shot-2.png || true
+          xcrun simctl spawn "$DEVICE" log show --last 3m --predicate 'processImagePath CONTAINS "Aurora"' > device.log 2>&1 || true
+          grep -iE 'krkr|engine|module|error' device.log | tail -40
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: krkr-sim-shots
+          path: |
+            shot-1.png
+            shot-2.png
+            sim.log
+            device.log
+          if-no-files-found: warn
