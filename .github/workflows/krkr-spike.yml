@@ -121,6 +121,16 @@ jobs:
           /usr/bin/time -p cmake --build out/ios/release --target engine_api -j 6 2>&1 | tee ../../krkr-build.log
           find out/ios/release -name "*.a" | head -10
 
+      - name: merge the engine libraries
+        if: always()
+        run: |
+          set -uo pipefail
+          OUT=third_party/krkr/out/ios/release
+          ARCHIVES=$(find "$OUT" -name '*.a' | sort | tr '\n' ' ')
+          echo "merging $(echo "$ARCHIVES" | wc -w) archives"
+          # One archive avoids link-order games across 30+ vcpkg libraries.
+          libtool -static -o libkrkrell.a $ARCHIVES 2>&1 | tail -5 || true
+          ls -la libkrkrell.a 2>/dev/null || echo 'merge failed'
       - name: report artefacts
         if: always()
         run: |
@@ -132,6 +142,7 @@ jobs:
         with:
           name: krkr-ios-engine
           path: |
+            libkrkrell.a
             third_party/krkr/out/ios/release/bridge/engine_api/libengine_api.a
             third_party/krkr/out/ios/release/**/*.a
             third_party/krkr/bridge/engine_api/include/**
