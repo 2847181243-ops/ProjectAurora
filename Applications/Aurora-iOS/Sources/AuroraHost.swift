@@ -48,13 +48,26 @@ final class AuroraHost: ObservableObject {
 
     /* Automated runs (CI simulator, scripted device checks) set AURORA_AUTOSTART to
      * a module id; the bundled smoke-test game is copied in first. */
+
+    /* Every bundled smoke-test game is copied in once, so a module added later does
+     * not need its own branch here. Existing folders are left alone: a test run must
+     * not overwrite saves the previous run wrote. */
+    private func copyBundledTestGames() {
+        let manager = FileManager.default
+        guard let bundledRoot = Bundle.main.resourceURL?.appendingPathComponent("TestGames") else { return }
+        let root = URL(fileURLWithPath: gamesRoot)
+        try? manager.createDirectory(at: root, withIntermediateDirectories: true)
+        let entries = (try? manager.contentsOfDirectory(at: bundledRoot, includingPropertiesForKeys: nil)) ?? []
+        for entry in entries {
+            let destination = root.appendingPathComponent(entry.lastPathComponent)
+            if manager.fileExists(atPath: destination.path) { continue }
+            try? manager.copyItem(at: entry, to: destination)
+        }
+    }
+
     private func autostartIfRequested() {
         guard let module = ProcessInfo.processInfo.environment["AURORA_AUTOSTART"], !module.isEmpty else { return }
-        if let bundled = Bundle.main.resourceURL?.appendingPathComponent("TestGames/minimal-ons") {
-            let destination = URL(fileURLWithPath: gamesRoot).appendingPathComponent("minimal-ons")
-            try? FileManager.default.createDirectory(at: URL(fileURLWithPath: gamesRoot), withIntermediateDirectories: true)
-            try? FileManager.default.copyItem(at: bundled, to: destination)
-        }
+        copyBundledTestGames()
         rescanLibrary()
         if let game = games.first(where: { $0.module == module }) {
             _ = aurora_bridge_start(module, game.path, game.format)
