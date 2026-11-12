@@ -1,0 +1,44 @@
+{
+  "module_id": "com.aurora.runtime.kirikiri",
+  "name": "KiriKiri2",
+  "version": "0.1.0",
+  "module_type": "galgame_engine",
+  "platform": "kirikiri",
+  "adapter": "visual_novel",
+  "entry_symbol": "aurora_module_entry_kirikiri",
+  "license": "GPL-3.0-or-later",
+  "sdk_version": "1.1.0",
+  "minimum_sdk_version": "1.0.0",
+  "supported_formats": [
+    "xp3"
+  ],
+  "capabilities": {
+    "video_output": true,
+    "audio": true,
+    "touch_input": true,
+    "controller": true,
+    "game_saves": true,
+    "save_state": false,
+    "fast_forward": true,
+    "requires_firmware": false,
+    "jit_required": false,
+    "jit_optional": false
+  },
+  "dependencies": [],
+  "status": "ready",
+  "upstream": {
+    "project": "KrKr2-Next",
+    "version": "1.5.0",
+    "commit": "unpinned"
+  },
+  "detection": {
+    "extensions": [
+      "xp3",
+      "ks"
+    ],
+    "filenames": [
+      "data.xp3",
+      "startup.tjs"
+    ]
+  }
+}

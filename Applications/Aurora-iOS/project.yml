@@ -39,6 +39,7 @@ targets:
           - "ONScripter/smpeg/*.mm"
           - "ONScripter/src/ons_engine_onscripter.cpp"
           - "ONScripter/engine/*.cpp"
+          - "KiriKiri/src/krkr_engine.cpp"
       - path: Generated/AuroraBuiltinModules.cpp
       - path: ../../ModuleManifests
         buildPhase: resources
