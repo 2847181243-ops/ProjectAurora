@@ -6,6 +6,9 @@ permissions:
 on:
   # push disabled while iterating on krkr
   workflow_dispatch:
+  push:
+    paths:
+      - 'ci-triggers/ios'
 
 jobs:
   unsigned-ipa:
