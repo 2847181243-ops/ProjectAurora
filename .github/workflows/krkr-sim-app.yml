@@ -60,7 +60,9 @@ jobs:
             ARCHS=arm64 ONLY_ACTIVE_ARCH=NO \
             -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
             build > build.log 2>&1 || true
+          grep -E 'error:|Undefined symbols|ld: ' build.log | head -25 || true
           tail -20 build.log
+          ls build/Build/Products 2>/dev/null || true
           find build -name 'Aurora.app' -maxdepth 6 | head -3
 
       - name: boot a simulator and start KiriKiri
@@ -80,6 +82,7 @@ jobs:
           APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 6 | head -1)
           echo "app=$APP"
           xcrun simctl install "$DEVICE" "$APP" || true
+          xcrun simctl listapps "$DEVICE" 2>/dev/null | grep -i aurora | head -5 || echo "no aurora app installed"
           export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.kirikiri
           xcrun simctl launch --console-pty "$DEVICE" com.aurora.app > sim.log 2>&1 &
           sleep 25
@@ -98,4 +101,6 @@ jobs:
             shot-2.png
             sim.log
             device.log
+            Applications/Aurora-iOS/build.log
+            Applications/Aurora-iOS/gen.log
           if-no-files-found: warn
