@@ -101,9 +101,24 @@ jobs:
           set -euo pipefail
           P=third_party/krkr/vcpkg/ports/glib/portfile.cmake
           python3 - "$P" <<'PY'
-          import re, sys
+          import sys
           path = sys.argv[1]
           text = open(path, encoding='utf-8').read()
+          key = 'vcpkg_extract_source_archive'
+          i = text.find(key)
+          if i < 0:
+              raise SystemExit('no extraction call in the glib portfile')
+          j = text.index('(', i)
+          depth = 0
+          k = j
+          while k < len(text):
+              if text[k] == '(':
+                  depth += 1
+              elif text[k] == ')':
+                  depth -= 1
+                  if depth == 0:
+                      break
+              k += 1
           inject = '''
           # Aurora: on Darwin pipe2() is only declared with the full feature set, and
           # glib's include order hides it. Force the portable fallback path instead of
@@ -113,14 +128,11 @@ jobs:
           string(REPLACE "#if defined(HAVE_PIPE2)" "#if 0" _aurora_gup "${_aurora_gup}")
           file(WRITE "${SOURCE_PATH}/glib/glib-unixprivate.h" "${_aurora_gup}")
           '''
-          m = re.search(r'^[^\n]*vcpkg_extract_source_archive[^\n]*', text, re.M)
-          if not m:
-              raise SystemExit('no extraction call in the glib portfile')
-          text = text[:m.end()] + '\n' + inject + text[m.end():]
+          text = text[:k + 1] + '\n' + inject + text[k + 1:]
           open(path, 'w', encoding='utf-8').write(text)
-          print('patched the glib port')
+          print('patched the glib port after the extraction call')
           PY
-          grep -n 'aurora_gup' "$P" | head -5
+          sed -n '18,32p' "$P"
       - name: configure for the simulator
         continue-on-error: true
         run: |
