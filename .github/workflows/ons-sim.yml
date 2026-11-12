@@ -61,8 +61,8 @@ jobs:
           git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
 
           SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
-          CC="clang -arch x86_64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -O2"
-          CXX="clang++ -std=gnu++14 -arch x86_64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing"
+          CC="clang -arch arm64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -O2"
+          CXX="clang++ -std=gnu++14 -arch arm64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -Wno-c++11-narrowing"
           INC="-I Modules/ONScripter/smpeg -I prefix/include -I prefix/include/SDL -I third_party/iosons/SDL_image -I third_party/iosons/SDL_ttf -I third_party/iosons/SDL_mixer"
           mkdir -p obj obj/addons
           : > ons.log
