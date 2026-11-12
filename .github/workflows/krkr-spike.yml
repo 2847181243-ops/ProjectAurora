@@ -76,19 +76,21 @@ jobs:
           path = sys.argv[1]
           text = open(path, encoding='utf-8').read()
           # The Cubism SDK is proprietary and absent here; upstream still creates the
-          # target unconditionally, which fails on an empty source glob. Turn it into an
+          # target unconditionally, which fails on an empty source glob. Make it an
           # interface target and downgrade every per-target property to INTERFACE.
           text = text.replace('add_library(CubismFramework STATIC ${CUBISM_FW_SOURCES})',
                               'add_library(CubismFramework INTERFACE)')
           text = re.sub(
               r'(target_(?:sources|include_directories|compile_definitions|compile_options|link_options|link_directories|link_libraries)\(\s*CubismFramework\s+)(PUBLIC|PRIVATE)',
               r'\1INTERFACE', text)
-          # No SDK means the feature flag must go too, otherwise krkrgles.cpp and
-          # engine_api.cpp still compile the Live2D code paths that reference it.
-          text = re.sub(r'^\s*target_compile_definitions\(\$\{PROJECT_NAME\} PUBLIC KRKR2_LIVE2D\)\s*
+          # Without the SDK the feature flag must go too, or krkrgles.cpp and
+          # engine_api.cpp still compile Live2D paths that reference missing symbols.
+          text = re.sub(r'^\s*target_compile_definitions\(\$\{PROJECT_NAME\} PUBLIC KRKR2_LIVE2D\)\s*$',
+                        '', text, flags=re.M)
+          open(path, 'w', encoding='utf-8').write(text)
           print('patched CubismFramework into an interface target')
           PY
-          grep -n 'CubismFramework' "$F" | head -12
+          grep -n 'CubismFramework\|KRKR2_LIVE2D' "$F" | head -12
           # Drop the Live2D plugin translation unit everywhere it is listed.
           for f in $(grep -rl 'krkrlive2d\.cpp' cpp --include=CMakeLists.txt); do
             sed -i '' '/krkrlive2d\.cpp/d' "$f"
