@@ -1,7 +1,8 @@
 name: ci
 
 on:
-  push:
+  # push disabled while iterating on krkr
+  workflow_dispatch_only_push:
     branches: [main]
   pull_request:
   workflow_dispatch:

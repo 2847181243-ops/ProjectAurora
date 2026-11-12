@@ -96,6 +96,9 @@ jobs:
             sed -i '' '/krkrlive2d\.cpp/d' "$f"
             echo "removed krkrlive2d.cpp from $f"
           done
+          # Some targets glob their sources, so the file has to go as well.
+          rm -f cpp/plugins/krkrlive2d.cpp
+          echo "deleted krkrlive2d.cpp"
       - name: configure for iOS
         continue-on-error: true
         run: |
