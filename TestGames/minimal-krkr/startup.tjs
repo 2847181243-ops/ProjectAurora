@@ -1,0 +1,10 @@
+// Minimal KiriKiri smoke test.
+// Creates one window, one primary layer and draws a line of text.
+var win = new Window();
+win.width = 640;
+win.height = 360;
+win.visible = true;
+
+var layer = new Layer(win, 0, 0, 640, 360);
+layer.drawText(24, 40, "Aurora KiriKiri smoke test", 0xFFFFFF, 28);
+layer.drawText(24, 96, "If you can read this the engine is running.", 0xCCCCCC, 20);
