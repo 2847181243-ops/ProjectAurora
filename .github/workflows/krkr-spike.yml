@@ -92,13 +92,13 @@ jobs:
           PY
           grep -n 'CubismFramework\|KRKR2_LIVE2D' "$F" | head -12
           # Drop the Live2D plugin translation unit everywhere it is listed.
-          for f in $(grep -rl 'krkrlive2d\.cpp' cpp --include=CMakeLists.txt); do
+          # These paths are inside the cloned tree, not the workspace root.
+          for f in $(grep -rl 'krkrlive2d\.cpp' third_party/krkr/cpp --include=CMakeLists.txt); do
             sed -i '' '/krkrlive2d\.cpp/d' "$f"
             echo "removed krkrlive2d.cpp from $f"
           done
-          # Some targets glob their sources, so the file has to go as well.
-          rm -f cpp/plugins/krkrlive2d.cpp
-          echo "deleted krkrlive2d.cpp"
+          rm -f third_party/krkr/cpp/plugins/krkrlive2d.cpp
+          test ! -e third_party/krkr/cpp/plugins/krkrlive2d.cpp && echo "deleted krkrlive2d.cpp"
       - name: configure for iOS
         continue-on-error: true
         run: |
