@@ -1,0 +1,146 @@
+name: krkr-sim-engine
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ci-triggers/krkr-sim'
+
+jobs:
+  engine:
+    name: KiriKiri2 engine for the iOS simulator
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: clone the engine
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/reAAAq/KrKr2-Next third_party/krkr
+
+      - name: install build tools
+        run: |
+          set -euo pipefail
+          brew install ninja autoconf automake autoconf-archive libtool pkg-config bison flex || true
+          echo "BISON_BIN=$(brew --prefix bison)/bin" >> "$GITHUB_ENV"
+
+      - name: prepare vcpkg
+        run: |
+          set -euo pipefail
+          if [ -n "${VCPKG_INSTALLATION_ROOT:-}" ] && [ -x "${VCPKG_INSTALLATION_ROOT}/vcpkg" ]; then
+            echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> "$GITHUB_ENV"
+          else
+            git clone --depth 1 https://github.com/microsoft/vcpkg third_party/vcpkg
+            third_party/vcpkg/bootstrap-vcpkg.sh -disableMetrics
+            echo "VCPKG_ROOT=$PWD/third_party/vcpkg" >> "$GITHUB_ENV"
+          fi
+          echo "VCPKG_BINARY_SOURCES=clear;files,$PWD/krkr-sim-vcpkg-cache,readwrite" >> "$GITHUB_ENV"
+          mkdir -p krkr-sim-vcpkg-cache
+
+      - uses: actions/cache@v4
+        with:
+          path: krkr-sim-vcpkg-cache
+          key: krkrsim-vcpkg-${{ runner.os }}-${{ github.sha }}
+          restore-keys: krkrsim-vcpkg-${{ runner.os }}-
+
+      - name: patch out the proprietary Live2D SDK
+        run: |
+          set -euo pipefail
+          F=third_party/krkr/cpp/plugins/CMakeLists.txt
+          python3 - "$F" <<'PY'
+          import re, sys
+          path = sys.argv[1]
+          text = open(path, encoding='utf-8').read()
+          # The Cubism SDK is proprietary and absent here; upstream still creates the
+          # target unconditionally, which fails on an empty source glob. Make it an
+          # interface target and downgrade every per-target property to INTERFACE.
+          text = text.replace('add_library(CubismFramework STATIC ${CUBISM_FW_SOURCES})',
+                              'add_library(CubismFramework INTERFACE)')
+          text = re.sub(
+              r'(target_(?:sources|include_directories|compile_definitions|compile_options|link_options|link_directories|link_libraries)\(\s*CubismFramework\s+)(PUBLIC|PRIVATE)',
+              r'\1INTERFACE', text)
+          # Without the SDK the feature flag must go too, or krkrgles.cpp and
+          # engine_api.cpp still compile Live2D paths that reference missing symbols.
+          text = re.sub(r'^\s*target_compile_definitions\(\$\{PROJECT_NAME\} PUBLIC KRKR2_LIVE2D\)\s*$',
+                        '', text, flags=re.M)
+          open(path, 'w', encoding='utf-8').write(text)
+          print('patched CubismFramework into an interface target')
+          PY
+          grep -n 'CubismFramework\|KRKR2_LIVE2D' "$F" | head -12
+          # Drop the Live2D plugin translation unit everywhere it is listed.
+          # These paths are inside the cloned tree, not the workspace root.
+          for f in $(grep -rl 'krkrlive2d\.cpp' third_party/krkr/cpp --include=CMakeLists.txt); do
+            sed -i '' '/krkrlive2d\.cpp/d' "$f"
+            echo "removed krkrlive2d.cpp from $f"
+          done
+          rm -f third_party/krkr/cpp/plugins/krkrlive2d.cpp
+          test ! -e third_party/krkr/cpp/plugins/krkrlive2d.cpp && echo "deleted krkrlive2d.cpp"
+
+      - name: define the simulator triplet
+        run: |
+          set -euo pipefail
+          T=third_party/krkr/vcpkg/triplets/arm64-iphonesimulator.cmake
+          sed 's/^set(VCPKG_OSX_SYSROOT.*/set(VCPKG_OSX_SYSROOT iphonesimulator)/' \
+            third_party/krkr/vcpkg/triplets/arm64-ios.cmake > "$T"
+          cat "$T"
+
+      - name: configure for the simulator
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd third_party/krkr
+          BISON_EXEC="$(brew --prefix bison)/bin/bison"
+          /usr/bin/time -p cmake -S . -B out/ios/sim -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphonesimulator \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DVCPKG_TARGET_TRIPLET=arm64-iphonesimulator \
+            -DVCPKG_OVERLAY_TRIPLETS="$PWD/vcpkg/triplets" \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DBUILD_TOOLS=OFF -DENABLE_TESTS=OFF \
+            -DBISON_EXECUTABLE="$BISON_EXEC" \
+            > ../../krkr-sim-configure.log 2>&1 || true
+          tail -12 ../../krkr-sim-configure.log
+
+      - name: build for the simulator
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd third_party/krkr
+          /usr/bin/time -p cmake --build out/ios/sim --target engine_api -j 6 > ../../krkr-sim-build.log 2>&1 || true
+          tail -8 ../../krkr-sim-build.log
+
+      - name: merge the simulator libraries
+        if: always()
+        run: |
+          set +e
+          OUT=third_party/krkr/out/ios/sim
+          ARCHIVES=$(find "$OUT" -name '*.a' | sort | tr '\n' ' ')
+          echo "merging $(echo "$ARCHIVES" | wc -w) archives"
+          libtool -static -o libkrkrell-sim.a $ARCHIVES 2>&1 | tail -5
+          ls -la libkrkrell-sim.a
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: krkr-ios-sim-engine
+          path: |
+            libkrkrell-sim.a
+            third_party/krkr/bridge/engine_api/include/**
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: krkr-sim-logs
+          path: |
+            krkr-sim-configure.log
+            krkr-sim-build.log
+          if-no-files-found: warn
