@@ -76,6 +76,11 @@ targets:
       - sdk: CoreText.framework
       - sdk: Accelerate.framework
       - sdk: IOSurface.framework
+      - sdk: CoreMedia.framework
+      - sdk: VideoToolbox.framework
+      - sdk: CoreImage.framework
+      - sdk: CoreServices.framework
+      - sdk: VideoToolbox.framework
       - sdk: Metal.framework
       - sdk: MetalKit.framework
     settings:
