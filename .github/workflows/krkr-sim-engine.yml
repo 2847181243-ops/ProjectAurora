@@ -90,6 +90,10 @@ jobs:
           # The upstream triplet never sets VCPKG_OSX_SYSROOT, so the sed above is a
           # no-op: vcpkg would keep building for the device sysroot. Append it.
           echo 'set(VCPKG_OSX_SYSROOT iphonesimulator)' >> "$T"
+          # glib calls pipe2(), which the simulator SDK only declares with the full
+          # Darwin feature set; without this every glib build fails on gbacktrace.c.
+          echo 'set(VCPKG_C_FLAGS "-D_DARWIN_C_SOURCE")' >> "$T"
+          echo 'set(VCPKG_CXX_FLAGS "-D_DARWIN_C_SOURCE")' >> "$T"
           cat "$T"
 
       - name: configure for the simulator
@@ -103,6 +107,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_SYSROOT=iphonesimulator \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_MAKE_PROGRAM="$(command -v ninja)" \
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DVCPKG_TARGET_TRIPLET=arm64-iphonesimulator \
             -DVCPKG_OVERLAY_TRIPLETS="$PWD/vcpkg/triplets" \
