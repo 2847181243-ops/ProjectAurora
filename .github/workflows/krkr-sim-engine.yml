@@ -96,6 +96,97 @@ jobs:
           echo 'set(VCPKG_CXX_FLAGS "-D_DARWIN_C_SOURCE")' >> "$T"
           cat "$T"
 
+      - name: teach glib that Darwin has no pipe2 header
+        run: |
+          set -euo pipefail
+          P=third_party/krkr/vcpkg/ports/glib/portfile.cmake
+          python3 - "$P" <<'PY'
+          import re, sys
+          path = sys.argv[1]
+          text = open(path, encoding='utf-8').read()
+          inject = '''
+          # Aurora: on Darwin pipe2() is only declared with the full feature set, and
+          # glib's include order hides it. Force the portable fallback path instead of
+          # failing the simulator build on an implicit declaration.
+          file(READ "${SOURCE_PATH}/glib/glib-unixprivate.h" _aurora_gup)
+          string(REPLACE "#ifdef HAVE_PIPE2" "#if 0" _aurora_gup "${_aurora_gup}")
+          string(REPLACE "#if defined(HAVE_PIPE2)" "#if 0" _aurora_gup "${_aurora_gup}")
+          file(WRITE "${SOURCE_PATH}/glib/glib-unixprivate.h" "${_aurora_gup}")
+          '''
+          m = re.search(r'^.*vcpkg_extract_source_archive.*
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd third_party/krkr
+          BISON_EXEC="$(brew --prefix bison)/bin/bison"
+          /usr/bin/time -p cmake -S . -B out/ios/sim -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_SYSROOT=iphonesimulator \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_MAKE_PROGRAM="$(command -v ninja)" \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DVCPKG_TARGET_TRIPLET=arm64-iphonesimulator \
+            -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake" \
+            -DBUILD_TOOLS=OFF -DENABLE_TESTS=OFF \
+            -DBISON_EXECUTABLE="$BISON_EXEC" \
+            > ../../krkr-sim-configure.log 2>&1 || true
+          tail -12 ../../krkr-sim-configure.log
+
+      - name: build for the simulator
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          cd third_party/krkr
+          /usr/bin/time -p cmake --build out/ios/sim --target engine_api -j 6 > ../../krkr-sim-build.log 2>&1 || true
+          tail -8 ../../krkr-sim-build.log
+
+      - name: merge the simulator libraries
+        if: always()
+        run: |
+          set +e
+          OUT=third_party/krkr/out/ios/sim
+          # Only archives whose objects target the simulator may be merged: one device
+          # object makes the whole archive unusable for a simulator link.
+          GOOD=""
+          for a in $(find "$OUT" -name '*.a' | sort); do
+            plat=$(otool -l "$a" 2>/dev/null | grep -A3 'LC_BUILD_VERSION' | grep ' platform ' | head -1 | awk '{print $2}')
+            case "$plat" in
+              7|"") GOOD="$GOOD $a" ;;   # 7 = iOS simulator, empty = no build version
+              *) echo "skipping $a (platform $plat)" ;;
+            esac
+          done
+          echo "merging $(echo $GOOD | wc -w) archives"
+          libtool -static -o libkrkrell-sim.a $GOOD > merge.log 2>&1
+          tail -5 merge.log
+          ls -la libkrkrell-sim.a
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: krkr-ios-sim-engine
+          path: |
+            libkrkrell-sim.a
+            third_party/krkr/bridge/engine_api/include/**
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: krkr-sim-logs
+          path: |
+            krkr-sim-configure.log
+            krkr-sim-build.log
+            merge.log
+          if-no-files-found: warn
+, text, re.M)
+          if not m:
+              raise SystemExit('no extraction call in the glib portfile')
+          text = text[:m.end()] + '\n' + inject + text[m.end():]
+          open(path, 'w', encoding='utf-8').write(text)
+          print('patched the glib port')
+          PY
+          grep -n 'aurora_gup' "$P" | head -5
       - name: configure for the simulator
         continue-on-error: true
         run: |
