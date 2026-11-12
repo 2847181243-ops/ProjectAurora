@@ -122,9 +122,18 @@ jobs:
         run: |
           set +e
           OUT=third_party/krkr/out/ios/sim
-          ARCHIVES=$(find "$OUT" -name '*.a' | sort | tr '\n' ' ')
-          echo "merging $(echo "$ARCHIVES" | wc -w) archives"
-          libtool -static -o libkrkrell-sim.a $ARCHIVES 2>&1 | tail -5
+          # Only archives whose objects target the simulator may be merged: one device
+          # object makes the whole archive unusable for a simulator link.
+          GOOD=""
+          for a in $(find "$OUT" -name '*.a' | sort); do
+            plat=$(otool -l "$a" 2>/dev/null | grep -A3 'LC_BUILD_VERSION' | grep ' platform ' | head -1 | awk '{print $2}')
+            case "$plat" in
+              7|"") GOOD="$GOOD $a" ;;   # 7 = iOS simulator, empty = no build version
+              *) echo "skipping $a (platform $plat)" ;;
+            esac
+          done
+          echo "merging $(echo $GOOD | wc -w) archives"
+          libtool -static -o libkrkrell-sim.a $GOOD 2>&1 | tail -5
           ls -la libkrkrell-sim.a
 
       - uses: actions/upload-artifact@v4
