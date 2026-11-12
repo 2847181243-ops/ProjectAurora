@@ -129,11 +129,14 @@ jobs:
           ARCHIVES=$(find "$OUT" -name '*.a' | sort | tr '\n' ' ')
           echo "merging $(echo "$ARCHIVES" | wc -w) archives"
           # One archive avoids link-order games across 30+ vcpkg libraries.
+          set +e
           libtool -static -o libkrkrell.a $ARCHIVES 2>&1 | tail -5 || true
           ls -la libkrkrell.a 2>/dev/null || echo 'merge failed'
       - name: report artefacts
         if: always()
+        continue-on-error: true
         run: |
+          set +e
           find third_party/krkr/out/ios/release -name '*.a' | head -20
           ls -la third_party/krkr/out/ios/release/bridge/engine_api/libengine_api.a 2>/dev/null || true
 
