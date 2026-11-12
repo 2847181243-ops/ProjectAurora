@@ -121,6 +121,21 @@ jobs:
           /usr/bin/time -p cmake --build out/ios/release --target engine_api -j 6 2>&1 | tee ../../krkr-build.log
           find out/ios/release -name "*.a" | head -10
 
+      - name: report artefacts
+        if: always()
+        run: |
+          find third_party/krkr/out/ios/release -name '*.a' | head -20
+          ls -la third_party/krkr/out/ios/release/bridge/engine_api/libengine_api.a 2>/dev/null || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: krkr-ios-engine
+          path: |
+            third_party/krkr/out/ios/release/bridge/engine_api/libengine_api.a
+            third_party/krkr/out/ios/release/**/*.a
+            third_party/krkr/bridge/engine_api/include/**
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         if: always()
         with:
