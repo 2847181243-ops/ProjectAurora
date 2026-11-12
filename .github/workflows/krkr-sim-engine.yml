@@ -133,7 +133,8 @@ jobs:
             esac
           done
           echo "merging $(echo $GOOD | wc -w) archives"
-          libtool -static -o libkrkrell-sim.a $GOOD 2>&1 | tail -5
+          libtool -static -o libkrkrell-sim.a $GOOD > merge.log 2>&1
+          tail -5 merge.log
           ls -la libkrkrell-sim.a
 
       - uses: actions/upload-artifact@v4
@@ -152,4 +153,5 @@ jobs:
           path: |
             krkr-sim-configure.log
             krkr-sim-build.log
+            merge.log
           if-no-files-found: warn
