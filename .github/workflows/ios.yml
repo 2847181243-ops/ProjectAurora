@@ -5,8 +5,6 @@ permissions:
 
 on:
   # push disabled while iterating on krkr
-  workflow_dispatch_only_push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
