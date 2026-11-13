@@ -2,7 +2,7 @@
 
 > 引擎：KrKr2-Next（https://github.com/reAAAq/KrKr2-Next）
 > 平台：iOS 16.0+ / arm64
-> 状态：设备版编译、链接、归档通过；模拟器版构建中
+> 状态：设备版编译、链接、归档通过；模拟器里引擎初始化、开游戏、执行 TJS 全部实测通过
 
 ## 1 为什么先做这个引擎
 
@@ -61,3 +61,48 @@ ONScripter 的引擎是阻塞主循环，接入时要和宿主抢线程；KiriKi
 - 模拟器运行验证（引擎正在为 `arm64-iossimulator` 重建）
 - 真机安装（需要签名，等本人）
 - 游戏内容覆盖：目前只有 `startup.tjs` 的最小用例，`.xp3` 打包、`Config.tjs`、脚本归档都未验证
+
+
+## 6 模拟器实测（2026-11-13）
+
+证据：`docs/evidence/kirikiri-simulator-running.png`、`kirikiri-simulator-sim.log`。
+
+```
+[2026-11-13 00:28:21.881] [core] [debug] EngineBootstrap: starting initialization
+[2026-11-13 00:28:29.722] [core] [info] EGL initialized: version 1.5
+[2026-11-13 00:28:29.722] [core] [info] EGL vendor: Google Inc. (Apple)
+[2026-11-13 00:28:29.722] [core] [info] EGL version string: 1.5 (ANGLE 2.1.7258 git hash: d9fc4a372074)
+[2026-11-13 00:28:29.759] [core] [info] ANGLE EGL context created successfully: 1280x720
+[2026-11-13 00:28:29.763] [core] [info] GL_RENDERER: ANGLE (Apple, ANGLE Metal Renderer: Apple iOS simulator GPU, Version 26.2 (Build 23C54))
+[2026-11-13 00:28:29.767] [core] [info] EngineBootstrap: ANGLE EGL context ready
+[2026-11-13 00:28:29.768] [core] [info] EngineBootstrap: initialization complete (1280x720)
+[2026-11-13 00:28:29.769] [core] [info] engine_open_game: runtime initialized, starting application with path: /Users/runner/Library/Developer/CoreSimulator/Devices/98A0BFA3-CEC3-4FD6-9916-5A2149774DBF/data/Containers/Data/Application/2B48E5CF-CB42-4CF7-9E32-736B387D25D2/Library/Application Support/AuroraData/Games/minimal-krkr (normalized: /Users/runner/Library/Developer/CoreSimulator/Devices/98A0BFA3-CEC3-4FD6-9916-5A2149774DBF/data/Containers/Data/Application/2B48E5CF-CB42-4CF7-9E32-736B387D25D2/Library/Application Support/AuroraData/Games/minimal-krkr/)
+[2026-11-13 00:28:29.788] [core] [debug] engine_open_game: calling Application->StartApplication...
+[2026-11-13 00:28:29.788] [core] [debug] StartApplication: normalizing storage path...
+[2026-11-13 00:28:29.788] [core] [debug] StartApplication: TVPInitScriptEngine...
+[2026-11-13 00:28:29.793] [core] [info] [TVP Console]  (info) Data path : file://./users/runner/library/developer/coresimulator/devices/98a0bfa3-cec3-4fd6-9916-5a2149774dbf/data/containers/data/application/2b48e5cf-cb42-4cf7-9e32-736b387d25d2/library/application support/auroradata/games/minimal-krkr/savedata/
+[2026-11-13 00:28:29.809] [core] [debug] StartApplication: TVPInitFontNames...
+```
+
+界面里 `minimal-krkr` 与 `KiriKiri2` 都显示 RUNNING，Stop 按钮可用。
+
+### 6.1 模拟器这条路踩过的四个坑
+
+| 现象 | 根因 | 处理 |
+|---|---|---|
+| `Float16ToFloat32.cpp.o built for 'iOS'` | 模拟器 triplet 由 sed 生成，但上游文件没有 `VCPKG_OSX_SYSROOT` 行，sed 静默无效，vcpkg 全程按 iphoneos 编 | 改成显式 `echo 'set(VCPKG_OSX_SYSROOT iphonesimulator)' >> triplet` |
+| `glib: pipe2 undeclared` | Darwin 只在完整特性集下声明 pipe2，glib 的包含顺序把它挡住了 | 给仓库自带的 glib port 打补丁，`#ifdef HAVE_PIPE2` → `#if 0` |
+| portfile 语法损坏（宿主 glib 也挂） | 补丁用正则插在 `vcpkg_extract_source_archive(` 之后，而该调用是跨行的，插进了参数列表 | 括号配平定位，插在调用结束后 |
+| `onscripter.a(...) found architecture 'x86_64'` | ONScripter 的引擎对象用写死的 `-arch x86_64` 编译 | 改成 arm64，与三方库统一 |
+
+### 6.2 测试脚本的时序坑
+
+引擎把 `startup.tjs` 执行在 `system/initialize.tjs` **之前**，那个时刻 `Window`/`Layer` 不可用，
+`new Layer(...)` 会抛异常并让 `engine_open_game` 返回失败。冒烟脚本因此只调用
+`Debug.message()`——能打出这一行就说明 TJS 虚拟机在跑。
+
+## 7 仍然缺的
+
+- 画面呈现：引擎渲染到自己的 layer，宿主这边只做了 `read_frame_rgba` 取帧，尚未把它接到 SwiftUI 的显示视图（和 ONScripter 同款遗留项）
+- 真实游戏：只验证了 `startup.tjs`，`.xp3` 封包、`Config.tjs`、存档路径都未实测
+- 真机安装：需要签名，等本人
