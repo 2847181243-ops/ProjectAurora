@@ -154,5 +154,18 @@ ONScripter 的引擎是阻塞主循环，接入时要和宿主抢线程；KiriKi
 第 3 条用 `TestGames/broken-krkr`（故意写错的 `@if`）复现时，引擎**没有崩**：
 模块如实返回 `io_error`，宿主进程存活，界面状态回到 READY。
 
-所以"坏脚本直接弄崩宿主"这个结论不成立。AetherKiri 那次的崩溃另有触发条件
-（更可能出在它 polyfill 流程更深处），目前没有独立复现器，按**未解决**记录。
+所以"坏脚本直接弄崩宿主"这个结论不成立。为定位它做了四组最小复现，全部**没有崩**：
+
+| 复现 | 形状 | 结果 |
+|---|---|---|
+| `broken-krkr` | startup.tjs 里直接写 `@if` | 返回 io_error，进程存活 |
+| `bad-nested` | startup.tjs `execStorage` 一个坏脚本 | 两个脚本都加载，进程存活 |
+| `bad-bom` | 嵌套 + UTF-8 BOM + `@if/@endif` | 同上 |
+| `bad-then-good` | 坏脚本之后接着 exec 一个好脚本 | 同上，第二个脚本正常执行 |
+
+四组都覆盖了演示包 `startup.tjs` 的结构（"exec 一个失败的脚本，然后继续 exec 下一个"），
+说明崩溃需要该包更具体的内容，不是脚本结构本身。
+
+**结论**：该演示包崩溃按"第三方包不兼容、无法独立复现"记录，不再耗轮次；
+vanilla KiriKiri2 兼容的包（纯 TJS、无 `@if` 预处理器）不受影响，已由
+`minimal-krkr` 验证。
