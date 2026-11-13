@@ -108,6 +108,13 @@ jobs:
           xcrun simctl spawn "$DEVICE" log show --last 2m --predicate 'process == "Aurora"' > device.log 2>&1 || true
           grep -iE 'krkr|engine|module|error|exception|fatal' device.log | tail -40 || true
 
+          DATA=$(xcrun simctl get_app_container "$DEVICE" com.aurora.app data 2>/dev/null)
+          echo "data container: $DATA" >> launch.log
+          if [ -n "$DATA" ]; then
+            find "$DATA" -name 'krkr-startup.log' -exec cp {} startup.log \; 2>/dev/null || true
+            [ -f startup.log ] && tail -40 startup.log || echo "no startup.log"
+          fi
+
           CRASH_DIR=$HOME/Library/Logs/DiagnosticReports
           ls -t "$CRASH_DIR" 2>/dev/null | head -10 || true
           NEWEST=$(ls -t "$CRASH_DIR"/*.ips 2>/dev/null | head -1)
@@ -124,6 +131,7 @@ jobs:
             launch.log
             install.log
             crash.txt
+            startup.log
             Applications/Aurora-iOS/build.log
             Applications/Aurora-iOS/gen.log
           if-no-files-found: warn

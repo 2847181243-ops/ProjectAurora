@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <cstring>
+#include <fstream>
 #include <new>
 #include <string>
 
@@ -30,6 +31,14 @@ std::string storagePath(Instance* instance, AuroraStorageKind kind) {
     const AuroraStatus status = instance->host->storage_directory(
         instance->host->host_context, kModuleId, kind, "", buffer, sizeof(buffer));
     return status == AURORA_OK ? std::string(buffer) : std::string();
+}
+
+/* The host log goes to the device console, which a simulator job cannot read from
+ * the unified log; dropping the text next to the cache keeps it retrievable. */
+void writeStartupLog(Instance* instance, const std::string& text) {
+    if (instance == nullptr || instance->config.cache_directory.empty()) return;
+    std::ofstream out(instance->config.cache_directory + "/krkr-startup.log", std::ios::trunc);
+    if (out) out << text;
 }
 
 AuroraStatus createInstance(const AuroraHostServices* host, void** out_instance) {
@@ -64,6 +73,7 @@ AuroraStatus startInstance(void* handle) {
     }
     if (!aurora::krkr::openGame(instance->config.game_root, error)) {
         logLine(instance, AURORA_LOG_ERROR, "engine_open_game failed: " + error);
+        writeStartupLog(instance, error);
         aurora::krkr::destroy();
         return AURORA_E_IO;
     }
