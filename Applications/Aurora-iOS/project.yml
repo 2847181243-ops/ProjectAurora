@@ -126,6 +126,13 @@ targets:
           - "-lbz2"
           - "-lz"
           - "-liconv"
+        # The SDL2 dylib sits next to the executable, and its install name is
+        # @rpath/libSDL2-2.0.0.dylib. Without an @executable_path runpath dyld
+        # cannot resolve it on a real device (the app died at launch with
+        # "Library not loaded").
+        LD_RUNPATH_SEARCH_PATHS:
+          - "$(inherited)"
+          - "@executable_path"
         LIBRARY_SEARCH_PATHS:
           - "$(SRCROOT)/../../krkrlib"
           - "$(SRCROOT)/../../onslib/lib"
