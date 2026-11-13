@@ -27,6 +27,15 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                /* While something is running its output is the whole point of the
+                 * screen, so it moves above the module list instead of sitting at
+                 * the bottom where it needs a scroll to be seen. */
+                if !host.runningModule.isEmpty {
+                    Section("Runtime output") {
+                        FramePanel(host: host)
+                    }
+                }
+
                 Section {
                     ForEach(host.rows) { row in
                         ModuleRowView(
@@ -45,9 +54,6 @@ struct ContentView: View {
                         .font(.footnote)
                 }
 
-                Section("Runtime output") {
-                    FramePanel(host: host)
-                }
             }
             .navigationTitle("Aurora")
             .toolbar {

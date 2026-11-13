@@ -15,6 +15,7 @@ struct Instance {
     aurora::krkr::Config config;
     bool running = false;
     std::string name = "kirikiri";
+    int64_t frames = 0;
 };
 
 void logLine(Instance* instance, AuroraLogLevel level, const std::string& message) {
@@ -86,7 +87,7 @@ AuroraStatus queryStatus(void* handle, AuroraModuleInstanceStatus* out_status) {
     if (handle == nullptr || out_status == nullptr) return AURORA_E_INVALID_ARGUMENT;
     Instance* instance = static_cast<Instance*>(handle);
     out_status->state = instance->running ? AURORA_STATE_RUNNING : AURORA_STATE_READY;
-    out_status->frames_presented = 0;
+    out_status->frames_presented = instance->frames;
     out_status->frames_dropped = 0;
     out_status->average_fps = 0.0;
     out_status->name = instance->name.c_str();
@@ -129,6 +130,7 @@ AuroraStatus tickInstance(void* handle, double delta_seconds) {
                     frame.pixels + static_cast<std::size_t>(row) * frame.stride_bytes, copy_bytes);
     }
     instance->host->present_frame(instance->host->host_context, &host_frame);
+    ++instance->frames;
     return AURORA_OK;
 }
 
