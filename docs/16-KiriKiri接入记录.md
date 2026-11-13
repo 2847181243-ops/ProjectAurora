@@ -133,3 +133,22 @@ ONScripter 的引擎是阻塞主循环，接入时要和宿主抢线程；KiriKi
 
 - 让测试游戏真的画点东西（`Window`/`Layer` 要等 `system/initialize.tjs` 之后才可用）
 - 用真实 `.xp3` 游戏验证解码、脚本、存档
+
+
+## 10 真实归档验证（2026-11-13）
+
+用 AetherKiri 的 KAG3 演示包（`data.xp3`，17 MB，63 个条目）做真实归档测试。
+探针在引擎实际解析的那个流上取到了数据：
+
+| 脚本 | 大小 | 前 8 字节 | 判定 |
+|---|---|---|---|
+| `startup.tjs` | 449 | `2f 2f 20 73 74 61 72 74`（`// start`） | 正确 |
+| `system_polyfill/polyfillinitialize.tjs` | 1637 | `ef bb bf 0a 40 69 66 20`（UTF-8 BOM + `@if `） | 正确 |
+
+结论：
+
+1. **xp3 挂载与读取完全正确**——文件定位、大小、字节都对得上；
+2. 该演示包的脚本用了 **`@if` 预处理器语法**，vanilla KiriKiri2 的 TJS2 解析器不支持，报 `syntax error`；
+3. 解析失败后引擎**没有干净地终止**，而是在 `TypeOfMemberDirect` 里 SIGSEGV，把宿主一起带走。
+
+第 3 条是引擎缺陷，与具体游戏无关，用 `TestGames/broken-krkr` 可以最小复现。

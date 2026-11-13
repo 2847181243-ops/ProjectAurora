@@ -1,0 +1,3 @@
+// A deliberately invalid script: the TJS parser reports a syntax error.
+// Used to check that a bad game cannot take the host down with it.
+@if 1
