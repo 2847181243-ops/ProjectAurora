@@ -1,0 +1,3 @@
+// Same shape as the AetherKiri demo: a failing script is followed by another one.
+Scripts.execStorage("bad.tjs");
+Scripts.execStorage("next.tjs");
