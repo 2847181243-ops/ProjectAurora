@@ -169,3 +169,27 @@ ONScripter 的引擎是阻塞主循环，接入时要和宿主抢线程；KiriKi
 **结论**：该演示包崩溃按"第三方包不兼容、无法独立复现"记录，不再耗轮次；
 vanilla KiriKiri2 兼容的包（纯 TJS、无 `@if` 预处理器）不受影响，已由
 `minimal-krkr` 验证。
+
+
+### 10.1 演示包失败的真正原因是预处理器
+
+把归档里的 `system_polyfill/PolyfillInitialize.tjs` 原文件取出来，开头是：
+
+```tjs
+﻿
+@if (kirikiriz)
+property _dummyProp { getter {} setter (v) {} }
+...
+@endif
+```
+
+`@if` 是 KiriKiri 的**脚本预处理器**指令（KAG3 的 `Config.tjs` 也大量使用）。
+当前构建的 TJS2 在解析到它时报 `syntax error`——预处理器没有生效。
+
+这意味着：
+
+- **纯 TJS 的游戏可以跑**（`minimal-krkr` 已验证）；
+- **依赖 `@if` 的 KAG3 风格脚本跑不了**，这会影响相当一部分吉里吉里游戏。
+
+这是一个功能缺口，不是本项目的 bug，也不在这次修复范围内：要支持它需要给 TJS2 接上预处理器
+（或在执行前预处理脚本），工作量与风险都不小，需要单独评估。
