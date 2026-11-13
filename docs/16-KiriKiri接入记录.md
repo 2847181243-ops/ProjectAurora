@@ -151,4 +151,8 @@ ONScripter 的引擎是阻塞主循环，接入时要和宿主抢线程；KiriKi
 2. 该演示包的脚本用了 **`@if` 预处理器语法**，vanilla KiriKiri2 的 TJS2 解析器不支持，报 `syntax error`；
 3. 解析失败后引擎**没有干净地终止**，而是在 `TypeOfMemberDirect` 里 SIGSEGV，把宿主一起带走。
 
-第 3 条是引擎缺陷，与具体游戏无关，用 `TestGames/broken-krkr` 可以最小复现。
+第 3 条用 `TestGames/broken-krkr`（故意写错的 `@if`）复现时，引擎**没有崩**：
+模块如实返回 `io_error`，宿主进程存活，界面状态回到 READY。
+
+所以"坏脚本直接弄崩宿主"这个结论不成立。AetherKiri 那次的崩溃另有触发条件
+（更可能出在它 polyfill 流程更深处），目前没有独立复现器，按**未解决**记录。
