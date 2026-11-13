@@ -21,6 +21,22 @@ namespace {
 engine_handle_t g_engine = nullptr;
 std::vector<uint8_t> g_pixels;
 
+/* The engine keeps its startup output in a ring buffer; draining it is the only way
+ * to learn why open_game failed. */
+std::string drainStartupLogs() {
+    if (g_engine == nullptr) return std::string();
+    std::string all;
+    std::vector<char> chunk(2048);
+    for (int i = 0; i < 16; ++i) {
+        uint32_t written = 0;
+        chunk[0] = '\0';
+        if (engine_drain_startup_logs(g_engine, chunk.data(), static_cast<uint32_t>(chunk.size()), &written) != ENGINE_RESULT_OK) break;
+        if (written == 0) break;
+        all.append(chunk.data(), written);
+    }
+    return all;
+}
+
 std::string lastError() {
     const char* message = g_engine != nullptr ? engine_get_last_error(g_engine) : nullptr;
     return message != nullptr ? std::string(message) : std::string("engine error");
@@ -59,6 +75,8 @@ bool openGame(const std::string& game_root, std::string& error) {
     const engine_result_t result = engine_open_game(g_engine, game_root.c_str(), nullptr);
     if (result != ENGINE_RESULT_OK) {
         error = lastError();
+        const std::string logs = drainStartupLogs();
+        if (!logs.empty()) error += "\n" + logs;
         return false;
     }
     return true;
