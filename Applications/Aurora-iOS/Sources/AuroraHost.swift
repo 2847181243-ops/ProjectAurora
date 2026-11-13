@@ -60,7 +60,12 @@ final class AuroraHost: ObservableObject {
         let entries = (try? manager.contentsOfDirectory(at: bundledRoot, includingPropertiesForKeys: nil)) ?? []
         for entry in entries {
             let destination = root.appendingPathComponent(entry.lastPathComponent)
-            if manager.fileExists(atPath: destination.path) { continue }
+            /* Smoke fixtures ship inside the app bundle; replace them on every
+             * launch so a rebuilt fixture reaches the device instead of being
+             * masked by what the previous install left behind. */
+            if manager.fileExists(atPath: destination.path) {
+                try? manager.removeItem(at: destination)
+            }
             try? manager.copyItem(at: entry, to: destination)
             makeWritable(destination)
         }
