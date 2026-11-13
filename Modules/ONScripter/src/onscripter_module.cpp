@@ -2,6 +2,7 @@
 #include <atomic>
 #include <cstdio>
 #include <cstring>
+#include <vector>
 #include <filesystem>
 #include <new>
 #include <string>
@@ -23,6 +24,7 @@ struct Instance {
     std::atomic<bool> running{false};
     std::atomic<int> result{0};
     std::string status_name = "onscripter";
+    int64_t frames = 0;
 };
 
 void logLine(Instance* instance, AuroraLogLevel level, const std::string& message) {
@@ -122,7 +124,7 @@ AuroraStatus queryStatus(void* handle, AuroraModuleInstanceStatus* out_status) {
     if (handle == nullptr || out_status == nullptr) return AURORA_E_INVALID_ARGUMENT;
     Instance* instance = static_cast<Instance*>(handle);
     out_status->state = instance->running.load() ? AURORA_STATE_RUNNING : AURORA_STATE_READY;
-    out_status->frames_presented = 0;
+    out_status->frames_presented = instance->frames;
     out_status->frames_dropped = 0;
     out_status->average_fps = 0.0;
     out_status->name = instance->status_name.c_str();
@@ -152,6 +154,28 @@ AuroraStatus tickInstance(void* handle, double) {
             logLine(instance, AURORA_LOG_WARNING, "engine exited with code " + std::to_string(code));
         }
     }
+
+    /* The engine owns a blocking loop and never hands us a frame, so the host
+     * samples its video surface on the tick instead. */
+    std::vector<uint8_t> rgba;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    if (!aurora::ons::grabFrame(rgba, width, height)) return AURORA_OK;
+    if (instance->host == nullptr || instance->host->acquire_frame == nullptr) return AURORA_OK;
+
+    AuroraFrame frame{};
+    if (instance->host->acquire_frame(instance->host->host_context, width, height, &frame) != AURORA_OK) {
+        return AURORA_OK;
+    }
+    const uint32_t rows = height < frame.height ? height : frame.height;
+    const uint32_t copy_bytes = width * 4u < frame.stride_bytes ? width * 4u : frame.stride_bytes;
+    for (uint32_t row = 0; row < rows; ++row) {
+        std::memcpy(static_cast<uint8_t*>(frame.pixels) + static_cast<std::size_t>(row) * frame.stride_bytes,
+                    rgba.data() + static_cast<std::size_t>(row) * static_cast<std::size_t>(width) * 4u,
+                    copy_bytes);
+    }
+    instance->host->present_frame(instance->host->host_context, &frame);
+    ++instance->frames;
     return AURORA_OK;
 }
 

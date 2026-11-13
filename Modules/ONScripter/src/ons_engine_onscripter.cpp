@@ -59,6 +59,55 @@ void requestStop() {
     pushQuit();
 }
 
+bool grabFrame(std::vector<uint8_t>& rgba, uint32_t& width, uint32_t& height) {
+    SDL_Surface* surface = SDL_GetVideoSurface();
+    if (surface == nullptr || surface->pixels == nullptr || surface->w <= 0 || surface->h <= 0) return false;
+
+    /* The engine draws on its own thread, so a frame can tear while we copy it.
+     * A tearing frame is acceptable here; blocking the engine is not. */
+    if (SDL_MUSTLOCK(surface) && SDL_LockSurface(surface) != 0) return false;
+
+    const int w = surface->w;
+    const int h = surface->h;
+    const int bpp = surface->format->BytesPerPixel;
+    rgba.resize(static_cast<std::size_t>(w) * static_cast<std::size_t>(h) * 4u);
+
+    const SDL_PixelFormat* format = surface->format;
+    const uint8_t* base = static_cast<const uint8_t*>(surface->pixels);
+    for (int y = 0; y < h; ++y) {
+        const uint8_t* row = base + static_cast<std::size_t>(y) * surface->pitch;
+        uint8_t* dst = rgba.data() + static_cast<std::size_t>(y) * static_cast<std::size_t>(w) * 4u;
+        for (int x = 0; x < w; ++x) {
+            uint32_t value = 0;
+            switch (bpp) {
+                case 1: value = row[x]; break;
+                case 2: value = reinterpret_cast<const uint16_t*>(row)[x]; break;
+                case 3: {
+                    const uint8_t* p = row + x * 3;
+                    value = static_cast<uint32_t>(p[0]) | (static_cast<uint32_t>(p[1]) << 8) |
+                            (static_cast<uint32_t>(p[2]) << 16);
+                    break;
+                }
+                default: value = reinterpret_cast<const uint32_t*>(row)[x]; break;
+            }
+            auto channel = [&](uint32_t mask, uint8_t shift, uint8_t loss) -> uint8_t {
+                if (mask == 0) return 0xFF;
+                const uint32_t raw = (value & mask) >> shift;
+                return static_cast<uint8_t>(raw << loss);
+            };
+            dst[x * 4 + 0] = channel(format->Rmask, format->Rshift, format->Rloss);
+            dst[x * 4 + 1] = channel(format->Gmask, format->Gshift, format->Gloss);
+            dst[x * 4 + 2] = channel(format->Bmask, format->Bshift, format->Bloss);
+            dst[x * 4 + 3] = 0xFF;
+        }
+    }
+    if (SDL_MUSTLOCK(surface)) SDL_UnlockSurface(surface);
+
+    width = static_cast<uint32_t>(w);
+    height = static_cast<uint32_t>(h);
+    return true;
+}
+
 std::string describeVideo() {
     const char* driver = SDL_VideoDriverName(nullptr, 0);
     char name[64] = {0};

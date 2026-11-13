@@ -3,6 +3,7 @@
 #define AURORA_ONS_ENGINE_H
 
 #include <string>
+#include <vector>
 
 /* The seam between Aurora and ONScripter.
  *
@@ -33,6 +34,10 @@ void requestStop();
 
 /* Human readable description of what the video backend gave us; empty when the
  * engine could not report it. */
+/* Copies the current video surface into RGBA8. Returns false when the engine has
+ * not produced a surface yet (or the backend has no frame source at all). */
+bool grabFrame(std::vector<uint8_t>& rgba, uint32_t& width, uint32_t& height);
+
 std::string describeVideo();
 
 /* Main thread: tears SDL down after the loop returned. */
