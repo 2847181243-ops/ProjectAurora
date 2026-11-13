@@ -78,6 +78,7 @@ jobs:
 
       - name: boot a simulator and start KiriKiri
         continue-on-error: true
+        timeout-minutes: 12
         run: |
           set -x
           xcrun simctl list devices available | head -10
@@ -89,7 +90,7 @@ jobs:
           fi
           echo "device=$DEVICE"
           xcrun simctl boot "$DEVICE" || true
-          xcrun simctl bootstatus "$DEVICE" -b || true
+          perl -e 'alarm 180; exec @ARGV' xcrun simctl bootstatus "$DEVICE" -b || true
           APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 6 | head -1)
           echo "app=$APP"
           xcrun simctl install "$DEVICE" "$APP" 2>&1 | tee install.log || true
@@ -99,7 +100,7 @@ jobs:
           # while the pty variant stays silent when the process dies immediately.
           export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.kirikiri
           export SIMCTL_CHILD_AURORA_AUTOSTART_GAME=aetherkiri-kag3
-          xcrun simctl launch "$DEVICE" com.aurora.app 2>&1 | tee launch.log || true
+          perl -e 'alarm 60; exec @ARGV' xcrun simctl launch "$DEVICE" com.aurora.app 2>&1 | tee launch.log || true
           sleep 5
           xcrun simctl spawn "$DEVICE" launchctl list 2>/dev/null | grep -i aurora > proc.log || echo "process gone after 5s" >> proc.log
           sleep 20
@@ -107,7 +108,7 @@ jobs:
           sleep 8
           xcrun simctl io "$DEVICE" screenshot shot-2.png || true
 
-          xcrun simctl spawn "$DEVICE" log show --last 2m --predicate 'process == "Aurora"' > device.log 2>&1 || true
+          perl -e 'alarm 120; exec @ARGV' xcrun simctl spawn "$DEVICE" log show --last 2m --predicate 'process == "Aurora"' > device.log 2>&1 || true
           grep -iE 'krkr|engine|module|error|exception|fatal' device.log | tail -40 || true
 
           DATA=$(xcrun simctl get_app_container "$DEVICE" com.aurora.app data 2>/dev/null)
