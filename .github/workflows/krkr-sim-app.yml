@@ -5,6 +5,15 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      module:
+        description: "Module id to autostart"
+        required: false
+        default: "com.aurora.runtime.kirikiri"
+      game:
+        description: "Game folder name, empty = first match"
+        required: false
+        default: "aetherkiri-kag3"
   push:
     paths:
       - 'ci-triggers/krkr-sim-app'
@@ -98,8 +107,8 @@ jobs:
 
           # Launch without --console-pty: it reports the PID or the exact refusal,
           # while the pty variant stays silent when the process dies immediately.
-          export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.kirikiri
-          export SIMCTL_CHILD_AURORA_AUTOSTART_GAME=aetherkiri-kag3
+          export SIMCTL_CHILD_AURORA_AUTOSTART="${{ github.event.inputs.module || 'com.aurora.runtime.kirikiri' }}"
+          export SIMCTL_CHILD_AURORA_AUTOSTART_GAME="${{ github.event.inputs.game || 'aetherkiri-kag3' }}"
           perl -e 'alarm 60; exec @ARGV' xcrun simctl launch "$DEVICE" com.aurora.app 2>&1 | tee launch.log || true
           sleep 5
           xcrun simctl spawn "$DEVICE" launchctl list 2>/dev/null | grep -i aurora > proc.log || echo "process gone after 5s" >> proc.log
