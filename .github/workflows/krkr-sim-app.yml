@@ -107,6 +107,12 @@ jobs:
           sleep 10
           xcrun simctl io "$DEVICE" screenshot shot-2.png || true
           xcrun simctl spawn "$DEVICE" log show --last 3m --predicate 'processImagePath CONTAINS "Aurora"' > device.log 2>&1 || true
+          xcrun simctl spawn "$DEVICE" log show --last 3m --predicate 'eventMessage CONTAINS "Aurora" OR process == "Aurora"' > device2.log 2>&1 || true
+          CRASH_DIR=$HOME/Library/Logs/DiagnosticReports
+          ls -t "$CRASH_DIR" 2>/dev/null | head -5
+          NEWEST=$(ls -t "$CRASH_DIR"/Aurora* 2>/dev/null | head -1)
+          if [ -n "$NEWEST" ]; then cp "$NEWEST" crash.txt; fi
+          ls -la crash.txt 2>/dev/null || true
           grep -iE 'krkr|engine|module|error' device.log | tail -40
 
       - uses: actions/upload-artifact@v4
@@ -120,6 +126,8 @@ jobs:
             device.log
             launch-status.log
             install.log
+            device2.log
+            crash.txt
             Applications/Aurora-iOS/build.log
             Applications/Aurora-iOS/gen.log
           if-no-files-found: warn
