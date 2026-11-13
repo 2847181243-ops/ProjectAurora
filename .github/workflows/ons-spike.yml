@@ -198,6 +198,25 @@ jobs:
               open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s)
               print('utf-8 full-width space is now non-printing')
           PY
+          # In UTF-8 mode drawChar() draws every character, including the full-width
+          # space that marks a dialogue line; the shipped font has no glyph for it,
+          # so every line starts with a tofu box. Skip just that one character.
+          python3 - third_party/onscripter/ONScripterLabel_text.cpp <<'PY'
+          import sys
+          p = sys.argv[1]
+          s = open(p, encoding='utf-8', errors='surrogateescape').read()
+          old = 'if ( !isNonPrinting(&out_text[0]) || script_h.enc.getEncoding() == Encoding::CODE_UTF8 ){'
+          new = ('const bool aurora_wide_space = ((unsigned char)out_text[0] == 0xe3 &&' + '\n' +
+                 '                               (unsigned char)out_text[1] == 0x80 &&' + '\n' +
+                 '                               (unsigned char)out_text[2] == 0x80);' + '\n' +
+                 '    if ( ( !isNonPrinting(&out_text[0]) || script_h.enc.getEncoding() == Encoding::CODE_UTF8 ) && !aurora_wide_space ){')
+          if old not in s:
+              print('drawChar condition not found, left alone')
+          else:
+              s = s.replace(old, new)
+              open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s)
+              print('utf-8 wide space is skipped when drawing')
+          PY
           # SDL 1.2 add-on headers: SDL2's would drag SDL2 core headers into the same TU.
           git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/iosons
           IOSONS=third_party/iosons
