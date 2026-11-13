@@ -106,3 +106,30 @@ ONScripter 的引擎是阻塞主循环，接入时要和宿主抢线程；KiriKi
 - 画面呈现：引擎渲染到自己的 layer，宿主这边只做了 `read_frame_rgba` 取帧，尚未把它接到 SwiftUI 的显示视图（和 ONScripter 同款遗留项）
 - 真实游戏：只验证了 `startup.tjs`，`.xp3` 封包、`Config.tjs`、存档路径都未实测
 - 真机安装：需要签名，等本人
+
+
+## 8 画面通路（2026-11-13 补）
+
+截图：`docs/evidence/kirikiri-simulator-frames.png`。
+
+界面上 `Runtime output` 面板位于库列表下方，显示一块 1280×720（16:9）的黑色画面，
+底下一行 `frames presented: 24 audio 48 kHz`。
+
+黑色是因为冒烟脚本只打日志、不画东西，面板本身证明的是通路：
+
+```
+引擎渲染帧 → engine_read_frame_rgba → 模块 present_frame → 宿主 surface_pixels
+→ aurora_bridge_frame_data → Metal texture → MTKView 显示
+```
+
+顺手修掉的两个问题：
+
+1. **帧序号恒为 0**：模块的 `query_status` 里写死 `frames_presented = 0`，而
+   `MetalFrameView` 靠序号去重（`sequence != uploadedSequence` 才重新上传纹理），
+   所以只有第一帧被上传、之后永远不刷新。改成模块自己数帧。
+2. **面板在列表最底部**：原来要滚动才能看到，改成有模块运行时提到库列表下方。
+
+## 9 下一步
+
+- 让测试游戏真的画点东西（`Window`/`Layer` 要等 `system/initialize.tjs` 之后才可用）
+- 用真实 `.xp3` 游戏验证解码、脚本、存档
