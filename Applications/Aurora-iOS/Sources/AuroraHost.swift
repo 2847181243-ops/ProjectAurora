@@ -62,6 +62,21 @@ final class AuroraHost: ObservableObject {
             let destination = root.appendingPathComponent(entry.lastPathComponent)
             if manager.fileExists(atPath: destination.path) { continue }
             try? manager.copyItem(at: entry, to: destination)
+            makeWritable(destination)
+        }
+    }
+
+
+    /* Bundle resources are copied with their read-only permissions, and an engine
+     * that wants to create a save folder inside the game tree then fails with a
+     * plain "io_error". Give the copy normal user permissions. */
+    private func makeWritable(_ root: URL) {
+        let manager = FileManager.default
+        guard let walker = manager.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey]) else { return }
+        try? manager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
+        for case let url as URL in walker {
+            let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+            try? manager.setAttributes([.posixPermissions: isDir ? 0o755 : 0o644], ofItemAtPath: url.path)
         }
     }
 
