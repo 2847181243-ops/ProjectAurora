@@ -70,6 +70,18 @@ bool create(const Config& config, std::string& error) {
     return true;
 }
 
+/* The runtime accepts one open_game per process: a second call fails with an IO
+ * error even after the first game was stopped. Remember what is open so a restart
+ * of the same game can skip the call instead of failing. */
+std::string& openGameRoot() {
+    static std::string root;
+    return root;
+}
+
+bool sameGameOpen(const std::string& game_root) {
+    return !openGameRoot().empty() && openGameRoot() == game_root;
+}
+
 bool openGame(const std::string& game_root, std::string& error) {
     if (g_engine == nullptr) { error = "no engine"; return false; }
     const engine_result_t result = engine_open_game(g_engine, game_root.c_str(), nullptr);
@@ -79,6 +91,7 @@ bool openGame(const std::string& game_root, std::string& error) {
         if (!logs.empty()) error += "\n" + logs;
         return false;
     }
+    openGameRoot() = game_root;
     return true;
 }
 

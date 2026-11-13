@@ -28,6 +28,7 @@ struct Frame {
 
 bool engineAvailable();
 bool create(const Config& config, std::string& error);
+bool sameGameOpen(const std::string& game_root);
 bool openGame(const std::string& game_root, std::string& error);
 /* Advances the engine and leaves the current frame in out until the next call. */
 bool tick(uint32_t delta_ms, Frame& out, std::string& error);

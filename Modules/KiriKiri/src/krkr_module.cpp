@@ -82,6 +82,12 @@ AuroraStatus startInstance(void* handle) {
         logLine(instance, AURORA_LOG_ERROR, "engine_create failed: " + error);
         return AURORA_E_INIT_FAILED;
     }
+    if (aurora::krkr::sameGameOpen(instance->config.game_root)) {
+        /* Already open: restarting the same title only needs the engine to run. */
+        instance->running = true;
+        instance->frames = 0;
+        return AURORA_OK;
+    }
     if (!aurora::krkr::openGame(instance->config.game_root, error)) {
         logLine(instance, AURORA_LOG_ERROR, "engine_open_game failed: " + error);
         writeStartupLog(instance, error);
