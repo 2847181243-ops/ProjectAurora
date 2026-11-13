@@ -133,6 +133,51 @@ jobs:
           print('patched the glib port after the extraction call')
           PY
           sed -n '18,32p' "$P"
+      - name: mount the project's own xp3 archives
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re, pathlib
+          fn = pathlib.Path('patches/krkr-project-xp3.inc').read_text()
+          decl = 'void TVPAutoMountProjectXP3Archives();'
+          call = 'TVPAutoMountProjectXP3Archives();'
+
+          # 1. declaration next to the sibling one
+          h = pathlib.Path('third_party/krkr/cpp/core/base/StorageIntf.h')
+          ht = h.read_text()
+          if decl not in ht:
+              ht = ht.replace('void TVPAutoMountSiblingXP3Archives();',
+                              'void TVPAutoMountSiblingXP3Archives();\n' + decl)
+              h.write_text(ht)
+
+          # 2. definition after the sibling function, found by brace matching
+          s = pathlib.Path('third_party/krkr/cpp/core/base/impl/StorageImpl.cpp')
+          st = s.read_text()
+          if 'TVPAutoMountProjectXP3Archives()' not in st:
+              i = st.index('void TVPAutoMountSiblingXP3Archives()')
+              j = st.index('{', i)
+              depth = 0
+              k = j
+              while k < len(st):
+                  if st[k] == '{': depth += 1
+                  elif st[k] == '}':
+                      depth -= 1
+                      if depth == 0: break
+                  k += 1
+              st = st[:k + 1] + '\n\n' + fn + st[k + 1:]
+              s.write_text(st)
+
+          # 3. call right after the sibling mount
+          a = pathlib.Path('third_party/krkr/cpp/core/environ/Application.cpp')
+          at = a.read_text()
+          if call not in at:
+              at = at.replace('TVPAutoMountSiblingXP3Archives();',
+                              'TVPAutoMountSiblingXP3Archives();\n\t' + call, 1)
+              a.write_text(at)
+
+          print('project xp3 mount wired')
+          PY
+          grep -n 'TVPAutoMountProjectXP3Archives' third_party/krkr/cpp/core/base/StorageIntf.h third_party/krkr/cpp/core/environ/Application.cpp | head -4
       - name: configure for the simulator
         continue-on-error: true
         run: |
