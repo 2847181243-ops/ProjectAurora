@@ -181,6 +181,23 @@ jobs:
           open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s)
           print('patched exit calls:', s.count('throw 7101'))
           PY
+          # The script ships as UTF-8, so its dialogue marker is U+3000 (E3 80 80),
+          # not the Shift-JIS 0x81 0x40 the engine checks for. Without this the
+          # marker is drawn as a missing glyph at the start of every line.
+          python3 - third_party/onscripter/ONScripterLabel_text.cpp <<'PY'
+          import sys
+          p = sys.argv[1]
+          s = open(p, encoding='utf-8', errors='surrogateescape').read()
+          old = '             ((text[0] == (char)0x81) && (text[1] == (char)0x40)) );'
+          new = ('             ((text[0] == (char)0x81) && (text[1] == (char)0x40)) ||' + '\n' +
+                 '             ((unsigned char) text[0] == 0xe3 && (unsigned char) text[1] == 0x80 && (unsigned char) text[2] == 0x80) );')
+          if old not in s:
+              print('non-printing check not found, left alone')
+          else:
+              s = s.replace(old, new)
+              open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s)
+              print('utf-8 full-width space is now non-printing')
+          PY
           # SDL 1.2 add-on headers: SDL2's would drag SDL2 core headers into the same TU.
           git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/iosons
           IOSONS=third_party/iosons
