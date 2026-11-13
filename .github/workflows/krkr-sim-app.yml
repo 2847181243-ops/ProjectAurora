@@ -38,6 +38,20 @@ jobs:
           [ -n "$run_id" ] && gh run download "$run_id" -n aurora-onscripter-sim -D onslib
           ls onslib | head -5; ls onslib/lib 2>/dev/null | head -5
 
+      - name: check the engine artifacts are current
+        run: |
+          set +e
+          HEAD_SHA=$(git rev-parse HEAD)
+          for spec in "ons-sim.yml onslib" "krkr-sim-engine.yml krkrlib"; do
+            set -- $spec
+            run_id=$(gh run list --workflow "$1" --status success --limit 1 --json databaseId,headSha --jq '.[0].databaseId')
+            run_sha=$(gh run list --workflow "$1" --status success --limit 1 --json databaseId,headSha --jq '.[0].headSha')
+            echo "$1: run=$run_id sha=$run_sha"
+            if [ "$run_sha" != "$HEAD_SHA" ]; then
+              echo "::warning::engine artifact is stale: $1 built $run_sha, HEAD is $HEAD_SHA"
+            fi
+          done
+
       - name: fetch the KiriKiri simulator engine
         continue-on-error: true
         env:
