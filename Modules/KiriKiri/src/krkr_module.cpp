@@ -83,7 +83,12 @@ AuroraStatus startInstance(void* handle) {
         return AURORA_E_INIT_FAILED;
     }
     if (aurora::krkr::sameGameOpen(instance->config.game_root)) {
-        /* Already open: restarting the same title only needs the engine to run. */
+        /* The runtime takes one open_game per process, so a restart cannot re-open
+         * the title; ask the live engine to resume instead. If it refuses, say so
+         * rather than pretending to run with no picture. */
+        if (!aurora::krkr::resume()) {
+            logLine(instance, AURORA_LOG_WARNING, "restart refused: the engine cannot resume");
+        }
         instance->running = true;
         instance->frames = 0;
         return AURORA_OK;
