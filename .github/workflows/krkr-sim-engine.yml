@@ -189,7 +189,7 @@ jobs:
           static void AuroraProbeStartupHead() {
               try {
                   ttstr name = TVPGetAppPath() + TJS_W("startup.tjs");
-                  if(!TVPIsExistentStorageNoSearch(name)) { spdlog::info("[aurora] startup.tjs missing"); return; }
+                  if(!TVPIsExistentStorage(name)) { spdlog::info("[aurora] startup.tjs missing"); return; }
                   tTJSBinaryStream* st = TVPOpenStream(name, TJS_BS_READ);
                   if(!st) { spdlog::info("[aurora] startup.tjs unreadable"); return; }
                   tjs_uint64 size = st->GetSize();
