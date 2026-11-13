@@ -70,6 +70,13 @@ AuroraStatus startInstance(void* handle) {
         logLine(instance, AURORA_LOG_WARNING, "this build has no KiriKiri engine linked");
         return AURORA_E_UNSUPPORTED;
     }
+    if (instance->config.game_root.empty()) {
+        /* A Run tap with nothing to open used to hand an empty path to
+         * engine_open_game, which then blocked the caller. Refuse it here. */
+        logLine(instance, AURORA_LOG_WARNING, "start refused: no game path");
+        return AURORA_E_INVALID_ARGUMENT;
+    }
+
     std::string error;
     if (!aurora::krkr::create(instance->config, error)) {
         logLine(instance, AURORA_LOG_ERROR, "engine_create failed: " + error);

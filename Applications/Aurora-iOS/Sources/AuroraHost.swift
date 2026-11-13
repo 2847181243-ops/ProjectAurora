@@ -134,6 +134,9 @@ final class AuroraHost: ObservableObject {
 
     func refresh() {
         BootLog.mark("refresh")
+        /* Bundled smoke games must exist on a normal launch too: without this the
+         * library is empty on a device and Run has nothing to open. */
+        copyBundledTestGames()
         let count = aurora_bridge_module_count()
         var list: [ModuleRow] = []
         var index: Int32 = 0
