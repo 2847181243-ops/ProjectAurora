@@ -82,9 +82,11 @@ final class AuroraHost: ObservableObject {
         guard let module = ProcessInfo.processInfo.environment["AURORA_AUTOSTART"], !module.isEmpty else { return }
         copyBundledTestGames()
         rescanLibrary()
+        BootLog.mark("library scanned: \(games.count) game(s)")
         /* AURORA_AUTOSTART_GAME picks one game by folder name; without it the first
          * game that claims the module wins, which is fine for single-fixture runs. */
         let wanted = ProcessInfo.processInfo.environment["AURORA_AUTOSTART_GAME"] ?? ""
+        BootLog.mark("autostart \(module) game=\(wanted.isEmpty ? "first" : wanted)")
         if let game = games.first(where: { $0.module == module && (wanted.isEmpty || $0.title == wanted) }) {
             _ = aurora_bridge_start(module, game.path, game.format)
             NSLog("[aurora] autostart \(module) with \(game.path)")
@@ -131,6 +133,7 @@ final class AuroraHost: ObservableObject {
     }
 
     func refresh() {
+        BootLog.mark("refresh")
         let count = aurora_bridge_module_count()
         var list: [ModuleRow] = []
         var index: Int32 = 0
@@ -201,11 +204,14 @@ final class AuroraHost: ObservableObject {
         /* Hand the module the first game that belongs to it: ONScripter cannot
          * start without knowing which script directory to open. */
         let game = games.first { $0.module == row.id }
+        BootLog.mark("manual run \(row.id) game=\(game?.title ?? "none")")
         let status = game == nil
             ? aurora_bridge_start(row.id, nil, nil)
             : aurora_bridge_start(row.id, game!.path, game!.format)
+        BootLog.mark("start returned \(status)")
         if status != 0 {
             lastError = String(cString: aurora_bridge_last_error())
+            BootLog.mark("start error: \(lastError)")
         }
         refresh()
     }
