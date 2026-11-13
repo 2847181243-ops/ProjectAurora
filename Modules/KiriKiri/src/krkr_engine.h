@@ -31,6 +31,9 @@ bool create(const Config& config, std::string& error);
 bool openGame(const std::string& game_root, std::string& error);
 /* Advances the engine and leaves the current frame in out until the next call. */
 bool tick(uint32_t delta_ms, Frame& out, std::string& error);
+/* x and y are in engine-surface pixels. kind: 0 = down, 1 = move, 2 = up. */
+void sendPointer(int kind, float x, float y);
+
 void setSurfaceSize(uint32_t width, uint32_t height);
 void destroy();
 

@@ -17,6 +17,9 @@ struct Instance {
     bool running = false;
     std::string name = "kirikiri";
     int64_t frames = 0;
+    bool touch_down = false;
+    int32_t touch_x = -1;
+    int32_t touch_y = -1;
 };
 
 void logLine(Instance* instance, AuroraLogLevel level, const std::string& message) {
@@ -116,6 +119,28 @@ AuroraStatus tickInstance(void* handle, double delta_seconds) {
     Instance* instance = static_cast<Instance*>(handle);
     if (instance == nullptr) return AURORA_E_INVALID_ARGUMENT;
     if (!instance->running) return AURORA_OK;
+
+    /* Touch arrives as surface pixels; the engine wants the same coordinate
+     * space, so the host input snapshot needs no further mapping. */
+    AuroraInputState input{};
+    if (instance->host->poll_input != nullptr &&
+        instance->host->poll_input(instance->host->host_context, &input) == AURORA_OK) {
+        const bool pressed = input.touch_active != 0;
+        const bool moved = pressed && (input.touch_x != instance->touch_x || input.touch_y != instance->touch_y);
+        if (pressed && !instance->touch_down) {
+            aurora::krkr::sendPointer(0, static_cast<float>(input.touch_x), static_cast<float>(input.touch_y));
+            instance->touch_down = true;
+            instance->touch_x = input.touch_x;
+            instance->touch_y = input.touch_y;
+        } else if (pressed && moved) {
+            aurora::krkr::sendPointer(1, static_cast<float>(input.touch_x), static_cast<float>(input.touch_y));
+            instance->touch_x = input.touch_x;
+            instance->touch_y = input.touch_y;
+        } else if (!pressed && instance->touch_down) {
+            aurora::krkr::sendPointer(2, static_cast<float>(instance->touch_x), static_cast<float>(instance->touch_y));
+            instance->touch_down = false;
+        }
+    }
 
     uint32_t delta_ms = static_cast<uint32_t>(delta_seconds * 1000.0);
     if (delta_ms == 0) delta_ms = 1;

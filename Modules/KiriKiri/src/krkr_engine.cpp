@@ -116,6 +116,23 @@ bool tick(uint32_t delta_ms, Frame& out, std::string& error) {
     return true;
 }
 
+void sendPointer(int kind, float x, float y) {
+    if (g_engine == nullptr) return;
+    engine_input_event_t event;
+    std::memset(&event, 0, sizeof(event));
+    event.struct_size = sizeof(event);
+    switch (kind) {
+        case 0: event.type = ENGINE_INPUT_EVENT_POINTER_DOWN; break;
+        case 1: event.type = ENGINE_INPUT_EVENT_POINTER_MOVE; break;
+        case 2: event.type = ENGINE_INPUT_EVENT_POINTER_UP; break;
+        default: return;
+    }
+    event.x = x;
+    event.y = y;
+    event.pointer_id = 0;
+    engine_send_input(g_engine, &event);
+}
+
 void setSurfaceSize(uint32_t width, uint32_t height) {
     if (g_engine != nullptr) engine_set_surface_size(g_engine, width, height);
 }
