@@ -178,40 +178,34 @@ jobs:
           print('project xp3 mount wired')
           PY
           grep -n 'TVPAutoMountProjectXP3Archives' third_party/krkr/cpp/core/base/StorageIntf.h third_party/krkr/cpp/core/environ/Application.cpp | head -4
-      - name: probe the startup script bytes
+      - name: probe every executed script
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import pathlib
           p = pathlib.Path('third_party/krkr/cpp/core/base/ScriptMgnIntf.cpp')
           s = p.read_text()
-          probe = '''
-          static void AuroraProbeStartupHead() {
-              try {
-                  ttstr name = TVPGetAppPath() + TJS_W("startup.tjs");
-                  if(!TVPIsExistentStorage(name)) { spdlog::info("[aurora] startup.tjs missing"); return; }
-                  tTJSBinaryStream* st = TVPOpenStream(name, TJS_BS_READ);
-                  if(!st) { spdlog::info("[aurora] startup.tjs unreadable"); return; }
-                  tjs_uint64 size = st->GetSize();
-                  unsigned char head[8] = {0};
-                  st->Read(head, sizeof(head));
-                  delete st;
-                  spdlog::info("[aurora] startup.tjs size={} head={:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
-                               (long long)size, head[0], head[1], head[2], head[3],
-                               head[4], head[5], head[6], head[7]);
-              } catch(...) { spdlog::info("[aurora] startup.tjs probe threw"); }
-          }
+          anchor = 'bool isbytecode = TVPScriptEngine->LoadByteCode('
+          if '[aurora] script ' not in s:
+              probe = '''
+                  {
+                      tjs_uint64 azure_sz = stream->GetSize();
+                      unsigned char azure_head[8] = {0};
+                      stream->Read(azure_head, sizeof(azure_head));
+                      stream->Seek(0);
+                      spdlog::info("[aurora] script {} size={} head={:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+                                   place.AsStdString(), (long long)azure_sz, azure_head[0], azure_head[1],
+                                   azure_head[2], azure_head[3], azure_head[4], azure_head[5],
+                                   azure_head[6], azure_head[7]);
+                  }
           '''
-          anchor = 'void TVPExecuteStartupScript() {'
-          if 'AuroraProbeStartupHead' not in s:
-              s = s.replace(anchor, probe + '\n' + anchor, 1)
-              s = s.replace(anchor, anchor + '\n    AuroraProbeStartupHead();', 1)
+              s = s.replace(anchor, probe + anchor, 1)
               p.write_text(s)
-              print('probe inserted')
+              print('stream probe inserted')
           else:
-              print('probe already present')
+              print('stream probe already present')
           PY
-          grep -n 'AuroraProbeStartupHead' third_party/krkr/cpp/core/base/ScriptMgnIntf.cpp | head -3
+          grep -n 'aurora\] script' third_party/krkr/cpp/core/base/ScriptMgnIntf.cpp | head -2
       - name: configure for the simulator
         continue-on-error: true
         run: |
