@@ -231,6 +231,15 @@ final class AuroraHost: ObservableObject {
         refreshAfterAction()
     }
 
+    /* Publishing new rows while a button action is still on the stack makes UIKit
+     * move views mid-dispatch; it asserts and aborts the process. Let the action
+     * return first and refresh on the next runloop turn. */
+    private func refreshAfterAction() {
+        DispatchQueue.main.async { [weak self] in
+            self?.refresh()
+        }
+    }
+
     private func tick() {
         refreshDiagnostics()
         guard !runningModule.isEmpty else { return }
