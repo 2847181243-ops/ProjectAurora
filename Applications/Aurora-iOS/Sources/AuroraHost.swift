@@ -133,6 +133,7 @@ final class AuroraHost: ObservableObject {
         refresh()
 
         autostartIfRequested()
+        runSelfTestIfRequested()
 
         let ticker = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             self?.tick()
@@ -246,6 +247,54 @@ final class AuroraHost: ObservableObject {
     private func refreshAfterAction() {
         DispatchQueue.main.async { [weak self] in
             self?.refresh()
+        }
+    }
+
+
+    /* Device self-test: launch with "-AuroraSelfTest 1" (plus optional rounds and
+     * hold seconds) and the app cycles both engines by itself, recording how many
+     * frames each one presented. That is the only way to exercise the engines on
+     * hardware without a human tapping Run. */
+    private func runSelfTestIfRequested() {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: "AuroraSelfTest") else { return }
+        let rounds = max(1, defaults.integer(forKey: "AuroraSelfTestRounds"))
+        let hold = max(2, defaults.integer(forKey: "AuroraSelfTestHold"))
+        let modules = ["com.aurora.runtime.kirikiri", "com.aurora.runtime.onscripter"]
+        BootLog.mark("selftest start rounds=\(rounds) hold=\(hold)")
+        selfTestStep(index: 0, rounds: rounds, hold: hold, modules: modules)
+    }
+
+    private func selfTestStep(index: Int, rounds: Int, hold: Int, modules: [String]) {
+        let total = rounds * modules.count
+        guard index < total else {
+            BootLog.mark("selftest done")
+            return
+        }
+        let module = modules[index % modules.count]
+        let round = index / modules.count + 1
+        let game = games.first { $0.module == module }
+
+        if game == nil {
+            BootLog.mark("selftest round \(round) \(module): no game, skipped")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                self?.selfTestStep(index: index + 1, rounds: rounds, hold: hold, modules: modules)
+            }
+            return
+        }
+
+        let status = aurora_bridge_start(module, game!.path, game!.format)
+        BootLog.mark("selftest round \(round) \(module): start=\(status)")
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(hold)) { [weak self] in
+            guard let self else { return }
+            let frames = aurora_bridge_frames_presented()
+            BootLog.mark("selftest round \(round) \(module): frames=\(frames)")
+            _ = aurora_bridge_stop(module)
+            self.refresh()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                self.selfTestStep(index: index + 1, rounds: rounds, hold: hold, modules: modules)
+            }
         }
     }
 
