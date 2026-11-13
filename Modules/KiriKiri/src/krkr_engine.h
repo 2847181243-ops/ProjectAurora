@@ -35,6 +35,9 @@ bool tick(uint32_t delta_ms, Frame& out, std::string& error);
 void sendPointer(int kind, float x, float y);
 
 void setSurfaceSize(uint32_t width, uint32_t height);
+bool pause();
+bool resume();
+
 void destroy();
 
 } // namespace krkr

@@ -137,6 +137,16 @@ void setSurfaceSize(uint32_t width, uint32_t height) {
     if (g_engine != nullptr) engine_set_surface_size(g_engine, width, height);
 }
 
+bool pause() {
+    if (g_engine == nullptr) return false;
+    return engine_pause(g_engine) == ENGINE_RESULT_OK;
+}
+
+bool resume() {
+    if (g_engine == nullptr) return false;
+    return engine_resume(g_engine) == ENGINE_RESULT_OK;
+}
+
 void destroy() {
     if (g_engine != nullptr) {
         engine_destroy(g_engine);

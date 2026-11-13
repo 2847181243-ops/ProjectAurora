@@ -17,6 +17,7 @@ struct Instance {
     bool running = false;
     std::string name = "kirikiri";
     int64_t frames = 0;
+    bool paused = false;
     bool touch_down = false;
     int32_t touch_x = -1;
     int32_t touch_y = -1;
@@ -85,8 +86,25 @@ AuroraStatus startInstance(void* handle) {
     return AURORA_OK;
 }
 
-AuroraStatus pauseInstance(void* handle) { return handle == nullptr ? AURORA_E_INVALID_ARGUMENT : AURORA_E_UNSUPPORTED; }
-AuroraStatus resumeInstance(void* handle) { return handle == nullptr ? AURORA_E_INVALID_ARGUMENT : AURORA_E_UNSUPPORTED; }
+AuroraStatus pauseInstance(void* handle) {
+    Instance* instance = static_cast<Instance*>(handle);
+    if (instance == nullptr) return AURORA_E_INVALID_ARGUMENT;
+    if (!instance->running || instance->paused) return AURORA_OK;
+    /* The engine keeps its state; the host stops ticking, which is what a paused
+     * module means here. */
+    aurora::krkr::pause();
+    instance->paused = true;
+    return AURORA_OK;
+}
+
+AuroraStatus resumeInstance(void* handle) {
+    Instance* instance = static_cast<Instance*>(handle);
+    if (instance == nullptr) return AURORA_E_INVALID_ARGUMENT;
+    if (!instance->running || !instance->paused) return AURORA_OK;
+    aurora::krkr::resume();
+    instance->paused = false;
+    return AURORA_OK;
+}
 
 AuroraStatus stopInstance(void* handle) {
     Instance* instance = static_cast<Instance*>(handle);
