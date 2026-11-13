@@ -3,6 +3,7 @@
 #if defined(AURORA_WITH_ONSCRIPTER)
 
 #include <atomic>
+#include <cstdio>
 #include <cstring>
 
 #include <SDL.h>
@@ -50,7 +51,18 @@ int initEngine(const Config& config) {
 
 int runLoop() {
     if (g_engine == nullptr) return 3;
-    g_engine->executeLabel();
+    /* The engine reports fatal errors by calling exit(), which tears SDL down on
+     * this thread and trips a UIKit assertion. The build patches those calls into
+     * a throw, so a bad script ends the loop instead of the process. */
+    try {
+        g_engine->executeLabel();
+    } catch (int code) {
+        std::fprintf(stderr, "[onscripter] engine aborted with code %d\n", code);
+        return code == 0 ? 0 : code;
+    } catch (...) {
+        std::fprintf(stderr, "[onscripter] engine threw an unknown exception\n");
+        return 4;
+    }
     return 0;
 }
 

@@ -59,6 +59,19 @@ jobs:
           git clone --depth 1 -b SDL-1.2 https://github.com/libsdl-org/SDL_mixer third_party/SDL_mixer12
           git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/iosons
           git clone --depth 1 https://github.com/Galladite27/ONScripter-EN third_party/onscripter
+          # The engine reports fatal errors with exit(-1); in an embedded app that
+          # tears SDL down on the engine thread and trips a UIKit assertion. Turn
+          # those calls into a throw the host can catch.
+          python3 - third_party/onscripter/ScriptHandler.cpp <<'PY'
+          import sys
+          p = sys.argv[1]
+          s = open(p, encoding='utf-8', errors='surrogateescape').read()
+          s = s.replace('if (!reporter) exit(-1); //nothing left to do without a way to report errors',
+                        'if (!reporter) { fprintf(stderr, "[ons] fatal: %s\\n", str); throw 7101; }')
+          s = s.replace('exit(-1);', 'throw 7101;')
+          open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s)
+          print('patched exit calls:', s.count('throw 7101'))
+          PY
 
           SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
           CC="clang -arch arm64 -mios-simulator-version-min=16.0 -isysroot $SDK -w -O2"
