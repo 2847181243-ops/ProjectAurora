@@ -100,7 +100,9 @@ jobs:
           export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.kirikiri
           export SIMCTL_CHILD_AURORA_AUTOSTART_GAME=aetherkiri-kag3
           xcrun simctl launch "$DEVICE" com.aurora.app 2>&1 | tee launch.log || true
-          sleep 25
+          sleep 5
+          xcrun simctl spawn "$DEVICE" launchctl list 2>/dev/null | grep -i aurora > proc.log || echo "process gone after 5s" >> proc.log
+          sleep 20
           xcrun simctl io "$DEVICE" screenshot shot-1.png || true
           sleep 8
           xcrun simctl io "$DEVICE" screenshot shot-2.png || true
@@ -115,8 +117,11 @@ jobs:
             [ -f startup.log ] && tail -40 startup.log || echo "no startup.log"
           fi
 
+          xcrun simctl spawn "$DEVICE" launchctl list 2>/dev/null | grep -i aurora >> proc.log || echo "process gone at screenshot" >> proc.log
+
           CRASH_DIR=$HOME/Library/Logs/DiagnosticReports
-          ls -t "$CRASH_DIR" 2>/dev/null | head -10 || true
+          ls -t "$CRASH_DIR" 2>/dev/null | head -20 > crash-list.txt || true
+          cat crash-list.txt
           NEWEST=$(ls -t "$CRASH_DIR"/*.ips 2>/dev/null | head -1)
           if [ -n "$NEWEST" ]; then cp "$NEWEST" crash.txt; head -40 crash.txt; fi
       - uses: actions/upload-artifact@v4
@@ -132,6 +137,8 @@ jobs:
             install.log
             crash.txt
             startup.log
+            proc.log
+            crash-list.txt
             Applications/Aurora-iOS/build.log
             Applications/Aurora-iOS/gen.log
           if-no-files-found: warn
