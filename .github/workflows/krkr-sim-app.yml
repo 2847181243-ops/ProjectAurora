@@ -14,6 +14,14 @@ on:
         description: "Game folder name, empty = first match"
         required: false
         default: "aetherkiri-kag3"
+      ons_run_id:
+        description: "Explicit ons-sim run id (empty = latest successful)"
+        required: false
+        default: ""
+      krkr_run_id:
+        description: "Explicit krkr-sim-engine run id (empty = latest successful)"
+        required: false
+        default: ""
   push:
     paths:
       - 'ci-triggers/krkr-sim-app'
@@ -33,7 +41,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          run_id=$(gh run list --workflow ons-sim.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          run_id="${{ github.event.inputs.ons_run_id }}"
+          if [ -z "$run_id" ]; then
+            run_id=$(gh run list --workflow ons-sim.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          fi
           echo "ons-sim run: $run_id"
           [ -n "$run_id" ] && gh run download "$run_id" -n aurora-onscripter-sim -D onslib
           ls onslib | head -5; ls onslib/lib 2>/dev/null | head -5
@@ -58,7 +69,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          run_id=$(gh run list --workflow krkr-sim-engine.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          run_id="${{ github.event.inputs.krkr_run_id }}"
+          if [ -z "$run_id" ]; then
+            run_id=$(gh run list --workflow krkr-sim-engine.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          fi
           echo "krkr-sim run: $run_id"
           [ -n "$run_id" ] && gh run download "$run_id" -n krkr-ios-sim-engine -D krkrlib
           # the project links -lkrkrell, so give the simulator build the same name
