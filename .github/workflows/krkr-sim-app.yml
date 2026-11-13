@@ -80,7 +80,7 @@ jobs:
         continue-on-error: true
         run: |
           set -x
-          xcrun simctl list devices available | head -20
+          xcrun simctl list devices available | head -10
           DEVICE=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')
           if [ -z "${DEVICE:-}" ]; then
             RUNTIME=$(xcrun simctl list runtimes | awk -F '[()]' '/iOS/{print $2; exit}')
@@ -93,28 +93,25 @@ jobs:
           APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 6 | head -1)
           echo "app=$APP"
           xcrun simctl install "$DEVICE" "$APP" 2>&1 | tee install.log || true
-          xcrun simctl get_app_container "$DEVICE" com.aurora.app 2>&1 | tee -a install.log || true
-          xcrun simctl listapps "$DEVICE" 2>/dev/null | grep -i aurora | head -5 || echo "no aurora app installed"
+          xcrun simctl terminate "$DEVICE" com.aurora.app 2>/dev/null || true
+
+          # Launch without --console-pty: it reports the PID or the exact refusal,
+          # while the pty variant stays silent when the process dies immediately.
           export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.kirikiri
           export SIMCTL_CHILD_AURORA_AUTOSTART_GAME=aetherkiri-kag3
-          xcrun simctl launch --console-pty "$DEVICE" com.aurora.app > sim.log 2>&1 &
-          LAUNCH_PID=$!
-          sleep 3
-          echo "launch exit: $(wait $LAUNCH_PID; echo $?)" >> launch-status.log
-          tail -5 sim.log >> launch-status.log 2>/dev/null || true
+          xcrun simctl launch "$DEVICE" com.aurora.app 2>&1 | tee launch.log || true
           sleep 25
           xcrun simctl io "$DEVICE" screenshot shot-1.png || true
-          sleep 10
+          sleep 8
           xcrun simctl io "$DEVICE" screenshot shot-2.png || true
-          xcrun simctl spawn "$DEVICE" log show --last 3m --predicate 'processImagePath CONTAINS "Aurora"' > device.log 2>&1 || true
-          xcrun simctl spawn "$DEVICE" log show --last 3m --predicate 'eventMessage CONTAINS "Aurora" OR process == "Aurora"' > device2.log 2>&1 || true
-          CRASH_DIR=$HOME/Library/Logs/DiagnosticReports
-          ls -t "$CRASH_DIR" 2>/dev/null | head -5
-          NEWEST=$(ls -t "$CRASH_DIR"/Aurora* 2>/dev/null | head -1)
-          if [ -n "$NEWEST" ]; then cp "$NEWEST" crash.txt; fi
-          ls -la crash.txt 2>/dev/null || true
-          grep -iE 'krkr|engine|module|error' device.log | tail -40
 
+          xcrun simctl spawn "$DEVICE" log show --last 2m --predicate 'process == "Aurora"' > device.log 2>&1 || true
+          grep -iE 'krkr|engine|module|error|exception|fatal' device.log | tail -40 || true
+
+          CRASH_DIR=$HOME/Library/Logs/DiagnosticReports
+          ls -t "$CRASH_DIR" 2>/dev/null | head -10 || true
+          NEWEST=$(ls -t "$CRASH_DIR"/*.ips 2>/dev/null | head -1)
+          if [ -n "$NEWEST" ]; then cp "$NEWEST" crash.txt; head -40 crash.txt; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -124,9 +121,8 @@ jobs:
             shot-2.png
             sim.log
             device.log
-            launch-status.log
+            launch.log
             install.log
-            device2.log
             crash.txt
             Applications/Aurora-iOS/build.log
             Applications/Aurora-iOS/gen.log
