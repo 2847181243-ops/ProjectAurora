@@ -192,7 +192,7 @@ jobs:
                       tjs_uint64 azure_sz = stream->GetSize();
                       unsigned char azure_head[8] = {0};
                       stream->Read(azure_head, sizeof(azure_head));
-                      stream->Seek(0);
+                      stream->Seek(0, TJS_BS_SEEK_SET);
                       spdlog::info("[aurora] script {} size={} head={:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
                                    place.AsStdString(), (long long)azure_sz, azure_head[0], azure_head[1],
                                    azure_head[2], azure_head[3], azure_head[4], azure_head[5],
