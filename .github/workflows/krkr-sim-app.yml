@@ -81,10 +81,15 @@ jobs:
           xcrun simctl bootstatus "$DEVICE" -b || true
           APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 6 | head -1)
           echo "app=$APP"
-          xcrun simctl install "$DEVICE" "$APP" || true
+          xcrun simctl install "$DEVICE" "$APP" 2>&1 | tee install.log || true
+          xcrun simctl get_app_container "$DEVICE" com.aurora.app 2>&1 | tee -a install.log || true
           xcrun simctl listapps "$DEVICE" 2>/dev/null | grep -i aurora | head -5 || echo "no aurora app installed"
           export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.kirikiri
           xcrun simctl launch --console-pty "$DEVICE" com.aurora.app > sim.log 2>&1 &
+          LAUNCH_PID=$!
+          sleep 3
+          echo "launch exit: $(wait $LAUNCH_PID; echo $?)" >> launch-status.log
+          tail -5 sim.log >> launch-status.log 2>/dev/null || true
           sleep 25
           xcrun simctl io "$DEVICE" screenshot shot-1.png || true
           sleep 10
@@ -101,6 +106,8 @@ jobs:
             shot-2.png
             sim.log
             device.log
+            launch-status.log
+            install.log
             Applications/Aurora-iOS/build.log
             Applications/Aurora-iOS/gen.log
           if-no-files-found: warn
