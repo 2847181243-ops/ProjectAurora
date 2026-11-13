@@ -25,6 +25,9 @@ struct Instance {
     std::atomic<int> result{0};
     std::string status_name = "onscripter";
     int64_t frames = 0;
+    bool touch_down = false;
+    int32_t touch_x = -1;
+    int32_t touch_y = -1;
 };
 
 void logLine(Instance* instance, AuroraLogLevel level, const std::string& message) {
@@ -146,12 +149,32 @@ void releaseInstance(void* handle) {
  * the tick observes the thread rather than producing frames. */
 AuroraStatus tickInstance(void* handle, double) {
     Instance* instance = static_cast<Instance*>(handle);
+    AuroraInputState input_state{};
     if (instance == nullptr) return AURORA_E_INVALID_ARGUMENT;
     if (!instance->running.load() && instance->worker.joinable()) {
         const int code = instance->result.load();
         instance->worker.join();
         if (code != 0) {
             logLine(instance, AURORA_LOG_WARNING, "engine exited with code " + std::to_string(code));
+        }
+    }
+
+    if (instance->host->poll_input != nullptr &&
+        instance->host->poll_input(instance->host->host_context, &input_state) == AURORA_OK) {
+        const bool pressed = input_state.touch_active != 0;
+        const bool moved = pressed && (input_state.touch_x != instance->touch_x || input_state.touch_y != instance->touch_y);
+        if (pressed && !instance->touch_down) {
+            aurora::ons::pushPointer(0, input_state.touch_x, input_state.touch_y);
+            instance->touch_down = true;
+            instance->touch_x = input_state.touch_x;
+            instance->touch_y = input_state.touch_y;
+        } else if (pressed && moved) {
+            aurora::ons::pushPointer(1, input_state.touch_x, input_state.touch_y);
+            instance->touch_x = input_state.touch_x;
+            instance->touch_y = input_state.touch_y;
+        } else if (!pressed && instance->touch_down) {
+            aurora::ons::pushPointer(2, instance->touch_x, instance->touch_y);
+            instance->touch_down = false;
         }
     }
 

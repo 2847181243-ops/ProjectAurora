@@ -30,6 +30,9 @@ int initEngine(const Config& config);
 int runLoop();
 
 /* Any thread: asks the event pump to return. */
+/* kind: 0 = down, 1 = move, 2 = up. x and y are video-surface pixels. */
+void pushPointer(int kind, int x, int y);
+
 void requestStop();
 
 /* Human readable description of what the video backend gave us; empty when the

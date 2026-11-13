@@ -54,6 +54,23 @@ int runLoop() {
     return 0;
 }
 
+void pushPointer(int kind, int x, int y) {
+    /* ONScripter reads SDL 1.2 events, so touch arrives as a left-button mouse. */
+    SDL_Event event;
+    std::memset(&event, 0, sizeof(event));
+    if (kind == 1) {
+        event.type = SDL_MOUSEMOTION;
+        event.motion.x = static_cast<Uint16>(x);
+        event.motion.y = static_cast<Uint16>(y);
+    } else {
+        event.type = kind == 0 ? SDL_MOUSEBUTTONDOWN : SDL_MOUSEBUTTONUP;
+        event.button.button = SDL_BUTTON_LEFT;
+        event.button.x = static_cast<Uint16>(x);
+        event.button.y = static_cast<Uint16>(y);
+    }
+    SDL_PushEvent(&event);
+}
+
 void requestStop() {
     g_quit_requested.store(true);
     pushQuit();
