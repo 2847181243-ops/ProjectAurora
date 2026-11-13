@@ -79,13 +79,22 @@ final class AuroraHost: ObservableObject {
     }
 
     private func autostartIfRequested() {
-        guard let module = ProcessInfo.processInfo.environment["AURORA_AUTOSTART"], !module.isEmpty else { return }
+        /* Either the environment (CI) or a launch argument can ask for a run. Launch
+         * arguments of the form "-AuroraAutoRun <id>" land in UserDefaults, which is
+         * how a device can be driven without tapping the screen. */
+        let envModule = ProcessInfo.processInfo.environment["AURORA_AUTOSTART"] ?? ""
+        let defaultsModule = UserDefaults.standard.string(forKey: "AuroraAutoRun") ?? ""
+        let module = envModule.isEmpty ? defaultsModule : envModule
+        guard !module.isEmpty else { return }
         copyBundledTestGames()
         rescanLibrary()
         BootLog.mark("library scanned: \(games.count) game(s)")
         /* AURORA_AUTOSTART_GAME picks one game by folder name; without it the first
          * game that claims the module wins, which is fine for single-fixture runs. */
-        let wanted = ProcessInfo.processInfo.environment["AURORA_AUTOSTART_GAME"] ?? ""
+        let envGame = ProcessInfo.processInfo.environment["AURORA_AUTOSTART_GAME"] ?? ""
+        let wanted = envGame.isEmpty
+            ? (UserDefaults.standard.string(forKey: "AuroraAutoGame") ?? "")
+            : envGame
         BootLog.mark("autostart \(module) game=\(wanted.isEmpty ? "first" : wanted)")
         if let game = games.first(where: { $0.module == module && (wanted.isEmpty || $0.title == wanted) }) {
             _ = aurora_bridge_start(module, game.path, game.format)
