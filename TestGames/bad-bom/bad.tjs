@@ -1,0 +1,4 @@
+﻿// polyfill-like
+@if 1
+
+@endif

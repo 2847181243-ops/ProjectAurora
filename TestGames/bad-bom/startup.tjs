@@ -1,0 +1,2 @@
+// Mirrors AetherKiri: startup execs a BOM-prefixed script full of @if blocks.
+Scripts.execStorage("bad.tjs");
