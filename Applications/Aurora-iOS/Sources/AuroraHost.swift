@@ -200,7 +200,7 @@ final class AuroraHost: ObservableObject {
 
     func setEnabled(_ row: ModuleRow, enabled: Bool) {
         _ = aurora_bridge_set_enabled(row.id, enabled ? 1 : 0)
-        refresh()
+        refreshAfterAction()
     }
 
     func run(_ row: ModuleRow) {
@@ -216,19 +216,19 @@ final class AuroraHost: ObservableObject {
             lastError = String(cString: aurora_bridge_last_error())
             BootLog.mark("start error: \(lastError)")
         }
-        refresh()
+        refreshAfterAction()
     }
 
     func stopRunning() {
         if !runningModule.isEmpty {
             _ = aurora_bridge_stop(runningModule)
         }
-        refresh()
+        refreshAfterAction()
     }
 
     func resetFailure(_ row: ModuleRow) {
         _ = aurora_bridge_reset_failure(row.id)
-        refresh()
+        refreshAfterAction()
     }
 
     private func tick() {
