@@ -17,6 +17,9 @@ enum BootLog {
     static func mark(_ text: String) {
         queue.async {
             let line = "\(Date().timeIntervalSince1970) \(text)\n"
+            /* Also goes to the device console: syslog can be streamed from a PC,
+             * which is the only channel available when there is no debugger. */
+            NSLog("[aurora] boot %@", text)
             guard let data = line.data(using: .utf8) else { return }
             if let handle = try? FileHandle(forWritingTo: url) {
                 handle.seekToEndOfFile()
