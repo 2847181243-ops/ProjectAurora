@@ -285,6 +285,9 @@ final class AuroraHost: ObservableObject {
 
         let status = aurora_bridge_start(module, game!.path, game!.format)
         BootLog.mark("selftest round \(round) \(module): start=\(status)")
+        /* The runtime panel is what hands the module a drawing surface; without it
+         * present_frame is refused and the frame count stays at zero. */
+        refreshAfterAction()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + Double(hold)) { [weak self] in
             guard let self else { return }
