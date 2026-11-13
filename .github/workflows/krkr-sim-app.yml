@@ -42,6 +42,17 @@ jobs:
           if [ -f krkrlib/libkrkrell-sim.a ]; then mv krkrlib/libkrkrell-sim.a krkrlib/libkrkrell.a; fi
           ls -la krkrlib | head -10
 
+      - name: fetch a real KiriKiri game
+        continue-on-error: true
+        run: |
+          set +e
+          # AetherKiri's KAG3 demo: an openly licensed KiriKiri game that ships as a
+          # real data.xp3. It is fetched at build time, never committed.
+          URL=https://raw.githubusercontent.com/aetherkiri/aetherkiri/main/apps/godot_app/builtin_demos/aetherkiri-kag3/data.xp3
+          mkdir -p TestGames/aetherkiri-kag3
+          curl -fsSL -o TestGames/aetherkiri-kag3/data.xp3 "$URL" || echo 'xp3 download failed'
+          ls -la TestGames/aetherkiri-kag3
+          file TestGames/aetherkiri-kag3/data.xp3 2>/dev/null || true
       - name: generate the module table
         run: |
           set +e
@@ -85,6 +96,7 @@ jobs:
           xcrun simctl get_app_container "$DEVICE" com.aurora.app 2>&1 | tee -a install.log || true
           xcrun simctl listapps "$DEVICE" 2>/dev/null | grep -i aurora | head -5 || echo "no aurora app installed"
           export SIMCTL_CHILD_AURORA_AUTOSTART=com.aurora.runtime.kirikiri
+          export SIMCTL_CHILD_AURORA_AUTOSTART_GAME=aetherkiri-kag3
           xcrun simctl launch --console-pty "$DEVICE" com.aurora.app > sim.log 2>&1 &
           LAUNCH_PID=$!
           sleep 3

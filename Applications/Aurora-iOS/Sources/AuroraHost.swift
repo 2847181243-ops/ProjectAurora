@@ -69,7 +69,10 @@ final class AuroraHost: ObservableObject {
         guard let module = ProcessInfo.processInfo.environment["AURORA_AUTOSTART"], !module.isEmpty else { return }
         copyBundledTestGames()
         rescanLibrary()
-        if let game = games.first(where: { $0.module == module }) {
+        /* AURORA_AUTOSTART_GAME picks one game by folder name; without it the first
+         * game that claims the module wins, which is fine for single-fixture runs. */
+        let wanted = ProcessInfo.processInfo.environment["AURORA_AUTOSTART_GAME"] ?? ""
+        if let game = games.first(where: { $0.module == module && (wanted.isEmpty || $0.title == wanted) }) {
             _ = aurora_bridge_start(module, game.path, game.format)
             NSLog("[aurora] autostart \(module) with \(game.path)")
         } else {
