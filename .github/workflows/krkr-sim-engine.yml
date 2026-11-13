@@ -195,7 +195,7 @@ jobs:
                   tjs_uint64 size = st->GetSize();
                   unsigned char head[8] = {0};
                   st->Read(head, sizeof(head));
-                  st->Destruct();
+                  delete st;
                   spdlog::info("[aurora] startup.tjs size={} head={:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
                                (long long)size, head[0], head[1], head[2], head[3],
                                head[4], head[5], head[6], head[7]);
