@@ -116,7 +116,9 @@ AuroraStatus resumeInstance(void* handle) {
 AuroraStatus stopInstance(void* handle) {
     Instance* instance = static_cast<Instance*>(handle);
     if (instance == nullptr) return AURORA_E_INVALID_ARGUMENT;
-    aurora::krkr::destroy();
+    /* Tearing the engine down here made the next start fail with io_error: the
+     * runtime does not survive a destroy/re-create cycle in the same process.
+     * Keep it alive for the whole app session and release it in releaseInstance. */
     instance->running = false;
     return AURORA_OK;
 }
