@@ -142,6 +142,40 @@ final class FrameRenderer: NSObject, MTKViewDelegate {
     }
 }
 
+/* Touches have to be forwarded by hand: the platform only knows what this view
+ * tells it, and ONScripter advances a dialogue on a click. Without this the panel
+ * draws frames but ignores the finger entirely. */
+final class TouchMTKView: MTKView {
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        forward(touches, active: 1)
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesMoved(touches, with: event)
+        forward(touches, active: 1)
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesEnded(touches, with: event)
+        forward(touches, active: 0)
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesCancelled(touches, with: event)
+        forward(touches, active: 0)
+    }
+
+    private func forward(_ touches: Set<UITouch>, active: Int32) {
+        guard let touch = touches.first else { return }
+        guard bounds.width > 0, bounds.height > 0 else { return }
+        let point = touch.location(in: self)
+        let x = Float(max(0, min(1, point.x / bounds.width)))
+        let y = Float(max(0, min(1, point.y / bounds.height)))
+        aurora_bridge_set_touch(active, x, y)
+    }
+}
+
 struct MetalFrameView: UIViewRepresentable {
     let framesPresented: Int32
 
@@ -152,7 +186,7 @@ struct MetalFrameView: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> MTKView {
-        let view = MTKView()
+        let view = TouchMTKView()
         if let device = MTLCreateSystemDefaultDevice() {
             view.device = device
             view.colorPixelFormat = .bgra8Unorm
