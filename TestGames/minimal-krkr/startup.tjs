@@ -1,6 +1,28 @@
-// Minimal KiriKiri smoke test.
+// Minimal KiriKiri touch test.
 //
-// The engine executes startup.tjs before its system layer is fully up, so this
-// script deliberately touches nothing but the console: Window/Layer are not
-// usable at this point and throwing here is reported as an open-game failure.
-Debug.message("Aurora KiriKiri smoke test: TJS running");
+// Draws a counter that only moves when the runtime delivers a pointer event, so
+// a screenshot before and after a tap says whether input really arrived. Kept to
+// the plainest Window/Layer API because this build has no KAG layer on top.
+Debug.message("Aurora KiriKiri touch test: starting");
+
+var win = new Window();
+win.width = 1280;
+win.height = 720;
+win.show();
+
+var layer = new Layer(win, null);
+layer.setSize(1280, 720);
+layer.fillRect(0, 0, 1280, 720, 0x202020);
+layer.font.height = 48;
+layer.font.color = 0xffffff;
+layer.drawText(60, 60, "KIRIKIRI TOUCH TEST", 0);
+layer.drawText(60, 160, "taps: 0", 0);
+
+var taps = 0;
+layer.onMouseDown = function(x, y, button) {
+    taps = taps + 1;
+    layer.fillRect(50, 150, 700, 80, 0x202020);
+    layer.drawText(60, 160, "taps: " + taps, 0);
+};
+
+Debug.message("Aurora KiriKiri touch test: window ready");
