@@ -8,7 +8,7 @@ Debug.message("Aurora KiriKiri touch test: starting");
 var win = new Window();
 win.width = 1280;
 win.height = 720;
-win.show();
+win.visible = true;
 
 var layer = new Layer(win, null);
 layer.setSize(1280, 720);
