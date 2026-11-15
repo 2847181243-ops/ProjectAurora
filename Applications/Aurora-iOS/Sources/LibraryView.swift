@@ -101,14 +101,16 @@ struct GameCard: View {
     let game: GameRow
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             CoverImage(game: game)
                 .aspectRatio(2.0 / 3.0, contentMode: .fit)
+                .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
                 )
+                .layoutPriority(1)
             /* The player does not pick an engine, so the card never names one.
              * A game nothing claims still shows up, marked so it is obvious why
              * it will not start. */
