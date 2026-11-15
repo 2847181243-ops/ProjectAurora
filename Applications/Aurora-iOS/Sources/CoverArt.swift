@@ -25,7 +25,31 @@ enum CoverArt {
                 }
             }
         }
-        return nil
+        /* Nothing loose: KiriKiri games keep their face inside an XP3 archive. */
+        return packedCover(in: folder)
+    }
+
+    /* Extracting an archive is not free, so the result is cached against the
+     * archive's size and timestamp. */
+    private static func packedCover(in folder: URL) -> UIImage? {
+        let archives = ((try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? [])
+            .filter { $0.pathExtension.lowercased() == "xp3" }
+        guard let archive = archives.first else { return nil }
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: archive.path),
+              let size = attributes[.size] as? Int,
+              let modified = attributes[.modificationDate] as? Date else { return nil }
+
+        let cacheDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("covers", isDirectory: true)
+        try? FileManager.default.createDirectory(at: cacheDir, withIntermediateDirectories: true)
+        let key = "(archive.lastPathComponent)-(size)-(Int(modified.timeIntervalSince1970))"
+        let cached = cacheDir.appendingPathComponent(key + ".img")
+        if let data = try? Data(contentsOf: cached), let image = UIImage(data: data) { return image }
+
+        guard let image = Xp3Cover.image(for: folder.path),
+              let data = image.jpegData(compressionQuality: 0.9) else { return nil }
+        try? data.write(to: cached)
+        return image
     }
 
     private static func folderURL(for game: GameRow) -> URL {
