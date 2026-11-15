@@ -78,6 +78,9 @@ enum CoverArt {
 
 struct CoverImage: View {
     let game: GameRow
+    /* Fill crops the artwork to the frame so it reaches both edges; fit keeps
+     * the whole picture and leaves the frame's bars visible. */
+    var fill: Bool = false
     @State private var loaded: UIImage?
 
     var body: some View {
@@ -93,7 +96,7 @@ struct CoverImage: View {
                         .opacity(0.5)
                     Image(uiImage: loaded)
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
+                        .aspectRatio(contentMode: fill ? .fill : .fit)
                 } else {
                     LinearGradient(colors: [CoverArt.tint(for: game.title),
                                             CoverArt.tint(for: game.title).opacity(0.45)],

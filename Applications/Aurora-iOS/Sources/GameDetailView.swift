@@ -22,8 +22,8 @@ struct GameDetailView: View {
     var body: some View {
         GeometryReader { geometry in
             let wide = geometry.size.width > 700
-            let coverWidth = wide ? min(geometry.size.width * 0.21, 280)
-                                  : geometry.size.width * 0.26
+            let coverWidth = wide ? min(geometry.size.width * 0.34, 430)
+                                  : geometry.size.width * 0.40
             content(coverWidth: coverWidth, wide: wide)
         }
         .background(Color.black.ignoresSafeArea())
@@ -38,7 +38,7 @@ struct GameDetailView: View {
             HStack(alignment: .top, spacing: wide ? 28 : 16) {
                 /* Same square proportion as the shelf, so a game looks the same
                  * before and after opening it. */
-                CoverImage(game: game)
+                CoverImage(game: game, fill: true)
                     .aspectRatio(1.0, contentMode: .fill)
                     .frame(width: coverWidth)
                     .clipped()
