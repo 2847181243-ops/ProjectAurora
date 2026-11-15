@@ -1,37 +1,36 @@
 {
   "module_id": "com.aurora.runtime.ppsspp",
   "name": "PPSSPP",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "module_type": "console_emulator",
   "platform": "psp",
-  "adapter": "native",
+  "adapter": "emulator",
   "entry_symbol": "aurora_module_entry_ppsspp",
   "license": "GPL-2.0-or-later",
-  "sdk_version": "1.0.0",
+  "sdk_version": "1.1.0",
   "minimum_sdk_version": "1.0.0",
   "supported_formats": [
     "iso",
     "cso",
-    "chd",
-    "pbp"
+    "chd"
   ],
   "capabilities": {
     "video_output": true,
-    "controller": true,
+    "audio": false,
     "touch_input": true,
-    "audio": true,
-    "fast_forward": true,
-    "save_state": true,
+    "controller": true,
     "game_saves": true,
+    "save_state": true,
+    "fast_forward": false,
     "requires_firmware": false,
     "jit_required": false,
     "jit_optional": true
   },
   "dependencies": [],
-  "status": "planned",
+  "status": "experimental",
   "upstream": {
     "project": "PPSSPP",
-    "version": "1.18.x",
+    "version": "master",
     "commit": "unpinned"
   },
   "detection": {
@@ -40,6 +39,9 @@
       "cso",
       "chd",
       "pbp"
+    ],
+    "filenames": [
+      "EBOOT.PBP"
     ]
   }
 }
