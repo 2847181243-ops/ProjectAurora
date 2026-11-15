@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+import PhotosUI
 import SwiftUI
 import UIKit
 
@@ -15,6 +16,7 @@ struct SettingsView: View {
     @State private var customMissing = false
     @State private var pickFailed = false
     @State private var pickedPreview: UIImage?
+    @State private var photoItem: PhotosPickerItem?
     @AppStorage("appearance.glassAlpha") private var glassAlpha = 0.04
     @AppStorage("appearance.glassAuto") private var glassAuto = false
     @AppStorage("appearance.textTone") private var textToneRaw = TextTone.auto.rawValue
@@ -47,7 +49,30 @@ struct SettingsView: View {
                         }
                     }
                     if BgStyle(rawValue: backgroundRaw) == .custom {
-                        Button("选择图片") { showImagePicker = true }
+                        /* Two sources on purpose: the photo library is where a
+                         * wallpaper usually lives, Files is where a downloaded
+                         * picture lives. */
+                        PhotosPicker(selection: $photoItem, matching: .images) {
+                            Label("从相册选择", systemImage: "photo")
+                        }
+                        .onChange(of: photoItem) { item in
+                            guard let item else { return }
+                            Task {
+                                let data = try? await item.loadTransferable(type: Data.self)
+                                let image = data.flatMap { UIImage(data: $0) }
+                                let saved = image.map { BackgroundStore.save($0) } ?? false
+                                await MainActor.run {
+                                    if let image, saved {
+                                        pickedPreview = image
+                                        pickFailed = false
+                                        customMissing = false
+                                    } else {
+                                        pickFailed = true
+                                    }
+                                }
+                            }
+                        }
+                        Button("从文件选择") { showImagePicker = true }
                         .fileImporter(isPresented: $showImagePicker,
                                       allowedContentTypes: [.image],
                                       allowsMultipleSelection: false) { result in
