@@ -164,6 +164,14 @@ AuroraStatus tickInstance(void* handle, double) {
         const bool pressed = input_state.touch_active != 0;
         const bool moved = pressed && (input_state.touch_x != instance->touch_x || input_state.touch_y != instance->touch_y);
         if (pressed && !instance->touch_down) {
+            /* Coordinates are what the engine will hit-test against, so log them:
+             * a tap that looks right on screen but lands elsewhere points at a
+             * scaling bug, not at the input path. */
+            logLine(instance, AURORA_LOG_INFO,
+                    "pointer down " + std::to_string(input_state.touch_x) + "," +
+                        std::to_string(input_state.touch_y) + " frame " +
+                        std::to_string(instance->binding != nullptr ? instance->binding->surface_width : 0) + "x" +
+                        std::to_string(instance->binding != nullptr ? instance->binding->surface_height : 0));
             aurora::ons::pushPointer(0, input_state.touch_x, input_state.touch_y);
             instance->touch_down = true;
             instance->touch_x = input_state.touch_x;
@@ -173,6 +181,9 @@ AuroraStatus tickInstance(void* handle, double) {
             instance->touch_x = input_state.touch_x;
             instance->touch_y = input_state.touch_y;
         } else if (!pressed && instance->touch_down) {
+            logLine(instance, AURORA_LOG_INFO,
+                    "pointer up " + std::to_string(instance->touch_x) + "," +
+                        std::to_string(instance->touch_y));
             aurora::ons::pushPointer(2, instance->touch_x, instance->touch_y);
             instance->touch_down = false;
         }
