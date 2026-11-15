@@ -155,6 +155,7 @@ final class AuroraHost: ObservableObject {
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 
         _ = aurora_bridge_init(root.path, nil)
+        removeLegacyFixtures()
         refresh()
 
         autostartIfRequested()
