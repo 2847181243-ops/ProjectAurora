@@ -22,6 +22,7 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("外观") {
+                    Toggle("跟随背景自动", isOn: $glassAuto)
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text("玻璃透明度")
@@ -30,7 +31,6 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
-                        Toggle("跟随背景自动", isOn: $glassAuto)
                         Slider(value: $glassAlpha, in: 0.0...0.45, step: 0.01)
                             .disabled(glassAuto)
                             .opacity(glassAuto ? 0.4 : 1)
