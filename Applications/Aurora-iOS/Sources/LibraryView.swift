@@ -22,7 +22,7 @@ struct LibraryView: View {
         /* Covers stay small so the shelf fills the width: a tablet should show a
          * row of games, not two posters. */
         let spacing: CGFloat = 16
-        let target: CGFloat = 235
+        let target: CGFloat = 300
         let fits = Int((width + spacing) / (target + spacing))
         let count = min(6, max(2, fits))
         let total = width - spacing * CGFloat(count + 1)
@@ -122,7 +122,7 @@ struct GameCard: View {
             /* Wider than a 2:3 poster: the shelf reads better on a tablet, and
              * the artwork is cropped rather than the card growing taller. */
             CoverImage(game: game)
-                .aspectRatio(4.0 / 5.0, contentMode: .fill)
+                .aspectRatio(1.0, contentMode: .fill)
                 .frame(maxWidth: .infinity)
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
