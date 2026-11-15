@@ -8,6 +8,7 @@ namespace krkr {
 
 bool engineAvailable() { return false; }
 bool create(const Config&, std::string& error) { error = "this build has no KiriKiri engine"; return false; }
+bool sameGameOpen(const std::string&) { return false; }
 bool openGame(const std::string&, std::string&) { return false; }
 bool tick(uint32_t, Frame&, std::string&) { return false; }
 void sendPointer(int, float, float) {}
