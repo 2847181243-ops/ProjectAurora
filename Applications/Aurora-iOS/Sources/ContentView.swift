@@ -94,6 +94,12 @@ struct ContentView: View {
         /* Starting a module from anywhere should land in the player: with the
          * module list gone, the library is the only place a game can start. */
         .task {
+            if ProcessInfo.processInfo.environment["AURORA_OPEN_SETTINGS"] == "1" {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                showSettings = true
+            }
+        }
+        .task {
             /* CI has no way to tap, so a launch variable can open one game's page
              * for a screenshot. Nothing reads this in a normal install. The scan
              * happens after the first layout, so wait for it instead of racing. */
