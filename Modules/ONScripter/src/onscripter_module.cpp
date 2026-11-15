@@ -178,14 +178,9 @@ AuroraStatus tickInstance(void* handle, double) {
             /* Coordinates are what the engine will hit-test against, so log them:
              * a tap that looks right on screen but lands elsewhere points at a
              * scaling bug, not at the input path. */
-            {
-                int screenW = 0, screenH = 0;
-                aurora::ons::screenSize(screenW, screenH);
-                pointerDebug(instance,
-                             "down " + std::to_string(input_state.touch_x) + "," +
-                                 std::to_string(input_state.touch_y) + " screen " +
-                                 std::to_string(screenW) + "x" + std::to_string(screenH));
-            }
+            pointerDebug(instance,
+                         "down " + std::to_string(input_state.touch_x) + "," +
+                             std::to_string(input_state.touch_y));
             aurora::ons::pushPointer(0, input_state.touch_x, input_state.touch_y);
             instance->touch_down = true;
             instance->touch_x = input_state.touch_x;
