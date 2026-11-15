@@ -31,14 +31,19 @@ struct GameDetailView: View {
                             .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
                     )
 
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 14) {
                     Text(game.title)
                         .font(.title2.weight(.semibold))
                         .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
 
                     ZStack {
+                        /* A frame that is slightly lighter than the page, otherwise
+                         * the video area is invisible against a black background. */
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.black)
+                            .fill(Color.white.opacity(0.06))
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
                         if let softwareMovie {
                             MovieView(path: softwareMovie)
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -59,6 +64,8 @@ struct GameDetailView: View {
                         }
                     }
                     .aspectRatio(16.0 / 9.0, contentMode: .fit)
+
+                    Spacer(minLength: 0)
 
                     Button {
                         onOpen(game)
