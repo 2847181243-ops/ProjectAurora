@@ -155,6 +155,9 @@ final class AuroraHost: ObservableObject {
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 
         _ = aurora_bridge_init(root.path, nil)
+        /* Anything that ends the process leaves a line here. Without it a clean
+         * exit() and a watchdog kill look identical from the outside. */
+        atexit { BootLog.rawAppend("process exiting") }
         removeLegacyFixtures()
         refresh()
 
