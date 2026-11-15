@@ -22,8 +22,8 @@ struct GameDetailView: View {
     var body: some View {
         GeometryReader { geometry in
             let wide = geometry.size.width > 700
-            let coverWidth = wide ? min(geometry.size.width * 0.26, 340)
-                                  : geometry.size.width * 0.34
+            let coverWidth = wide ? min(geometry.size.width * 0.30, 400)
+                                  : geometry.size.width * 0.36
             content(coverWidth: coverWidth, wide: wide)
         }
         .background(Color.black.ignoresSafeArea())
