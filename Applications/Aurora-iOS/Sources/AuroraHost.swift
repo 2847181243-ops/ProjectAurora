@@ -6,7 +6,7 @@ import Metal
 import SwiftUI
 import UIKit
 
-struct GameRow: Identifiable {
+struct GameRow: Identifiable, Hashable {
     let id: String
     let title: String
     let module: String

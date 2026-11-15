@@ -5,7 +5,7 @@ import SwiftUI
  * folder when it ships one, and a stable colour block when it does not. */
 struct LibraryView: View {
     @ObservedObject var host: AuroraHost
-    @Binding var playing: GameRow?
+    @Binding var path: [GameRow]
     @State private var showImporter = false
     @State private var unclaimed: GameRow?
 
@@ -26,20 +26,21 @@ struct LibraryView: View {
             } else {
                 LazyVGrid(columns: columns, spacing: 20) {
                     ForEach(onlyGames) { game in
-                        Button {
-                            /* Only open the player when an engine actually claims
-                             * this file; otherwise the screen would be a black page
-                             * with no explanation. */
-                            guard let row = host.rows.first(where: { $0.id == game.module }) else {
+                        if game.module.isEmpty {
+                            Button {
                                 unclaimed = game
-                                return
+                            } label: {
+                                GameCard(game: game)
                             }
-                            host.run(row)
-                            playing = game
-                        } label: {
-                            GameCard(game: game)
+                            .buttonStyle(.plain)
+                        } else {
+                            /* Picking a game opens its page; starting it is a
+                             * deliberate second tap. */
+                            NavigationLink(value: game) {
+                                GameCard(game: game)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 20)

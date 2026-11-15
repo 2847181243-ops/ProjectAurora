@@ -11,6 +11,7 @@ struct ContentView: View {
     @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
     @State private var showSettings = false
     @State private var playing: GameRow?
+    @State private var path: [GameRow] = []
 
     private var background: BgStyle {
         BgStyle(rawValue: backgroundRaw) ?? .system
@@ -20,8 +21,8 @@ struct ContentView: View {
         ZStack {
             AppBackground(style: background)
 
-            NavigationStack {
-                LibraryView(host: host, playing: $playing)
+            NavigationStack(path: $path) {
+                LibraryView(host: host, path: $path)
                     .navigationTitle("Aurora")
                     .navigationBarTitleDisplayMode(.large)
                     .toolbar {
@@ -38,6 +39,16 @@ struct ContentView: View {
                         }
                     }
                     .toolbarBackground(.hidden, for: .navigationBar)
+                    .navigationDestination(for: GameRow.self) { game in
+                        GameDetailView(host: host,
+                                       game: game,
+                                       onOpen: { picked in
+                                           guard let row = host.rows.first(where: { $0.id == picked.module }) else { return }
+                                           host.run(row)
+                                           playing = picked
+                                       },
+                                       onSelect: { next in path = [next] })
+                    }
             }
         }
         .tint(Theme.accent)
