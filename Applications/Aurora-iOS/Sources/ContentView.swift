@@ -8,7 +8,7 @@ import SwiftUI
  * app wants to play a game, not configure an engine. */
 struct ContentView: View {
     @ObservedObject var host: AuroraHost
-    @AppStorage("appearance.background") private var backgroundRaw = BgStyle.system.rawValue
+    @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
     @State private var showSettings = false
     @State private var playing: GameRow?
 

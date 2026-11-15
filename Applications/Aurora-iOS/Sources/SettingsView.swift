@@ -10,7 +10,7 @@ struct SettingsView: View {
     @State private var showImporter = false
     @State private var developerMode = false
     @State private var versionTaps = 0
-    @AppStorage("appearance.background") private var backgroundRaw = BgStyle.system.rawValue
+    @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
     @State private var showImagePicker = false
     @State private var customMissing = false
 
