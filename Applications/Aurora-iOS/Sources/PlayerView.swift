@@ -56,8 +56,8 @@ struct PlayerView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                         .font(.headline)
-                        .padding(12)
-                        .background(.ultraThinMaterial, in: Circle())
+                        .padding(11)
+                        .glassSurface(cornerRadius: 22)
                 }
                 .accessibilityLabel("返回")
 
@@ -68,8 +68,8 @@ struct PlayerView: View {
                 } label: {
                     Image(systemName: "stop.fill")
                         .font(.headline)
-                        .padding(12)
-                        .background(.ultraThinMaterial, in: Circle())
+                        .padding(11)
+                        .glassSurface(cornerRadius: 22)
                 }
                 .accessibilityLabel("停止")
             }
@@ -87,7 +87,7 @@ struct PlayerView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(.ultraThinMaterial, in: Capsule())
+            .glassSurface(cornerRadius: 22)
             .padding(.bottom, 24)
         }
         .foregroundStyle(.white)

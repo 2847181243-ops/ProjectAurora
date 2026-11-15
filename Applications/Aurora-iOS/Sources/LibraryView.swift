@@ -36,7 +36,6 @@ struct LibraryView: View {
                 .padding(.vertical, 12)
             }
         }
-        .background(Theme.background.ignoresSafeArea())
         .fileImporter(isPresented: $showImporter,
                       allowedContentTypes: [.folder, .item],
                       allowsMultipleSelection: true) { result in
@@ -83,14 +82,19 @@ struct GameCard: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
                 )
-            Text(game.title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-            Text(engineName)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(game.title)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+                Text(engineName)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .glassSurface(cornerRadius: 10)
         }
     }
 

@@ -8,27 +8,40 @@ import SwiftUI
  * app wants to play a game, not configure an engine. */
 struct ContentView: View {
     @ObservedObject var host: AuroraHost
+    @AppStorage("appearance.background") private var backgroundRaw = BgStyle.system.rawValue
     @State private var showSettings = false
     @State private var playing: GameRow?
 
+    private var background: BgStyle {
+        BgStyle(rawValue: backgroundRaw) ?? .system
+    }
+
     var body: some View {
-        NavigationStack {
-            LibraryView(host: host, playing: $playing)
-                .navigationTitle("Aurora")
-                .navigationBarTitleDisplayMode(.large)
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            showSettings = true
-                        } label: {
-                            Image(systemName: "gearshape")
+        ZStack {
+            AppBackground(style: background)
+
+            NavigationStack {
+                LibraryView(host: host, playing: $playing)
+                    .navigationTitle("Aurora")
+                    .navigationBarTitleDisplayMode(.large)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                showSettings = true
+                            } label: {
+                                Image(systemName: "gearshape")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .padding(9)
+                                    .glassSurface(cornerRadius: 20)
+                            }
+                            .accessibilityLabel("设置")
                         }
-                        .accessibilityLabel("Settings")
                     }
-                }
+                    .toolbarBackground(.hidden, for: .navigationBar)
+            }
         }
         .tint(Theme.accent)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(background.colorScheme)
         .sheet(isPresented: $showSettings) {
             SettingsView(host: host)
         }
@@ -48,6 +61,4 @@ struct ContentView: View {
 
 enum Theme {
     static let accent = Color(red: 1.0, green: 0.61, blue: 0.22)
-    static let card = Color(white: 0.12)
-    static let background = Color(white: 0.05)
 }
