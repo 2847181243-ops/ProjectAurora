@@ -51,7 +51,7 @@ extension View {
 /* How much white the plate adds. Higher reads as a frosted pane, lower as clear
  * glass; the player picks, because it depends on the wallpaper behind. */
 struct GlassAlphaKey: EnvironmentKey {
-    static let defaultValue: Double = 0.10
+    static let defaultValue: Double = 0.04
 }
 
 extension EnvironmentValues {

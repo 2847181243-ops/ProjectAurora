@@ -9,8 +9,8 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var host: AuroraHost
     @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
-    @AppStorage("appearance.glassAlpha") private var manualAlpha = 0.10
-    @AppStorage("appearance.glassAuto") private var glassAuto = true
+    @AppStorage("appearance.glassAlpha") private var manualAlpha = 0.04
+    @AppStorage("appearance.glassAuto") private var glassAuto = false
     @Environment(\.colorScheme) private var scheme
     @State private var showSettings = false
     @State private var playing: GameRow?
