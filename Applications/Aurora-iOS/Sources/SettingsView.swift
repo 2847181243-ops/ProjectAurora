@@ -66,6 +66,7 @@ struct SettingsView: View {
                                         pickedPreview = image
                                         pickFailed = false
                                         customMissing = false
+                                        backgroundRaw = BgStyle.custom.rawValue
                                     } else {
                                         pickFailed = true
                                     }
@@ -84,6 +85,7 @@ struct SettingsView: View {
                                     pickedPreview = image
                                     pickFailed = false
                                     customMissing = false
+                                    backgroundRaw = BgStyle.custom.rawValue
                                 } else {
                                     pickFailed = true
                                 }
@@ -91,6 +93,7 @@ struct SettingsView: View {
                         }
                         Button("清除图片", role: .destructive) {
                             BackgroundStore.clear()
+                            pickedPreview = nil
                             customMissing = true
                         }
                         /* Show what was actually stored. Without this a pick that

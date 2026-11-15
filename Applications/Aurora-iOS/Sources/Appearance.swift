@@ -56,6 +56,12 @@ enum GlassAuto {
     }
 }
 
+extension Notification.Name {
+    /* The background lives on disk, so views cannot depend on it the way they
+     * depend on @State. Saving or clearing it has to announce itself. */
+    static let backgroundChanged = Notification.Name("aurora.background.changed")
+}
+
 enum BackgroundStore {
     static var url: URL {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -64,7 +70,9 @@ enum BackgroundStore {
 
     static func save(_ image: UIImage) -> Bool {
         guard let data = image.jpegData(compressionQuality: 0.9) else { return false }
-        return (try? data.write(to: url)) != nil
+        let ok = (try? data.write(to: url)) != nil
+        if ok { NotificationCenter.default.post(name: .backgroundChanged, object: nil) }
+        return ok
     }
 
     static func load() -> UIImage? {
@@ -74,11 +82,13 @@ enum BackgroundStore {
 
     static func clear() {
         try? FileManager.default.removeItem(at: url)
+        NotificationCenter.default.post(name: .backgroundChanged, object: nil)
     }
 }
 
 struct AppBackground: View {
     let style: BgStyle
+    @State private var image: UIImage?
 
     var body: some View {
         GeometryReader { geometry in
@@ -90,7 +100,7 @@ struct AppBackground: View {
             case .system:
                 Color(uiColor: .systemBackground)
             case .custom:
-                if let image = BackgroundStore.load() {
+                if let image {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
