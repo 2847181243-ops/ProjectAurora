@@ -23,7 +23,20 @@ struct Instance {
     int32_t touch_y = -1;
 };
 
+/* Every engine message also lands in a file: on a device the console is a sea
+ * of system noise and the in-memory log dies with the process. */
+void logToFile(Instance* instance, const std::string& message) {
+    if (instance == nullptr || instance->host == nullptr || instance->host->storage_directory == nullptr) return;
+    char buffer[1024];
+    const AuroraStatus status = instance->host->storage_directory(
+        instance->host->host_context, kModuleId, AURORA_STORAGE_SAVES, "", buffer, sizeof(buffer));
+    if (status != AURORA_OK) return;
+    std::ofstream out(std::string(buffer) + "/krkr.log", std::ios::app);
+    if (out) out << message << "\n";
+}
+
 void logLine(Instance* instance, AuroraLogLevel level, const std::string& message) {
+    logToFile(instance, message);
     if (instance->host != nullptr && instance->host->write_log != nullptr) {
         instance->host->write_log(instance->host->host_context, kModuleId, level, message.c_str());
     }
