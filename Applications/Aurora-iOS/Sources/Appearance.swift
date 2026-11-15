@@ -68,19 +68,27 @@ enum BackgroundStore {
         return dir.appendingPathComponent("background.img")
     }
 
+    /* Decoding a wallpaper on every body evaluation is expensive enough to show
+     * up as a stutter, so the decoded image is kept until it changes. */
+    private static var cache: UIImage?
+
     static func save(_ image: UIImage) -> Bool {
         guard let data = image.jpegData(compressionQuality: 0.9) else { return false }
         let ok = (try? data.write(to: url)) != nil
+        cache = ok ? image : nil
         if ok { NotificationCenter.default.post(name: .backgroundChanged, object: nil) }
         return ok
     }
 
     static func load() -> UIImage? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return UIImage(data: data)
+        if let cache { return cache }
+        guard let data = try? Data(contentsOf: url), let image = UIImage(data: data) else { return nil }
+        cache = image
+        return image
     }
 
     static func clear() {
+        cache = nil
         try? FileManager.default.removeItem(at: url)
         NotificationCenter.default.post(name: .backgroundChanged, object: nil)
     }

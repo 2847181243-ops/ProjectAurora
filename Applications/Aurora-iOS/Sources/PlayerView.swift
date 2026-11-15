@@ -51,6 +51,16 @@ struct PlayerView: View {
                 }
             }
 
+            /* The engine takes a moment to produce its first frame; without this
+             * the screen is simply black and looks like a hang. */
+            if host.framesPresented == 0 {
+                VStack(spacing: 12) {
+                    ProgressView()
+                    Text("正在启动游戏…").font(.caption).foregroundStyle(.secondary)
+                }
+                .allowsHitTesting(false)
+            }
+
             if showControls {
                 controls.transition(.opacity)
             }
