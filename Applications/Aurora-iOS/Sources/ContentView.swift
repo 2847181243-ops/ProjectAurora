@@ -9,7 +9,9 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var host: AuroraHost
     @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
-    @AppStorage("appearance.glassAlpha") private var glassAlpha = 0.10
+    @AppStorage("appearance.glassAlpha") private var manualAlpha = 0.10
+    @AppStorage("appearance.glassAuto") private var glassAuto = true
+    @Environment(\.colorScheme) private var scheme
     @State private var showSettings = false
     @State private var playing: GameRow?
     @State private var path: [GameRow] = []
@@ -19,6 +21,15 @@ struct ContentView: View {
     private var leadingCover: UIImage? {
         guard let first = host.games.first(where: { !$0.module.isEmpty }) else { return nil }
         return CoverArt.image(for: first)
+    }
+
+    /* Auto derives the pane from what is actually behind it, which is the closest
+     * a third-party app can get to "follow the wallpaper": iOS does not hand apps
+     * the wallpaper image at all. */
+    private var effectiveAlpha: Double {
+        guard glassAuto else { return manualAlpha }
+        let brightness = leadingCover?.averageBrightness() ?? 0.1
+        return GlassAuto.alpha(backdropBrightness: brightness, scheme: scheme)
     }
 
     private var background: BgStyle {
@@ -62,7 +73,7 @@ struct ContentView: View {
                     }
             }
         }
-        .environment(\.glassAlpha, glassAlpha)
+        .environment(\.glassAlpha, effectiveAlpha)
         .tint(Theme.accent)
         .preferredColorScheme(background.colorScheme)
         .sheet(isPresented: $showSettings) {

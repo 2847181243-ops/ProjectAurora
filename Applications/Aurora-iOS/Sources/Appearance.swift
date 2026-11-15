@@ -27,6 +27,35 @@ enum BgStyle: String, CaseIterable, Identifiable {
     }
 }
 
+extension UIImage {
+    /* One-pixel downscale: enough to answer "is this backdrop bright?" and cheap
+     * enough to run while the library is on screen. */
+    func averageBrightness() -> Double {
+        let size = CGSize(width: 1, height: 1)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let tiny = renderer.image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
+        guard let cg = tiny.cgImage, let data = cg.dataProvider?.data,
+              let bytes = CFDataGetBytePtr(data) else { return 0.5 }
+        let count = CFDataGetLength(data)
+        guard count >= 3 else { return 0.5 }
+        let r = Double(bytes[0]) / 255.0
+        let g = Double(bytes[1]) / 255.0
+        let b = Double(bytes[2]) / 255.0
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+}
+
+enum GlassAuto {
+    /* A bright backdrop needs a darker pane to keep text readable; a dark one
+     * wants a lighter pane so the glass is visible at all. */
+    static func alpha(backdropBrightness brightness: Double, scheme: ColorScheme) -> Double {
+        let base = 0.06 + (1.0 - brightness) * 0.22
+        return scheme == .dark ? min(0.40, base) : min(0.45, base + 0.06)
+    }
+}
+
 enum BackgroundStore {
     static var url: URL {
         let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]

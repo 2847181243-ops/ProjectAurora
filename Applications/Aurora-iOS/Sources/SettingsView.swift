@@ -26,7 +26,10 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
+                        Toggle("跟随背景自动", isOn: $glassAuto)
                         Slider(value: $glassAlpha, in: 0.0...0.45, step: 0.01)
+                            .disabled(glassAuto)
+                            .opacity(glassAuto ? 0.4 : 1)
                     }
                     Toggle("经典玻璃（用于对比）", isOn: Binding(
                         get: { UserDefaults.standard.bool(forKey: "appearance.classicGlass") },
