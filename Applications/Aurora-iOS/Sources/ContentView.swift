@@ -19,10 +19,11 @@ struct ContentView: View {
     @State private var path: [GameRow] = []
 
     /* The first shelf cover doubles as the backdrop, which is what gives the
-     * glass something to show through. */
+     * glass something to show through. Only a loose file qualifies: the backdrop
+     * is computed while the page renders, so it must never open an archive. */
     private var leadingCover: UIImage? {
         guard let first = host.games.first(where: { !$0.module.isEmpty }) else { return nil }
-        return CoverArt.image(for: first)
+        return CoverArt.looseImage(for: first)
     }
 
     /* Auto derives the pane from what is actually behind it, which is the closest

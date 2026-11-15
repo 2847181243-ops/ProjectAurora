@@ -11,12 +11,11 @@ enum CoverArt {
     ]
     private static let extensions = ["png", "jpg", "jpeg", "webp", "bmp"]
 
-    static func image(for game: GameRow) -> UIImage? {
+    /* Loose files only. Safe to call while a view renders. */
+    static func looseImage(for game: GameRow) -> UIImage? {
         let folder = folderURL(for: game)
-        let fileManager = FileManager.default
-        let entries = (try? fileManager.contentsOfDirectory(at: folder,
-                                                            includingPropertiesForKeys: nil)) ?? []
-        /* Match case-insensitively: doujin packages are wildly inconsistent. */
+        let entries = (try? FileManager.default.contentsOfDirectory(at: folder,
+                                                                    includingPropertiesForKeys: nil)) ?? []
         for base in names {
             for ext in extensions {
                 let wanted = "\(base).\(ext)"
@@ -25,8 +24,12 @@ enum CoverArt {
                 }
             }
         }
-        /* Nothing loose: KiriKiri games keep their face inside an XP3 archive. */
-        return packedCover(in: folder)
+        return nil
+    }
+
+    static func image(for game: GameRow) -> UIImage? {
+        if let loose = looseImage(for: game) { return loose }
+        return packedCover(in: folderURL(for: game))
     }
 
     /* Extracting an archive is not free, so the result is cached against the
@@ -105,7 +108,12 @@ struct CoverImage: View {
             .clipped()
         }
         .task(id: game.path) {
-            loaded = CoverArt.image(for: game)
+            /* Reading an XP3 archive blocks for seconds; on the main actor that
+             * is exactly the black screen people saw at launch. */
+            let image = await Task.detached(priority: .userInitiated) {
+                CoverArt.image(for: game)
+            }.value
+            loaded = image
         }
     }
 }
