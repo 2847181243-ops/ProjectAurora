@@ -13,6 +13,13 @@ struct ContentView: View {
     @State private var playing: GameRow?
     @State private var path: [GameRow] = []
 
+    /* The first shelf cover doubles as the backdrop, which is what gives the
+     * glass something to show through. */
+    private var leadingCover: UIImage? {
+        guard let first = host.games.first(where: { !$0.module.isEmpty }) else { return nil }
+        return CoverArt.image(for: first)
+    }
+
     private var background: BgStyle {
         BgStyle(rawValue: backgroundRaw) ?? .system
     }
@@ -20,6 +27,9 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             AppBackground(style: background)
+            if background != .white {
+                BackdropGlow(tint: Theme.accent, image: leadingCover)
+            }
 
             NavigationStack(path: $path) {
                 LibraryView(host: host, path: $path)

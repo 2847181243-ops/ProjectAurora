@@ -80,19 +80,60 @@ struct AppBackground: View {
 }
 
 /* Frosted plate used for the gear, the player controls and the settings rows.
- * Built from materials rather than the newer glass API so it renders the same on
- * every iOS version this app targets. */
+ *
+ * A material only reads as glass when there is something behind it to refract, so
+ * the plates are drawn over the backdrop glow below. The highlight stroke is what
+ * sells the edge: bright at the top-left, fading out by the bottom-right. */
 struct GlassSurface: ViewModifier {
     var cornerRadius: CGFloat = 16
 
     func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         content
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .background(.ultraThinMaterial, in: shape)
+            .background(Color.white.opacity(0.06), in: shape)
             .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.14), lineWidth: 0.8)
+                shape.strokeBorder(
+                    LinearGradient(colors: [Color.white.opacity(0.55), Color.white.opacity(0.06)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing),
+                    lineWidth: 0.9)
             )
-            .shadow(color: .black.opacity(0.28), radius: 12, y: 6)
+            .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
+    }
+}
+
+/* Something for the glass to sample. Without this the plates sit on flat black
+ * and read as dark rectangles no matter how thin the material is. */
+struct BackdropGlow: View {
+    let tint: Color
+    let image: UIImage?
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                if let image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .blur(radius: 60)
+                        .opacity(0.35)
+                }
+                Circle()
+                    .fill(tint.opacity(0.35))
+                    .frame(width: geometry.size.width * 0.9)
+                    .blur(radius: 120)
+                    .offset(x: -geometry.size.width * 0.25, y: -geometry.size.height * 0.2)
+                Circle()
+                    .fill(Color.blue.opacity(0.18))
+                    .frame(width: geometry.size.width * 0.7)
+                    .blur(radius: 140)
+                    .offset(x: geometry.size.width * 0.3, y: geometry.size.height * 0.25)
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
     }
 }
 
