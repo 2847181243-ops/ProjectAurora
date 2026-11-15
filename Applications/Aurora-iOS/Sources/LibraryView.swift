@@ -9,17 +9,23 @@ struct LibraryView: View {
     @State private var showImporter = false
     @State private var unclaimed: GameRow?
 
+    /* Only things an engine claimed are games. A stray file in the Games folder
+     * is not something the player can open, so the library does not list it. */
+    private var onlyGames: [GameRow] {
+        host.games.filter { !$0.module.isEmpty }
+    }
+
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: 16)]
     }
 
     var body: some View {
         ScrollView {
-            if host.games.isEmpty {
+            if onlyGames.isEmpty {
                 emptyState
             } else {
                 LazyVGrid(columns: columns, spacing: 20) {
-                    ForEach(host.games) { game in
+                    ForEach(onlyGames) { game in
                         Button {
                             /* Only open the player when an engine actually claims
                              * this file; otherwise the screen would be a black page
