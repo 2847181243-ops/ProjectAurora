@@ -39,6 +39,7 @@ jobs:
             -DCMAKE_SYSTEM_NAME=iOS \
             -DCMAKE_OSX_ARCHITECTURES=arm64 \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
             -DLIBRETRO=ON -DHEADLESS=OFF $GLFLAGS 2>&1 | tee configure.log
           ls -1 build-ios
 
