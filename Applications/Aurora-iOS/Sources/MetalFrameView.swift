@@ -146,6 +146,11 @@ final class FrameRenderer: NSObject, MTKViewDelegate {
  * tells it, and ONScripter advances a dialogue on a click. Without this the panel
  * draws frames but ignores the finger entirely. */
 final class TouchMTKView: MTKView {
+    /* Size of the game frame currently on screen. Touches live in view
+     * coordinates, but the engine wants frame coordinates, and the picture is
+     * letterboxed inside the view — so the bars must be subtracted first. */
+    var contentSize: CGSize = .zero
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         forward(touches, active: 1)
@@ -168,16 +173,44 @@ final class TouchMTKView: MTKView {
 
     private func forward(_ touches: Set<UITouch>, active: Int32) {
         guard let touch = touches.first else { return }
-        guard bounds.width > 0, bounds.height > 0 else { return }
+        let width = bounds.width
+        let height = bounds.height
+        guard width > 0, height > 0 else { return }
         let point = touch.location(in: self)
-        let x = Float(max(0, min(1, point.x / bounds.width)))
-        let y = Float(max(0, min(1, point.y / bounds.height)))
+
+        var rw = width
+        var rh = height
+        if contentSize.width > 0, contentSize.height > 0 {
+            var x: Int32 = 0
+            var y: Int32 = 0
+            var fittedWidth: Int32 = 0
+            var fittedHeight: Int32 = 0
+            aurora_bridge_compute_viewport(Int32(contentSize.width), Int32(contentSize.height),
+                                           Int32(width), Int32(height), 0,
+                                           &x, &y, &fittedWidth, &fittedHeight)
+            if fittedWidth > 0, fittedHeight > 0 {
+                rw = CGFloat(fittedWidth)
+                rh = CGFloat(fittedHeight)
+                let ox = CGFloat(x)
+                let oy = CGFloat(y)
+                /* Outside the picture (in a bar) means no input for the engine. */
+                guard point.x >= ox, point.x <= ox + rw, point.y >= oy, point.y <= oy + rh else { return }
+                let nx = Float((point.x - ox) / rw)
+                let ny = Float((point.y - oy) / rh)
+                aurora_bridge_set_touch(active, max(0, min(1, nx)), max(0, min(1, ny)))
+                return
+            }
+        }
+        let x = Float(max(0, min(1, point.x / width)))
+        let y = Float(max(0, min(1, point.y / height)))
         aurora_bridge_set_touch(active, x, y)
     }
 }
 
 struct MetalFrameView: UIViewRepresentable {
     let framesPresented: Int32
+    var frameWidth: Int = 0
+    var frameHeight: Int = 0
 
     final class Coordinator {
         var renderer: FrameRenderer?
@@ -202,6 +235,9 @@ struct MetalFrameView: UIViewRepresentable {
     }
 
     func updateUIView(_ view: MTKView, context: Context) {
+        if let touch = view as? TouchMTKView {
+            touch.contentSize = CGSize(width: frameWidth, height: frameHeight)
+        }
         view.setNeedsDisplay()
     }
 }

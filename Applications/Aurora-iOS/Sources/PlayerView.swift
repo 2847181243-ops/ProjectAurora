@@ -22,7 +22,9 @@ struct PlayerView: View {
 
             Group {
                 if host.useMetal {
-                    MetalFrameView(framesPresented: host.framesPresented)
+                    MetalFrameView(framesPresented: host.framesPresented,
+                                  frameWidth: host.frameWidth,
+                                  frameHeight: host.frameHeight)
                 } else if let frame = host.frame {
                     Image(uiImage: frame).resizable().aspectRatio(contentMode: .fit)
                 } else {
