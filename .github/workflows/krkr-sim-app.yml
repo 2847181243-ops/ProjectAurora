@@ -143,7 +143,11 @@ jobs:
 
           # The pty launch is the only channel that carries the engine's stdout (and
           # therefore the line right before a crash); liveness comes from launchctl.
-          export SIMCTL_CHILD_AURORA_AUTOSTART="${{ github.event.inputs.module || 'com.aurora.runtime.kirikiri' }}"
+          MODULE="${{ github.event.inputs.module || 'com.aurora.runtime.kirikiri' }}"
+          if [ "$MODULE" != "com.aurora.runtime.none" ]; then
+            export SIMCTL_CHILD_AURORA_SHIP_FIXTURES=1
+          fi
+          export SIMCTL_CHILD_AURORA_AUTOSTART="$MODULE"
           export SIMCTL_CHILD_AURORA_OPEN_SETTINGS="${{ github.event.inputs.open_settings || '' }}"
           export SIMCTL_CHILD_AURORA_OPEN_DETAIL="${{ github.event.inputs.open_detail || '' }}"
           export SIMCTL_CHILD_AURORA_AUTOSTART_GAME="${{ github.event.inputs.game || 'aetherkiri-kag3' }}"

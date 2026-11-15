@@ -56,8 +56,7 @@ final class AuroraHost: ObservableObject {
         /* The smoke fixtures exist so CI can prove the engines start, and only the
          * CI launch (AURORA_AUTOSTART) asks for them. A real install shows the
          * player's own games and nothing else. */
-        guard let wanted = ProcessInfo.processInfo.environment["AURORA_AUTOSTART"],
-              !wanted.isEmpty else { return }
+        guard ProcessInfo.processInfo.environment["AURORA_SHIP_FIXTURES"] == "1" else { return }
         let manager = FileManager.default
         guard let bundledRoot = Bundle.main.resourceURL?.appendingPathComponent("TestGames") else { return }
         let root = URL(fileURLWithPath: gamesRoot)
