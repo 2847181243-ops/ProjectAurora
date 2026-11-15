@@ -36,7 +36,7 @@ struct LibraryView: View {
             if onlyGames.isEmpty {
                 emptyState
             } else {
-                LazyVGrid(columns: columns(for: geo.size.width), spacing: 22) {
+                LazyVGrid(columns: columns(for: geo.size.width), spacing: 12) {
                     ForEach(onlyGames) { game in
                         if game.module.isEmpty {
                             Button {
@@ -56,7 +56,7 @@ struct LibraryView: View {
                     }
                 }
                 .padding(.horizontal, 18)
-                .padding(.vertical, 14)
+                .padding(.vertical, 8)
             }
         }
         .alert("无法识别这个游戏", isPresented: Binding(
@@ -114,7 +114,7 @@ struct GameCard: View {
     let game: GameRow
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             CoverImage(game: game)
                 .aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .frame(maxWidth: .infinity)

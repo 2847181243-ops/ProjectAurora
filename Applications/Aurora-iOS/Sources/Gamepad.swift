@@ -57,6 +57,19 @@ final class Gamepad: ObservableObject {
         RunLoop.main.add(ticker!, forMode: .common)
     }
 
+    private func handleTouchpad(_ touchpad: GCControllerTouchpad) {
+        let position = touchpad.touchSurface
+        let x = Float(position.xAxis.value)
+        let y = Float(1.0 - position.yAxis.value)
+        if touchpad.button.isPressed {
+            aurora_bridge_set_touch(1, x, y)
+            wasPressed = true
+        } else if wasPressed {
+            aurora_bridge_set_touch(0, x, y)
+            wasPressed = false
+        }
+    }
+
     private func poll() {
         guard let controller = GCController.controllers().first else { return }
         var mask: UInt32 = 0
@@ -86,18 +99,13 @@ final class Gamepad: ObservableObject {
 
         aurora_bridge_set_pad(mask, axisX, axisY)
 
-        /* The touchpad is the good pointer: it has a real absolute position. */
-        if let touchpad = controller.touchpad {
-            let position = touchpad.touchSurface
-            let x = CGFloat(position.xAxis.value)
-            let y = CGFloat(1.0 - position.yAxis.value)
-            if touchpad.button.isPressed {
-                aurora_bridge_set_touch(1, Float(x), Float(y))
-                wasPressed = true
-            } else if wasPressed {
-                aurora_bridge_set_touch(0, Float(x), Float(y))
-                wasPressed = false
-            }
+        /* The touchpad is the good pointer: it has a real absolute position.
+         * Only the PlayStation pads have one, and each exposes it on its own
+         * subclass rather than on GCController. */
+        if let dual = controller.extendedGamepad as? GCDualShockGamepad {
+            handleTouchpad(dual.touchpad)
+        } else if let dual = controller.extendedGamepad as? GCDualSenseGamepad {
+            handleTouchpad(dual.touchpad)
         }
 
         /* A on its own means "advance", which is a tap in the middle. */
