@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "module_type": "console_emulator",
   "platform": "psp",
-  "adapter": "emulator",
+  "adapter": "libretro",
   "entry_symbol": "aurora_module_entry_ppsspp",
   "license": "GPL-2.0-or-later",
   "sdk_version": "1.1.0",
