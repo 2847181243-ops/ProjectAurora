@@ -141,7 +141,7 @@ jobs:
           # therefore the line right before a crash); liveness comes from launchctl.
           export SIMCTL_CHILD_AURORA_AUTOSTART="${{ github.event.inputs.module || 'com.aurora.runtime.kirikiri' }}"
           export SIMCTL_CHILD_AURORA_OPEN_DETAIL="${{ github.event.inputs.open_detail || '' }}"
-export SIMCTL_CHILD_AURORA_AUTOSTART_GAME="${{ github.event.inputs.game || 'aetherkiri-kag3' }}"
+          export SIMCTL_CHILD_AURORA_AUTOSTART_GAME="${{ github.event.inputs.game || 'aetherkiri-kag3' }}"
           ( xcrun simctl launch --console-pty "$DEVICE" com.aurora.app > sim.log 2>&1 & echo $! > launch.pid )
           sleep 3
           echo "launch pid $(cat launch.pid 2>/dev/null)" > launch.log
