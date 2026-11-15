@@ -12,6 +12,7 @@ struct GameDetailView: View {
     var onSelect: (GameRow) -> Void
 
     @State private var movie: URL?
+    @State private var softwareMovie: String?
     @State private var unplayableMovie: String?
 
     private var others: [GameRow] {
@@ -38,7 +39,10 @@ struct GameDetailView: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .fill(Color.black)
-                        if let movie {
+                        if let softwareMovie {
+                            MovieView(path: softwareMovie)
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        } else if let movie {
                             VideoPlayer(player: AVPlayer(url: movie))
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         } else {
@@ -121,6 +125,7 @@ struct GameDetailView: View {
      * decode at all, so say that instead of showing a black rectangle. */
     private func locateOpening() {
         movie = nil
+        softwareMovie = nil
         unplayableMovie = nil
         var folder = URL(fileURLWithPath: game.path)
         var isDirectory: ObjCBool = false
@@ -136,8 +141,14 @@ struct GameDetailView: View {
             movie = playable
             return
         }
-        if let old = ordered.first(where: { legacy.contains($0.pathExtension.lowercased()) }) {
-            unplayableMovie = "片头是 \(old.pathExtension.uppercased()) 格式，系统播放器解不了"
+        if let mpeg = ordered.first(where: { ["mpg", "mpeg"].contains($0.pathExtension.lowercased()) }) {
+            /* MPEG-1 has no system decoder on iOS at all, so hand it to the
+             * software player instead of claiming it cannot be shown. */
+            softwareMovie = mpeg.path
+            return
+        }
+        if let old = ordered.first(where: { ["wmv", "avi"].contains($0.pathExtension.lowercased()) }) {
+            unplayableMovie = "片头是 \(old.pathExtension.uppercased())，暂时没有解码器"
         }
     }
 }
