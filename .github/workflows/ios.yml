@@ -124,13 +124,16 @@ jobs:
           echo "embedding into $APP"
           if [ ! -f "$CORE" ]; then echo "no core artifact, skipping"; exit 0; fi
           mkdir -p "$APP/Frameworks"
-          # Xcode rewrote the load command to @rpath/ppsspp_libretro.dylib, so the
-          # copy has to carry that exact name.
+          # dyld resolves @executable_path against the app root, not Frameworks,
+          # and the binary's only rpath is @executable_path (same place SDL2 lives).
+          cp "$CORE" "$APP/ppsspp_libretro.dylib"
           cp "$CORE" "$APP/Frameworks/ppsspp_libretro.dylib"
           # The core is linked by file name only; rewrite it to go through @rpath so
           # dyld looks inside the bundle instead of the system search paths.
           install_name_tool -change libppsspp_libretro.dylib @rpath/ppsspp_libretro.dylib "$BIN" || true
+          install_name_tool -id @rpath/ppsspp_libretro.dylib "$APP/ppsspp_libretro.dylib"
           install_name_tool -id @rpath/ppsspp_libretro.dylib "$APP/Frameworks/ppsspp_libretro.dylib"
+          codesign -f -s - "$APP/ppsspp_libretro.dylib"
           codesign -f -s - "$APP/Frameworks/ppsspp_libretro.dylib"
           otool -L "$BIN" | grep -i ppsspp || true
 
