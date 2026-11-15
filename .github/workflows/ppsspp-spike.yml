@@ -72,7 +72,11 @@ jobs:
           set -euo pipefail
           mkdir -p core-out/include core-out/lib
           # The libretro headers are generated into the build tree.
-          cp libretro/libretro.h core-out/include/ 2>/dev/null || cp $(find . -name libretro.h | head -1) core-out/include/
+          # There are several libretro.h files in the tree; only the API one
+          # declares the environment constants. Pick by content, not by path.
+          HDR=$(grep -rl 'RETRO_ENVIRONMENT_SET_PIXEL_FORMAT' --include=libretro.h . | head -1)
+          echo "header: $HDR"
+          cp "$HDR" core-out/include/libretro.h
           # libtool/linker expect the lib- prefix; upstream names it without one.
           cp build-ios/lib/Release/ppsspp_libretro.dylib core-out/lib/libppsspp_libretro.dylib 2>/dev/null || true
           for f in $(find build-ios -name 'ppsspp_libretro*.a' -o -name 'libppsspp*.a'); do cp "$f" core-out/lib/; done
