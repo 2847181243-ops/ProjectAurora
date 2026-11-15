@@ -170,13 +170,6 @@ struct GameDetailView: View {
             unplayableMovie = "片头是 \(old.pathExtension.uppercased())，暂时没有解码器"
             return
         }
-        /* No loose video: these games almost always keep the opening inside their
-         * archive, so say that instead of pretending the game has no opening. */
-        let archives = names.filter { ["nsa", "ns2", "ns3", "xp3", "sar"].contains($0.pathExtension.lowercased()) }
-        if let packed = archives.first {
-            unplayableMovie = "片头在 \(packed.lastPathComponent) 里，暂不支持从包里提取"
-        } else {
-            unplayableMovie = "这个游戏没有片头"
-        }
+        unplayableMovie = "找不到片头"
     }
 }
