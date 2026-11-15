@@ -78,7 +78,7 @@ struct GameDetailView: View {
                         onOpen(game)
                     } label: {
                         Label("开始游戏", systemImage: "play.fill")
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: 320)
                             .padding(.vertical, 6)
                     }
                     .buttonStyle(.borderedProminent)
