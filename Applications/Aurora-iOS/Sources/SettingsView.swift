@@ -13,6 +13,10 @@ struct SettingsView: View {
     @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
     @State private var showImagePicker = false
     @State private var customMissing = false
+    @AppStorage("appearance.glassAlpha") private var glassAlpha = 0.04
+    @AppStorage("appearance.glassAuto") private var glassAuto = false
+    @AppStorage("appearance.textTone") private var textToneRaw = TextTone.auto.rawValue
+    @AppStorage("appearance.textColorHex") private var textColorHex = "FF9C38"
 
     var body: some View {
         NavigationStack {
@@ -52,9 +56,6 @@ struct SettingsView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                }
-
-                Section("外观") {
                     Picker("字体颜色", selection: $textToneRaw) {
                         ForEach(TextTone.allCases) { tone in
                             Text(tone.label).tag(tone.rawValue)
