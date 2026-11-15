@@ -530,6 +530,24 @@ void aurora_bridge_set_touch(int32_t active, float x, float y) {
     s.host->setInput(*instance->binding, snapshot);
 }
 
+void aurora_bridge_set_pad(uint32_t buttons, float axis_x, float axis_y) {
+    BridgeState& s = state();
+    if (!s.supervisor || !s.host || s.running_module.empty()) return;
+    const aurora::RuntimeInstance* instance = s.supervisor->instance(s.running_module);
+    if (instance == nullptr || instance->binding == nullptr) return;
+
+    aurora::RawInputEvent raw;
+    raw.pad_buttons = buttons;
+    raw.axis_left_x = axis_x;
+    raw.axis_left_y = axis_y;
+    const aurora::InputProfile profile = aurora::defaultProfile();
+    const AuroraInputState snapshot = aurora::applyProfile(
+        profile, raw,
+        instance->binding->surface_width,
+        instance->binding->surface_height);
+    s.host->setInput(*instance->binding, snapshot);
+}
+
 /* ---- diagnostics ---------------------------------------------------------- */
 
 const char* aurora_bridge_diagnostics(int32_t max_lines) {

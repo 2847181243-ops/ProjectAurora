@@ -154,6 +154,7 @@ final class AuroraHost: ObservableObject {
         try? FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
 
         _ = aurora_bridge_init(root.path, nil)
+        _ = Gamepad.shared
         /* Test aid: "-AuroraMkdir <name>" creates a game folder up front. The
          * file-transfer channel cannot create directories, so without this a
          * packaged game can only arrive through the import picker. */

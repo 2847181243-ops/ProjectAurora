@@ -60,6 +60,11 @@ int32_t aurora_bridge_library_import(const char* source_path);
  * default profile so the module sees buttons and frame-pixel coordinates. */
 void aurora_bridge_set_touch(int32_t active, float x, float y);
 
+/* Controller state, using the AuroraButton mask from the module ABI plus the
+ * left stick as a normalised pair. Modules that only understand touch (the
+ * visual novel engines) read the tap that set_touch already delivers. */
+void aurora_bridge_set_pad(uint32_t buttons, float axis_x, float axis_y);
+
 /* Last log lines, so a device without a debugger can still be diagnosed. */
 const char* aurora_bridge_diagnostics(int32_t max_lines);
 

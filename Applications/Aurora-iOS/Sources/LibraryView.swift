@@ -19,14 +19,14 @@ struct LibraryView: View {
      * three on a tablet, so the covers stay large instead of shrinking to fit
      * however many happen to be on the shelf. */
     private func columns(for width: CGFloat) -> [GridItem] {
-        /* Aim for covers around 200pt: big enough to read the art, small enough
-         * that a tablet shows a shelf rather than two posters. */
-        let spacing: CGFloat = 18
-        let target: CGFloat = 200
+        /* Covers stay small so the shelf fills the width: a tablet should show a
+         * row of games, not two posters. */
+        let spacing: CGFloat = 16
+        let target: CGFloat = 150
         let fits = Int((width + spacing) / (target + spacing))
         let count = min(6, max(2, fits))
         let total = width - spacing * CGFloat(count + 1)
-        let cardWidth = max(120, min(target * 1.25, total / CGFloat(count)))
+        let cardWidth = max(110, min(target * 1.2, total / CGFloat(count)))
         return Array(repeating: GridItem(.fixed(cardWidth), spacing: spacing), count: count)
     }
 
