@@ -46,6 +46,7 @@ struct GameDetailView: View {
                             .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
                         if let softwareMovie {
                             MovieView(path: softwareMovie)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         } else if let movie {
                             VideoPlayer(player: AVPlayer(url: movie))
@@ -65,8 +66,6 @@ struct GameDetailView: View {
                     }
                     .aspectRatio(16.0 / 9.0, contentMode: .fit)
 
-                    Spacer(minLength: 0)
-
                     Button {
                         onOpen(game)
                     } label: {
@@ -83,6 +82,9 @@ struct GameDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                /* Do not stretch to the cover's height: the button belongs right
+                 * under the video, not at the bottom of a tall column. */
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .padding(.horizontal, 24)
             .padding(.top, 8)
