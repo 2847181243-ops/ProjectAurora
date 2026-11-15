@@ -32,6 +32,12 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(host: host)
         }
+        /* Starting a module from anywhere should land in the player: with the
+         * module list gone, the library is the only place a game can start. */
+        .onChange(of: host.runningModule) { module in
+            guard !module.isEmpty, playing == nil else { return }
+            playing = host.games.first { $0.module == module }
+        }
         .fullScreenCover(item: $playing) { game in
             PlayerView(host: host, game: game) {
                 playing = nil
