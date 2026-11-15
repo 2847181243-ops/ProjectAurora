@@ -197,6 +197,12 @@ final class TouchMTKView: MTKView {
                 guard point.x >= ox, point.x <= ox + rw, point.y >= oy, point.y <= oy + rh else { return }
                 let nx = Float((point.x - ox) / rw)
                 let ny = Float((point.y - oy) / rh)
+                /* tap-log: raw touch, fitted rect and the normalised pair the
+                 * engine will see, so a missed tap can be traced to a stage. */
+                if active != 0 {
+                    BootLog.mark(String(format: "tap %.0f,%.0f view %.0fx%.0f rect %.0f,%.0f %.0fx%.0f -> %.3f,%.3f",
+                                        point.x, point.y, width, height, ox, oy, rw, rh, nx, ny))
+                }
                 aurora_bridge_set_touch(active, max(0, min(1, nx)), max(0, min(1, ny)))
                 return
             }
