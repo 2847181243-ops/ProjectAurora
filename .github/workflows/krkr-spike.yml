@@ -99,6 +99,40 @@ jobs:
           done
           rm -f third_party/krkr/cpp/plugins/krkrlive2d.cpp
           test ! -e third_party/krkr/cpp/plugins/krkrlive2d.cpp && echo "deleted krkrlive2d.cpp"
+      - name: let libpng own its allocations
+        run: |
+          set -euo pipefail
+          # The engine feeds libpng memory out of a per-thread bump arena, and the
+          # arena never hands memory back. libpng reallocs while inflating, so on
+          # iOS every PNG ended in "libpng error". Give libpng plain malloc/free.
+          F=third_party/krkr/cpp/core/visual/LoadPNG.cpp
+          python3 - "$F" <<'PY'
+          import sys
+          path = sys.argv[1]
+          text = open(path, encoding='utf-8').read()
+          before = text
+          text = text.replace('''static png_voidp PNG_malloc(png_structp ps, png_size_t size) {
+    if(TVPDecodeArenaActive()) {
+        void *p = TVPDecodeArenaAlloc(size);
+        if(p) return p;
+    }
+    return malloc(size);
+}''', '''static png_voidp PNG_malloc(png_structp ps, png_size_t size) {
+    /* libpng owns its allocations: it reallocs and frees throughout the decode. */
+    return malloc(size);
+}''')
+          text = text.replace('''static void PNG_free(png_structp ps, void * /* png_structp*/ mem) {
+    if(TVPDecodeArenaActive()) return;
+    free(mem);
+}''', '''static void PNG_free(png_structp ps, void *mem) {
+    free(mem);
+}''')
+          if text == before:
+              raise SystemExit('libpng allocator patch did not apply')
+          open(path, 'w', encoding='utf-8').write(text)
+          print('libpng allocator uses plain malloc/free')
+          PY
+          grep -n 'PNG_malloc' -A4 "$F" | head -12
       - name: mount the project's own xp3 archives
         run: |
           set -euo pipefail
