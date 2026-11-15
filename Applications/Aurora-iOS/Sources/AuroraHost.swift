@@ -53,6 +53,11 @@ final class AuroraHost: ObservableObject {
      * not need its own branch here. Existing folders are left alone: a test run must
      * not overwrite saves the previous run wrote. */
     private func copyBundledTestGames() {
+        /* The smoke fixtures exist so CI can prove the engines start, and only the
+         * CI launch (AURORA_AUTOSTART) asks for them. A real install shows the
+         * player's own games and nothing else. */
+        guard let wanted = ProcessInfo.processInfo.environment["AURORA_AUTOSTART"],
+              !wanted.isEmpty else { return }
         let manager = FileManager.default
         guard let bundledRoot = Bundle.main.resourceURL?.appendingPathComponent("TestGames") else { return }
         let root = URL(fileURLWithPath: gamesRoot)
@@ -81,6 +86,21 @@ final class AuroraHost: ObservableObject {
         try? manager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: root.path)
         try? manager.createDirectory(at: root.appendingPathComponent("savedata"),
                                      withIntermediateDirectories: true)
+    }
+
+    /* Earlier builds copied the smoke fixtures into the games folder on every
+     * launch, which is why a normal install showed them as games. Clear them
+     * out once so the library only holds what the player put there. */
+    private func removeLegacyFixtures() {
+        let manager = FileManager.default
+        let root = URL(fileURLWithPath: gamesRoot)
+        for name in ["minimal-ons", "minimal-krkr", "marker.txt"] {
+            let target = root.appendingPathComponent(name)
+            if manager.fileExists(atPath: target.path) {
+                try? manager.removeItem(at: target)
+                BootLog.mark("removed leftover fixture \(name)")
+            }
+        }
     }
 
     private func autostartIfRequested() {
