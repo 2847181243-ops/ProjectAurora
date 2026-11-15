@@ -10,6 +10,10 @@ on:
         description: "Module id to autostart"
         required: false
         default: "com.aurora.runtime.kirikiri"
+      sim_device:
+        description: simulator device name (iPad for tablet layout checks)
+        required: false
+        default: ''
       open_settings:
         description: open the settings sheet at launch (screenshot aid)
         required: false
@@ -127,10 +131,11 @@ jobs:
         run: |
           set -x
           xcrun simctl list devices available | head -10
-          DEVICE=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/{print $2; exit}')
+          FAMILY="${{ github.event.inputs.sim_device || 'iPhone' }}"
+          DEVICE=$(xcrun simctl list devices available | awk -F '[()]' -v fam="$FAMILY" '$0 ~ fam {print $2; exit}')
           if [ -z "${DEVICE:-}" ]; then
             RUNTIME=$(xcrun simctl list runtimes | awk -F '[()]' '/iOS/{print $2; exit}')
-            TYPE=$(xcrun simctl list devicetypes | awk -F '[()]' '/iPhone/{print $2; exit}')
+            TYPE=$(xcrun simctl list devicetypes | awk -F '[()]' -v fam="$FAMILY" '$0 ~ fam {print $2; exit}')
             DEVICE=$(xcrun simctl create aurora-sim "$TYPE" "$RUNTIME")
           fi
           echo "device=$DEVICE"
