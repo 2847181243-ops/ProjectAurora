@@ -1,0 +1,62 @@
+# ios run 271
+
+sha: 13f093e199f247d0e4174a4d9e55eb437fc00ef6
+status: failure
+at: 2026-11-15T15:32:37Z
+
+## errors
+
+check.log:::error::missing @rpath library @rpath/ppsspp_libretro.dylib
+
+## tails
+
+### check.log
+== bundle check ==
+app: Applications/Aurora-iOS/build/Aurora.xcarchive/Products/Applications/Aurora.app
+--- LC_RPATH ---
+/usr/lib/swift
+@executable_path
+--- @rpath dependencies ---
+ok      @rpath/libSDL2-2.0.0.dylib -> libSDL2-2.0.0.dylib
+::error::missing @rpath library @rpath/ppsspp_libretro.dylib
+
+### gen.log
+wrote Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp with 6 module(s)
+
+### toolchain.log
+[32m==>[0m [1mDownloading bottle manifests[0m
+✔︎ Bottle Manifest xcodegen (2.46.0)
+[32m==>[0m [1mFetching downloads for: [32mxcodegen[39m[0m
+✔︎ Bottle xcodegen (2.46.0)
+[34m==>[0m [1mPouring xcodegen--2.46.0.arm64_tahoe.bottle.1.tar.gz[0m
+🍺  /opt/homebrew/Cellar/xcodegen/2.46.0: 38 files, 7.4MB
+
+### Applications/Aurora-iOS/archive.log
+
+SetMode u+w,go-w,a+rX /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app (in target 'Aurora' from project 'Aurora')
+    cd /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS
+    /bin/chmod -RH u+w,go-w,a+rX /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app
+
+RegisterExecutionPolicyException /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app (in target 'Aurora' from project 'Aurora')
+    cd /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS
+    builtin-RegisterExecutionPolicyException /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app
+
+Validate /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app (in target 'Aurora' from project 'Aurora')
+    cd /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS
+    builtin-validationUtility /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app -shallow-bundle -infoplist-subpath Info.plist
+
+Touch /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app (in target 'Aurora' from project 'Aurora')
+    cd /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS
+    /usr/bin/touch -c /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/build/Build/Intermediates.noindex/ArchiveIntermediates/Aurora/InstallationBuildProductsLocation/Applications/Aurora.app
+
+note: Run script build phase 'embed SDL2 dylib' will be run during every build because the option to run the script phase "Based on dependency analysis" is unchecked. (in target 'Aurora' from project 'Aurora')
+** ARCHIVE SUCCEEDED **
+
+
+### Applications/Aurora-iOS/project.log
+⚙️  Generating plists...
+⚙️  Generating project...
+⚙️  Writing project...
+Created project at /Users/runner/work/ProjectAurora/ProjectAurora/Applications/Aurora-iOS/Aurora.xcodeproj
+
+## archive tail
