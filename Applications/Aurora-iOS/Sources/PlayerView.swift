@@ -5,6 +5,7 @@ import SwiftUI
  * the way and only appear when the screen is touched. */
 struct PlayerView: View {
     @ObservedObject var host: AuroraHost
+    @ObservedObject private var gamepad = Gamepad.shared
     let game: GameRow
     var onExit: () -> Void
 
@@ -35,6 +36,20 @@ struct PlayerView: View {
             }
             .aspectRatio(aspectRatio, contentMode: .fit)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            /* Where a controller's virtual pointer sits. Only drawn while one is
+             * connected, so touch players never see it. */
+            if !gamepad.connectedName.isEmpty {
+                GeometryReader { geometry in
+                    Circle()
+                        .fill(Color.white.opacity(0.35))
+                        .overlay(Circle().strokeBorder(Color.white.opacity(0.8), lineWidth: 1.5))
+                        .frame(width: 18, height: 18)
+                        .position(x: gamepad.pointer.x * geometry.size.width,
+                                  y: gamepad.pointer.y * geometry.size.height)
+                        .allowsHitTesting(false)
+                }
+            }
 
             if showControls {
                 controls.transition(.opacity)

@@ -17,9 +17,15 @@ final class Gamepad: ObservableObject {
     @Published private(set) var connectedName: String = ""
     @Published private(set) var connectedBattery: String = ""
 
+    /* Virtual pointer: the D-pad moves it, A clicks where it sits. That gives
+     * menu navigation on any game that is driven by a mouse, with no engine
+     * changes at all. */
+    @Published private(set) var pointer = CGPoint(x: 0.5, y: 0.5)
+
     private var ticker: Timer?
     private var wasPressed = false
     private var lastTap: TimeInterval = 0
+    private var lastMove: TimeInterval = 0
 
     private init() {
         NotificationCenter.default.addObserver(forName: .GCControllerDidConnect, object: nil, queue: .main) { [weak self] _ in
@@ -91,14 +97,50 @@ final class Gamepad: ObservableObject {
          * currently comes from the stick and the A button. */
         _ = controller;
 
-        /* A on its own means "advance", which is a tap in the middle. */
-        let aPressed = (mask & 1) != 0
+        /* Touchpad, if this SDK exposes one through the physical profile. */
+        let profile = controller.physicalInputProfile
+        if let surface = profile.dpads["Touchpad"], let button = profile.buttons["Touchpad Button"] {
+            let x = CGFloat(surface.xAxis.value)
+            let y = CGFloat(1.0 - surface.yAxis.value)
+            if button.isPressed {
+                pointer = CGPoint(x: x, y: y)
+                aurora_bridge_set_touch(1, Float(x), Float(y))
+                wasPressed = true
+            } else if wasPressed {
+                aurora_bridge_set_touch(0, Float(x), Float(y))
+                wasPressed = false
+            }
+        }
+
         let now = Date().timeIntervalSince1970
+        /* D-pad or stick moves the pointer on a slow repeat so a held direction
+         * steps instead of racing. */
+        let step: CGFloat = 0.02
+        let hold: TimeInterval = 0.22
+        var dx: CGFloat = 0
+        var dy: CGFloat = 0
+        if mask & (1 << 6) != 0 { dx -= 1 }
+        if mask & (1 << 7) != 0 { dx += 1 }
+        if mask & (1 << 4) != 0 { dy -= 1 }
+        if mask & (1 << 5) != 0 { dy += 1 }
+        if dx == 0 && dy == 0 {
+            if abs(axisX) > 0.6 { dx = axisX > 0 ? 1 : -1 }
+            if abs(axisY) > 0.6 { dy = axisY > 0 ? 1 : -1 }
+        }
+        if (dx != 0 || dy != 0), now - lastMove > hold {
+            lastMove = now
+            pointer = CGPoint(x: min(1, max(0, pointer.x + dx * step)),
+                              y: min(1, max(0, pointer.y + dy * step)))
+        }
+
+        /* A clicks wherever the pointer sits. */
+        let aPressed = (mask & 1) != 0
         if aPressed, now - lastTap > 0.25 {
             lastTap = now
-            aurora_bridge_set_touch(1, 0.5, 0.5)
+            let tap = CGPoint(x: pointer.x, y: pointer.y)
+            aurora_bridge_set_touch(1, Float(tap.x), Float(tap.y))
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                aurora_bridge_set_touch(0, 0.5, 0.5)
+                aurora_bridge_set_touch(0, Float(tap.x), Float(tap.y))
             }
         }
     }
