@@ -16,7 +16,7 @@ struct LibraryView: View {
     }
 
     private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: 16)]
+        [GridItem(.adaptive(minimum: 180, maximum: 260), spacing: 18)]
     }
 
     var body: some View {

@@ -57,9 +57,16 @@ struct CoverImage: View {
         GeometryReader { geometry in
             ZStack {
                 if let loaded {
+                    /* Fit, not fill: a cover is artwork and cropping it loses the
+                     * composition. The blurred copy behind keeps the frame full. */
                     Image(uiImage: loaded)
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .scaledToFill()
+                        .blur(radius: 20)
+                        .opacity(0.5)
+                    Image(uiImage: loaded)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
                 } else {
                     LinearGradient(colors: [CoverArt.tint(for: game.title),
                                             CoverArt.tint(for: game.title).opacity(0.45)],
