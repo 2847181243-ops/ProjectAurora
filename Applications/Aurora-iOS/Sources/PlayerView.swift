@@ -97,7 +97,6 @@ struct PlayerView: View {
 
             HStack(spacing: 12) {
                 Text(game.title).font(.caption).foregroundStyle(.white)
-                Text("\(host.framesPresented) 帧").font(.caption2).foregroundStyle(.white.opacity(0.6))
                 if !host.lastError.isEmpty {
                     Text(host.lastError).font(.caption2).foregroundStyle(.red).lineLimit(1)
                 }
