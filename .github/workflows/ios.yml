@@ -68,6 +68,11 @@ jobs:
         continue-on-error: true
         run: python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp 2>&1 | tee gen.log
 
+      - name: report the toolchain
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
       - name: install xcodegen
         continue-on-error: true
         run: brew install xcodegen 2>&1 | tee toolchain.log
