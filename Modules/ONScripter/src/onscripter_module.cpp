@@ -169,9 +169,7 @@ AuroraStatus tickInstance(void* handle, double) {
              * scaling bug, not at the input path. */
             logLine(instance, AURORA_LOG_INFO,
                     "pointer down " + std::to_string(input_state.touch_x) + "," +
-                        std::to_string(input_state.touch_y) + " frame " +
-                        std::to_string(instance->binding != nullptr ? instance->binding->surface_width : 0) + "x" +
-                        std::to_string(instance->binding != nullptr ? instance->binding->surface_height : 0));
+                        std::to_string(input_state.touch_y));
             aurora::ons::pushPointer(0, input_state.touch_x, input_state.touch_y);
             instance->touch_down = true;
             instance->touch_x = input_state.touch_x;
