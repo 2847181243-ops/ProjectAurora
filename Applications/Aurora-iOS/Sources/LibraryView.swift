@@ -15,16 +15,24 @@ struct LibraryView: View {
         host.games.filter { !$0.module.isEmpty }
     }
 
-    private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: 140, maximum: 230), spacing: 16)]
+    /* Fixed column counts read better than an adaptive grid: two on a phone,
+     * three on a tablet, so the covers stay large instead of shrinking to fit
+     * however many happen to be on the shelf. */
+    private func columns(for width: CGFloat) -> [GridItem] {
+        let count = width > 700 ? 3 : 2
+        let spacing: CGFloat = 18
+        let total = width - spacing * CGFloat(count + 1)
+        let cardWidth = max(120, total / CGFloat(count))
+        return Array(repeating: GridItem(.fixed(cardWidth), spacing: spacing), count: count)
     }
 
     var body: some View {
+        GeometryReader { geo in
         ScrollView {
             if onlyGames.isEmpty {
                 emptyState
             } else {
-                LazyVGrid(columns: columns, spacing: 20) {
+                LazyVGrid(columns: columns(for: geo.size.width), spacing: 22) {
                     ForEach(onlyGames) { game in
                         if game.module.isEmpty {
                             Button {
@@ -43,8 +51,8 @@ struct LibraryView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 14)
             }
         }
         .alert("无法识别这个游戏", isPresented: Binding(
