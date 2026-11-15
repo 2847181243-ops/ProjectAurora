@@ -107,32 +107,22 @@ jobs:
           # iOS every PNG ended in "libpng error". Give libpng plain malloc/free.
           F=third_party/krkr/cpp/core/visual/LoadPNG.cpp
           python3 - "$F" <<'PY'
-          import sys
+          import re, sys
           path = sys.argv[1]
           text = open(path, encoding='utf-8').read()
           before = text
-          text = text.replace('''static png_voidp PNG_malloc(png_structp ps, png_size_t size) {
-    if(TVPDecodeArenaActive()) {
-        void *p = TVPDecodeArenaAlloc(size);
-        if(p) return p;
-    }
-    return malloc(size);
-}''', '''static png_voidp PNG_malloc(png_structp ps, png_size_t size) {
-    /* libpng owns its allocations: it reallocs and frees throughout the decode. */
-    return malloc(size);
-}''')
-          text = text.replace('''static void PNG_free(png_structp ps, void * /* png_structp*/ mem) {
-    if(TVPDecodeArenaActive()) return;
-    free(mem);
-}''', '''static void PNG_free(png_structp ps, void *mem) {
-    free(mem);
-}''')
+          text = re.sub(r'static png_voidp PNG_malloc\(png_structp ps, png_size_t size\) \{.*?\n\}',
+                        'static png_voidp PNG_malloc(png_structp ps, png_size_t size) {\n    return malloc(size);\n}',
+                        text, flags=re.S)
+          text = re.sub(r'static void PNG_free\(png_structp ps, void [^)]*\) \{.*?\n\}',
+                        'static void PNG_free(png_structp ps, void *mem) {\n    free(mem);\n}',
+                        text, flags=re.S)
           if text == before:
               raise SystemExit('libpng allocator patch did not apply')
           open(path, 'w', encoding='utf-8').write(text)
           print('libpng allocator uses plain malloc/free')
           PY
-          grep -n 'PNG_malloc' -A4 "$F" | head -12
+          grep -n 'PNG_malloc' -A3 "$F" | head -10
       - name: mount the project's own xp3 archives
         run: |
           set -euo pipefail
