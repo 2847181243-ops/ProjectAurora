@@ -7,6 +7,7 @@ struct LibraryView: View {
     @ObservedObject var host: AuroraHost
     @Binding var playing: GameRow?
     @State private var showImporter = false
+    @State private var unclaimed: GameRow?
 
     private var columns: [GridItem] {
         [GridItem(.adaptive(minimum: 150, maximum: 220), spacing: 16)]
@@ -23,7 +24,10 @@ struct LibraryView: View {
                             /* Only open the player when an engine actually claims
                              * this file; otherwise the screen would be a black page
                              * with no explanation. */
-                            guard let row = host.rows.first(where: { $0.id == game.module }) else { return }
+                            guard let row = host.rows.first(where: { $0.id == game.module }) else {
+                                unclaimed = game
+                                return
+                            }
                             host.run(row)
                             playing = game
                         } label: {
@@ -36,6 +40,14 @@ struct LibraryView: View {
                 .padding(.vertical, 12)
             }
         }
+        .alert("无法识别这个游戏", isPresented: Binding(
+            get: { unclaimed != nil },
+            set: { if !$0 { unclaimed = nil } }
+        )) {
+            Button("好", role: .cancel) { unclaimed = nil }
+        } message: {
+            Text(reasonFor(unclaimed))
+        }
         .fileImporter(isPresented: $showImporter,
                       allowedContentTypes: [.folder, .item],
                       allowsMultipleSelection: true) { result in
@@ -43,6 +55,14 @@ struct LibraryView: View {
                 host.importGames(from: urls)
             }
         }
+    }
+
+    private func reasonFor(_ game: GameRow?) -> String {
+        guard let game else { return "" }
+        if game.detail.isEmpty {
+            return "这个文件夹里没有找到任何引擎认识的入口文件（ONScripter 的 nscript.dat / 0.utf，KiriKiri 的 startup.tjs / data.xp3）。"
+        }
+        return game.detail
     }
 
     private var emptyState: some View {
@@ -82,14 +102,19 @@ struct GameCard: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
                 )
-            VStack(alignment: .leading, spacing: 2) {
+            /* The player does not pick an engine, so the card never names one.
+             * A game nothing claims still shows up, marked so it is obvious why
+             * it will not start. */
+            HStack(spacing: 6) {
                 Text(game.title)
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)
-                Text(engineName)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                Spacer(minLength: 0)
+                if game.module.isEmpty {
+                    Image(systemName: "questionmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
@@ -98,10 +123,4 @@ struct GameCard: View {
         }
     }
 
-    private var engineName: String {
-        if game.module.contains("onscripter") { return "ONScripter" }
-        if game.module.contains("kirikiri") { return "KiriKiri2" }
-        if game.module.isEmpty { return "无法识别格式" }
-        return game.module
-    }
 }
