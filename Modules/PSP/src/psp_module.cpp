@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <cstdio>
+#include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <new>
 #include <string>
 #include <vector>
@@ -22,7 +24,20 @@ struct Instance {
     std::string status_name = "ppsspp";
 };
 
+std::string storagePath(Instance* instance, AuroraStorageKind kind);
+
+/* Device console is unreadable in practice; every core message also goes to a
+ * file so the failure point can be inspected afterwards. */
+void logToFile(Instance* instance, const std::string& message) {
+    if (instance == nullptr) return;
+    const std::string dir = storagePath(instance, AURORA_STORAGE_SAVES);
+    if (dir.empty()) return;
+    std::ofstream out(dir + "/ppsspp.log", std::ios::app);
+    if (out) out << message << "\n";
+}
+
 void logLine(Instance* instance, AuroraLogLevel level, const std::string& message) {
+    logToFile(instance, message);
     std::fprintf(stderr, "[ppsspp] %s\n", message.c_str());
     if (instance->host != nullptr && instance->host->write_log != nullptr) {
         instance->host->write_log(instance->host->host_context, kModuleId, level, message.c_str());
