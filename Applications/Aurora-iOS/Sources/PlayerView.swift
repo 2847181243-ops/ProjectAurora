@@ -52,13 +52,30 @@ struct PlayerView: View {
             }
 
             /* The engine takes a moment to produce its first frame; without this
-             * the screen is simply black and looks like a hang. */
+             * the screen is simply black and looks like a hang. When it fails it
+             * has to say so instead of staying black forever. */
             if host.framesPresented == 0 {
-                VStack(spacing: 12) {
-                    ProgressView()
-                    Text("正在启动游戏…").font(.caption).foregroundStyle(.secondary)
+                if host.lastError.isEmpty {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                        Text("正在启动游戏…").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .allowsHitTesting(false)
+                } else {
+                    VStack(spacing: 10) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.system(size: 30, weight: .light))
+                        Text("启动失败").font(.headline)
+                        Text(host.lastError)
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(.secondary)
+                        Button("返回") { onExit() }
+                            .buttonStyle(.borderedProminent)
+                            .padding(.top, 6)
+                    }
+                    .padding(24)
                 }
-                .allowsHitTesting(false)
             }
 
             if showControls {
