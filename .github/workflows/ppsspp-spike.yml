@@ -45,6 +45,8 @@ jobs:
             -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY="" \
             -DUSE_MINIUPNPC=OFF \
             -DUSE_SYSTEM_MINIUPNPC=OFF \
+            "-DCMAKE_C_FLAGS=-DMOBILE_DEVICE" \
+            "-DCMAKE_CXX_FLAGS=-DMOBILE_DEVICE" \
             -DLIBRETRO=ON -DHEADLESS=OFF $GLFLAGS 2>&1 | tee configure.log
           ls -1 build-ios
 
