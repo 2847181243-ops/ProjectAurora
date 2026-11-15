@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #import "AuroraMovieView.h"
 
-#include <vector>
+#include <stdlib.h>
 
 #include "pl_mpeg.h"
 
 @interface AuroraMovieView () {
     plm_t *_mpeg;
-    std::vector<uint8_t> _rgba;
+    uint8_t *_rgba;
+    size_t _rgbaCapacity;
     CGImageRef _currentFrame;
     double _clock;          /* seconds of playback we have advanced through */
     CFTimeInterval _lastTick;
@@ -104,11 +105,17 @@
     const int width = (int)frame->width;
     const int height = (int)frame->height;
     if (width <= 0 || height <= 0) return;
-    _rgba.resize((size_t)width * (size_t)height * 4);
-    plm_frame_to_rgba(frame, _rgba.data(), width * 4);
+    const size_t needed = (size_t)width * (size_t)height * 4;
+    if (_rgbaCapacity < needed) {
+        uint8_t *grown = (uint8_t *)realloc(_rgba, needed);
+        if (grown == NULL) return;
+        _rgba = grown;
+        _rgbaCapacity = needed;
+    }
+    plm_frame_to_rgba(frame, _rgba, width * 4);
 
     CGColorSpaceRef space = CGColorSpaceCreateDeviceRGB();
-    CGContextRef ctx = CGBitmapContextCreate(_rgba.data(), width, height, 8, (size_t)width * 4, space,
+    CGContextRef ctx = CGBitmapContextCreate(_rgba, width, height, 8, (size_t)width * 4, space,
                                              kCGImageAlphaNoneSkipLast | kCGBitmapByteOrderDefault);
     if (ctx != NULL) {
         CGImageRef image = CGBitmapContextCreateImage(ctx);
@@ -126,6 +133,7 @@
     [self pause];
     if (_mpeg != NULL) plm_destroy(_mpeg);
     if (_currentFrame != NULL) CGImageRelease(_currentFrame);
+    if (_rgba != NULL) free(_rgba);
 }
 
 @end
