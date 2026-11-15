@@ -47,6 +47,16 @@ std::string storagePath(Instance* instance, AuroraStorageKind kind, const char* 
     return status == AURORA_OK ? std::string(buffer) : std::string(fallback);
 }
 
+/* Pointer diagnostics land in a file: the console is awkward to read from a PC
+ * and the in-memory log dies with the process. */
+void pointerDebug(Instance* instance, const std::string& text) {
+    if (instance == nullptr) return;
+    const std::string dir = storagePath(instance, AURORA_STORAGE_SAVES, "");
+    if (dir.empty()) return;
+    std::ofstream out(dir + "/ons-pointer.log", std::ios::app);
+    if (out) out << text << "\n";
+}
+
 AuroraStatus createInstance(const AuroraHostServices* host, void** out_instance) {
     if (host == nullptr || out_instance == nullptr) return AURORA_E_INVALID_ARGUMENT;
     Instance* instance = new (std::nothrow) Instance();
