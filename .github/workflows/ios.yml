@@ -122,6 +122,22 @@ jobs:
           done
           # A dyld failure is unrecoverable at launch: fail here instead of on a device.
           exit $missing
+      - name: make sure the bundle finds its own dylibs
+        run: |
+          APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 8 | head -1)
+          BIN="$APP/Aurora"
+          echo '--- rpaths before ---'
+          otool -l "$BIN" | awk '/LC_RPATH/{getline; while($1!="path"){getline}; print $2}' || true
+          # The dylib sits next to the executable, so @executable_path must be
+          # on the search path. project.yml asks for it, but the generated
+          # project has been dropping it, so make it true here instead of
+          # trusting the setting.
+          if ! otool -l "$BIN" | grep -q 'path @executable_path '; then
+            install_name_tool -add_rpath @executable_path "$BIN"
+            echo 'added @executable_path'
+          fi
+          echo '--- rpaths after ---'
+          otool -l "$BIN" | awk '/LC_RPATH/{getline; while($1!="path"){getline}; print $2}'
       - name: upload build logs
         if: always()
         uses: actions/upload-artifact@v4
