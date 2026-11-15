@@ -20,11 +20,25 @@ struct GameDetailView: View {
     }
 
     var body: some View {
+        GeometryReader { geometry in
+            let wide = geometry.size.width > 700
+            let coverWidth = wide ? min(geometry.size.width * 0.26, 340)
+                                  : geometry.size.width * 0.34
+            content(coverWidth: coverWidth, wide: wide)
+        }
+        .background(Color.black.ignoresSafeArea())
+        .navigationTitle(game.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .task(id: game.path) { locateOpening() }
+    }
+
+    @ViewBuilder
+    private func content(coverWidth: CGFloat, wide: Bool) -> some View {
         VStack(spacing: 18) {
-            HStack(alignment: .top, spacing: 20) {
+            HStack(alignment: .top, spacing: wide ? 28 : 16) {
                 CoverImage(game: game)
                     .aspectRatio(2.0 / 3.0, contentMode: .fit)
-                    .frame(maxWidth: 260)
+                    .frame(width: coverWidth)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -37,6 +51,7 @@ struct GameDetailView: View {
                         .lineLimit(2)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
+                    if movie != nil || softwareMovie != nil || unplayableMovie != nil {
                     ZStack {
                         /* A frame that is slightly lighter than the page, otherwise
                          * the video area is invisible against a black background. */
@@ -65,6 +80,7 @@ struct GameDetailView: View {
                         }
                     }
                     .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                    }
 
                     Button {
                         onOpen(game)
@@ -86,7 +102,7 @@ struct GameDetailView: View {
                  * under the video, not at the bottom of a tall column. */
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, wide ? 40 : 20)
             .padding(.top, 8)
 
             if !others.isEmpty {
@@ -123,12 +139,6 @@ struct GameDetailView: View {
 
             Spacer(minLength: 0)
         }
-        .background(Color.black.ignoresSafeArea())
-        .navigationTitle(game.title)
-        .navigationBarTitleDisplayMode(.inline)
-        .task(id: game.path) { locateOpening() }
-    }
-
     /* Games ship their opening movie next to the script. Only mp4/mov can be
      * handed to AVFoundation; older titles use MPEG-1 or WMV, which iOS cannot
      * decode at all, so say that instead of showing a black rectangle. */
@@ -158,6 +168,15 @@ struct GameDetailView: View {
         }
         if let old = ordered.first(where: { ["wmv", "avi"].contains($0.pathExtension.lowercased()) }) {
             unplayableMovie = "片头是 \(old.pathExtension.uppercased())，暂时没有解码器"
+            return
+        }
+        /* No loose video: these games almost always keep the opening inside their
+         * archive, so say that instead of pretending the game has no opening. */
+        let archives = names.filter { ["nsa", "ns2", "ns3", "xp3", "sar"].contains($0.pathExtension.lowercased()) }
+        if let packed = archives.first {
+            unplayableMovie = "片头在 \(packed.lastPathComponent) 里，暂不支持从包里提取"
+        } else {
+            unplayableMovie = "这个游戏没有片头"
         }
     }
 }
