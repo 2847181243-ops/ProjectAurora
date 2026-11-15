@@ -18,6 +18,16 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("外观") {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("玻璃透明度")
+                            Spacer()
+                            Text(String(format: "%.0f%%", glassAlpha * 100))
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+                        Slider(value: $glassAlpha, in: 0.0...0.45, step: 0.01)
+                    }
                     Toggle("经典玻璃（用于对比）", isOn: Binding(
                         get: { UserDefaults.standard.bool(forKey: "appearance.classicGlass") },
                         set: { UserDefaults.standard.set($0, forKey: "appearance.classicGlass") }

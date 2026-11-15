@@ -9,6 +9,7 @@ import SwiftUI
 struct ContentView: View {
     @ObservedObject var host: AuroraHost
     @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
+    @AppStorage("appearance.glassAlpha") private var glassAlpha = 0.10
     @State private var showSettings = false
     @State private var playing: GameRow?
     @State private var path: [GameRow] = []
@@ -61,6 +62,7 @@ struct ContentView: View {
                     }
             }
         }
+        .environment(\.glassAlpha, glassAlpha)
         .tint(Theme.accent)
         .preferredColorScheme(background.colorScheme)
         .sheet(isPresented: $showSettings) {

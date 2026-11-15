@@ -10,12 +10,13 @@ import SwiftUI
  */
 struct GlassSurface: ViewModifier {
     var cornerRadius: CGFloat = 16
+    @Environment(\.glassAlpha) private var alpha
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         content
             .background(.ultraThinMaterial, in: shape)
-            .background(Color.white.opacity(0.06), in: shape)
+            .background(Color.white.opacity(alpha), in: shape)
             .overlay(
                 shape.strokeBorder(
                     LinearGradient(colors: [Color.white.opacity(0.55), Color.white.opacity(0.06)],
@@ -44,6 +45,19 @@ extension View {
         } else {
             self.modifier(GlassSurface(cornerRadius: cornerRadius))
         }
+    }
+}
+
+/* How much white the plate adds. Higher reads as a frosted pane, lower as clear
+ * glass; the player picks, because it depends on the wallpaper behind. */
+struct GlassAlphaKey: EnvironmentKey {
+    static let defaultValue: Double = 0.10
+}
+
+extension EnvironmentValues {
+    var glassAlpha: Double {
+        get { self[GlassAlphaKey.self] }
+        set { self[GlassAlphaKey.self] = newValue }
     }
 }
 
