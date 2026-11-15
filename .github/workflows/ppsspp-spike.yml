@@ -23,6 +23,14 @@ jobs:
           git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/hrydgard/ppsspp third_party/ppsspp
           du -sh third_party/ppsspp
 
+      - name: point the GLES link at the iOS framework
+        working-directory: third_party/ppsspp
+        run: |
+          set -euo pipefail
+          # Upstream links -lGLESv2 -lEGL, which only exist on Android/Linux. iOS
+          # ships the same API inside OpenGLES.framework.
+          sed -i '' 's/set(OPENGL_LIBRARIES GLESv2 EGL)/set(OPENGL_LIBRARIES "-framework OpenGLES")/' CMakeLists.txt
+          grep -n 'OPENGL_LIBRARIES' CMakeLists.txt | head -5
       - name: configure for iOS arm64
         working-directory: third_party/ppsspp
         run: |
