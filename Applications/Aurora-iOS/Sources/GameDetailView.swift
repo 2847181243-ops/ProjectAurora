@@ -51,35 +51,27 @@ struct GameDetailView: View {
                         .lineLimit(2)
                         .frame(maxWidth: .infinity, alignment: .leading)
 
-                    if movie != nil || softwareMovie != nil || unplayableMovie != nil {
-                    ZStack {
-                        /* A frame that is slightly lighter than the page, otherwise
-                         * the video area is invisible against a black background. */
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
-                        if let softwareMovie {
+                    if let softwareMovie {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.white.opacity(0.06))
                             MovieView(path: softwareMovie)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        } else if let movie {
+                        }
+                        .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                    } else if let movie {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.white.opacity(0.06))
                             VideoPlayer(player: AVPlayer(url: movie))
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        } else {
-                            VStack(spacing: 8) {
-                                Image(systemName: "film.slash")
-                                    .font(.system(size: 28, weight: .light))
-                                    .foregroundStyle(.secondary)
-                                Text(unplayableMovie ?? "这个游戏没有可播放的片头")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .padding(20)
                         }
-                    }
-                    .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                        .aspectRatio(16.0 / 9.0, contentMode: .fit)
+                    } else {
+                        /* No video: one line of text, not an empty 16:9 hole. */
+                        Text(unplayableMovie ?? "找不到片头")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
 
                     Button {
@@ -139,6 +131,8 @@ struct GameDetailView: View {
 
             Spacer(minLength: 0)
         }
+    }
+
     /* Games ship their opening movie next to the script. Only mp4/mov can be
      * handed to AVFoundation; older titles use MPEG-1 or WMV, which iOS cannot
      * decode at all, so say that instead of showing a black rectangle. */
