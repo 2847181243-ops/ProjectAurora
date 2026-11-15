@@ -66,6 +66,14 @@ int runLoop() {
     return 0;
 }
 
+bool screenSize(int& width, int& height) {
+    SDL_Surface* surface = SDL_GetVideoSurface();
+    if (surface == nullptr) return false;
+    width = surface->w;
+    height = surface->h;
+    return true;
+}
+
 void pushPointer(int kind, int x, int y) {
     /* ONScripter reads SDL 1.2 events, so touch arrives as a left-button mouse. */
     SDL_Event event;
