@@ -131,6 +131,8 @@ jobs:
       - name: check the bundle can load its libraries
         run: |
           set -uo pipefail
+          exec > >(tee check.log) 2>&1
+          echo "== bundle check =="
           APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 8 | head -1)
           BIN="$APP/Aurora"
           echo "app: $APP"
@@ -243,6 +245,7 @@ jobs:
             echo ''
             echo '## archive tail'
             awk '/Undefined symbols for architecture/{flag=1} flag{print; n++} n>25{exit}' Applications/Aurora-iOS/archive.log 2>/dev/null
+            Applications/Aurora-iOS/check.log
           } > "$file"
           git add "$file"
           git commit -m "ci: ios run ${{ github.run_number }}" || true
