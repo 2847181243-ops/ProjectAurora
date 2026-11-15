@@ -10,6 +10,10 @@ on:
         description: "Module id to autostart"
         required: false
         default: "com.aurora.runtime.kirikiri"
+      open_detail:
+        description: game title whose page should open at launch
+        required: false
+        default: ''
       game:
         description: "Game folder name, empty = first match"
         required: false

@@ -93,6 +93,15 @@ struct ContentView: View {
         }
         /* Starting a module from anywhere should land in the player: with the
          * module list gone, the library is the only place a game can start. */
+        .onAppear {
+            /* CI has no way to tap, so a launch variable can open one game's page
+             * for a screenshot. Nothing reads this in a normal install. */
+            let wanted = ProcessInfo.processInfo.environment["AURORA_OPEN_DETAIL"] ?? ""
+            if !wanted.isEmpty, path.isEmpty,
+               let game = host.games.first(where: { $0.title == wanted || $0.id == wanted }) {
+                path = [game]
+            }
+        }
         .onChange(of: host.runningModule) { module in
             guard !module.isEmpty, playing == nil else { return }
             playing = host.games.first { $0.module == module }
