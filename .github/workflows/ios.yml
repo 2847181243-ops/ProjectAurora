@@ -120,12 +120,14 @@ jobs:
           CORE=ppssppcore/lib/libppsspp_libretro.dylib
           if [ ! -f "$CORE" ]; then echo "no core artifact, skipping"; exit 0; fi
           mkdir -p "$APP/Frameworks"
-          cp "$CORE" "$APP/Frameworks/libppsspp_libretro.dylib"
+          # Xcode rewrote the load command to @rpath/ppsspp_libretro.dylib, so the
+          # copy has to carry that exact name.
+          cp "$CORE" "$APP/Frameworks/ppsspp_libretro.dylib"
           # The core is linked by file name only; rewrite it to go through @rpath so
           # dyld looks inside the bundle instead of the system search paths.
-          install_name_tool -change libppsspp_libretro.dylib @rpath/libppsspp_libretro.dylib "$BIN" || true
-          install_name_tool -id @rpath/libppsspp_libretro.dylib "$APP/Frameworks/libppsspp_libretro.dylib"
-          codesign -f -s - "$APP/Frameworks/libppsspp_libretro.dylib"
+          install_name_tool -change libppsspp_libretro.dylib @rpath/ppsspp_libretro.dylib "$BIN" || true
+          install_name_tool -id @rpath/ppsspp_libretro.dylib "$APP/Frameworks/ppsspp_libretro.dylib"
+          codesign -f -s - "$APP/Frameworks/ppsspp_libretro.dylib"
           otool -L "$BIN" | grep -i ppsspp || true
 
       - name: check the bundle can load its libraries
