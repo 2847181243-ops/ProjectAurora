@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "../../../third_party/pl_mpeg/pl_mpeg.h"
+#include "pl_mpeg.h"
 
 @interface AuroraMovieView () {
     plm_t *_mpeg;
