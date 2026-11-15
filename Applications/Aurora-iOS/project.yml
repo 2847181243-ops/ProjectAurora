@@ -30,6 +30,10 @@ targets:
       # The whole Modules tree, not a hand-written list: a module added to
       # Modules/modules.list must not require an edit here, or the "one line to add
       # a module" promise is false on the iOS side.
+      # Present only when CI downloaded the PPSSPP core artifact; XcodeGen skips
+      # a missing path, and the module falls back to its stub.
+      - path: ../../ppssppcore/include
+        optional: true
       - path: ../../Modules
         excludes:
           - "**/CMakeLists.txt"
@@ -91,6 +95,7 @@ targets:
         DEVELOPMENT_TEAM: ""
         HEADER_SEARCH_PATHS:
           - "$(SRCROOT)/../../krkrlib"
+          - "$(SRCROOT)/../../ppssppcore/include"
           - "$(SRCROOT)/../../krkrlib/third_party/krkr/bridge/engine_api/include"
           - "$(SRCROOT)/../../krkrlib/include"
           - "$(SRCROOT)/../../krkrlib/include"
@@ -105,6 +110,7 @@ targets:
           - "$(SRCROOT)/../../SDK/AuroraDisplayAPI/include"
           - "$(SRCROOT)/../../SDK/AuroraInputAPI/include"
           - "$(SRCROOT)/Sources"
+        OTHER_LDFLAGS: "$(inherited) -L$(SRCROOT)/../../ppssppcore/lib -lppsspp_libretro"
         OTHER_LDFLAGS:
           - "-lc++"
           - "-laurora_onscripter"

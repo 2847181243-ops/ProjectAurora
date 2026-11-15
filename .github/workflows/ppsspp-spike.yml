@@ -73,7 +73,8 @@ jobs:
           mkdir -p core-out/include core-out/lib
           # The libretro headers are generated into the build tree.
           cp libretro/libretro.h core-out/include/ 2>/dev/null || cp $(find . -name libretro.h | head -1) core-out/include/
-          cp build-ios/lib/Release/ppsspp_libretro.dylib core-out/lib/ 2>/dev/null || true
+          # libtool/linker expect the lib- prefix; upstream names it without one.
+          cp build-ios/lib/Release/ppsspp_libretro.dylib core-out/lib/libppsspp_libretro.dylib 2>/dev/null || true
           for f in $(find build-ios -name 'ppsspp_libretro*.a' -o -name 'libppsspp*.a'); do cp "$f" core-out/lib/; done
           ls -la core-out/lib core-out/include
       - name: upload the core

@@ -64,6 +64,18 @@ jobs:
             gh run download "$run_id" -n krkr-ios-engine -D krkrlib || echo 'artifact download failed'
           fi
           ls -la krkrlib 2>/dev/null | head -10
+      - name: fetch the PSP core
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          run_id=$(gh run list --workflow ppsspp-spike.yml --status success --limit 1 --json databaseId --jq '.[0].databaseId' || true)
+          echo "ppsspp run: ${run_id:-none}"
+          if [ -n "${run_id:-}" ]; then
+            gh run download "$run_id" -n ppsspp-core -D ppssppcore || echo "artifact download failed"
+          fi
+          ls -la ppssppcore/lib ppssppcore/include 2>/dev/null || true
       - name: generate module table
         continue-on-error: true
         run: python3 BuildSystem/generate_builtin_table.py --out Applications/Aurora-iOS/Generated/AuroraBuiltinModules.cpp 2>&1 | tee gen.log
