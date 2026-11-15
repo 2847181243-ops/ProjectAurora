@@ -39,6 +39,13 @@ struct HostBinding {
     AuroraInputState input{};
     double last_input_poll_seconds = 0.0;
 
+    /* A tap can begin and end between two polls. Latching it means the module
+     * always sees one down frame followed by one up frame, which is what an
+     * engine that advances on "click" needs. Without it quick taps vanish. */
+    bool touch_latched_down = false;
+    bool touch_force_release = false;
+    AuroraInputState latched_down_state{};
+
     bool owns_frame = false;
     AuroraFrame current_frame{};
 

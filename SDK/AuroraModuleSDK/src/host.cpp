@@ -76,6 +76,15 @@ void ModuleHost::enableSurface(HostBinding& binding, uint32_t width, uint32_t he
 }
 
 void ModuleHost::setInput(HostBinding& binding, const AuroraInputState& input) {
+    const bool was_down = binding.input.touch_active != 0;
+    const bool now_down = input.touch_active != 0;
+    if (now_down && !was_down) {
+        binding.touch_latched_down = true;
+        binding.latched_down_state = input;
+        binding.touch_force_release = false;
+    } else if (!now_down && was_down) {
+        binding.touch_force_release = true;
+    }
     binding.input = input;
 }
 
@@ -168,7 +177,18 @@ AuroraStatus ModuleHost::onPresentFrame(void* context, const AuroraFrame* frame)
 AuroraStatus ModuleHost::onPollInput(void* context, AuroraInputState* out_state) {
     auto* binding = static_cast<HostBinding*>(context);
     if (binding == nullptr || out_state == nullptr) return AURORA_E_INVALID_ARGUMENT;
-    *out_state = binding->input;
+    if (binding->touch_latched_down) {
+        /* Deliver the press even though the finger may already be gone. */
+        *out_state = binding->latched_down_state;
+        binding->touch_latched_down = false;
+        binding->touch_force_release = true;
+    } else if (binding->touch_force_release) {
+        *out_state = binding->input;
+        out_state->touch_active = 0;
+        binding->touch_force_release = false;
+    } else {
+        *out_state = binding->input;
+    }
     binding->last_input_poll_seconds = monotonicSeconds();
     return AURORA_OK;
 }
