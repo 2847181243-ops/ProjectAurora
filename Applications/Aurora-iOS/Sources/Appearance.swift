@@ -79,29 +79,6 @@ struct AppBackground: View {
     }
 }
 
-/* Frosted plate used for the gear, the player controls and the settings rows.
- *
- * A material only reads as glass when there is something behind it to refract, so
- * the plates are drawn over the backdrop glow below. The highlight stroke is what
- * sells the edge: bright at the top-left, fading out by the bottom-right. */
-struct GlassSurface: ViewModifier {
-    var cornerRadius: CGFloat = 16
-
-    func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        content
-            .background(.ultraThinMaterial, in: shape)
-            .background(Color.white.opacity(0.06), in: shape)
-            .overlay(
-                shape.strokeBorder(
-                    LinearGradient(colors: [Color.white.opacity(0.55), Color.white.opacity(0.06)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing),
-                    lineWidth: 0.9)
-            )
-            .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
-    }
-}
-
 /* Something for the glass to sample. Without this the plates sit on flat black
  * and read as dark rectangles no matter how thin the material is. */
 struct BackdropGlow: View {
@@ -137,8 +114,4 @@ struct BackdropGlow: View {
     }
 }
 
-extension View {
-    func glassSurface(cornerRadius: CGFloat = 16) -> some View {
-        modifier(GlassSurface(cornerRadius: cornerRadius))
-    }
-}
+

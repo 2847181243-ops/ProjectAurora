@@ -18,6 +18,10 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section("外观") {
+                    Toggle("经典玻璃（用于对比）", isOn: Binding(
+                        get: { UserDefaults.standard.bool(forKey: "appearance.classicGlass") },
+                        set: { UserDefaults.standard.set($0, forKey: "appearance.classicGlass") }
+                    ))
                     Picker("背景", selection: $backgroundRaw) {
                         ForEach(BgStyle.allCases) { style in
                             Text(style.label).tag(style.rawValue)
