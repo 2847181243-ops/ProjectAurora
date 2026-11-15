@@ -217,6 +217,17 @@ jobs:
               open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s)
               print('utf-8 wide space is skipped when drawing')
           PY
+          # The MP3 helper still ends the process on its error paths. In an
+          # embedded app that kills the whole host, so turn those into throws.
+          python3 - third_party/onscripter/MadWrapper.cpp <<'PY'
+          import sys
+          p = sys.argv[1]
+          s = open(p, encoding='utf-8', errors='surrogateescape').read()
+          for call in ('exit(0);', 'exit(1);', 'exit(-1);'):
+              s = s.replace(call, 'throw 7101;')
+          open(p, 'w', encoding='utf-8', errors='surrogateescape').write(s)
+          print('madwrapper throws:', s.count('throw 7101'))
+          PY
           # SDL 1.2 add-on headers: SDL2's would drag SDL2 core headers into the same TU.
           git clone --depth 1 https://github.com/yeatse/ONScripter-iOS third_party/iosons
           IOSONS=third_party/iosons
