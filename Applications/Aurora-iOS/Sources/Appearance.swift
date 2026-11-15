@@ -144,3 +144,31 @@ struct BackdropGlow: View {
 }
 
 
+
+
+/* Text colour. Auto follows the system (white on dark, black on light) and is the
+ * default; the rest let somebody pick a reading colour that suits the backdrop. */
+enum TextTone: String, CaseIterable, Identifiable {
+    case auto, white, black, warm, accent
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .auto: return "自动（跟随系统）"
+        case .white: return "白色"
+        case .black: return "黑色"
+        case .warm: return "暖白"
+        case .accent: return "暖橙"
+        }
+    }
+
+    var color: Color? {
+        switch self {
+        case .auto: return nil
+        case .white: return .white
+        case .black: return .black
+        case .warm: return Color(red: 0.98, green: 0.94, blue: 0.88)
+        case .accent: return Theme.accent
+        }
+    }
+}

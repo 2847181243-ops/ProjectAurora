@@ -54,6 +54,14 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("外观") {
+                    Picker("字体颜色", selection: $textToneRaw) {
+                        ForEach(TextTone.allCases) { tone in
+                            Text(tone.label).tag(tone.rawValue)
+                        }
+                    }
+                }
+
                 Section("游戏库") {
                     Text(host.gamesRoot)
                         .font(.caption.monospaced())

@@ -11,6 +11,7 @@ struct ContentView: View {
     @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
     @AppStorage("appearance.glassAlpha") private var manualAlpha = 0.04
     @AppStorage("appearance.glassAuto") private var glassAuto = false
+    @AppStorage("appearance.textTone") private var textToneRaw = TextTone.auto.rawValue
     @Environment(\.colorScheme) private var scheme
     @State private var showSettings = false
     @State private var playing: GameRow?
@@ -26,6 +27,10 @@ struct ContentView: View {
     /* Auto derives the pane from what is actually behind it, which is the closest
      * a third-party app can get to "follow the wallpaper": iOS does not hand apps
      * the wallpaper image at all. */
+    private var tone: TextTone {
+        TextTone(rawValue: textToneRaw) ?? .auto
+    }
+
     private var effectiveAlpha: Double {
         guard glassAuto else { return manualAlpha }
         let brightness = leadingCover?.averageBrightness() ?? 0.1
@@ -74,6 +79,7 @@ struct ContentView: View {
             }
         }
         .environment(\.glassAlpha, effectiveAlpha)
+        .foregroundStyle(tone.color ?? Color.primary)
         .tint(Theme.accent)
         .preferredColorScheme(background.colorScheme)
         .sheet(isPresented: $showSettings) {
