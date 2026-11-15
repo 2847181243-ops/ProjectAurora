@@ -3,271 +3,45 @@
 
 import SwiftUI
 
+/* One screen for the player: the library. Everything that exists for debugging
+ * (modules, log, diagnostics) moved into Settings, because somebody opening this
+ * app wants to play a game, not configure an engine. */
 struct ContentView: View {
     @ObservedObject var host: AuroraHost
-    @State private var showImporter = false
+    @State private var showSettings = false
+    @State private var playing: GameRow?
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    if host.games.isEmpty {
-                        Text("Put game folders in Files → On My iPad → Aurora, or use Import.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(host.games) { game in
-                        GameRowView(game: game)
-                    }
-                } header: {
-                    Text("Library")
-                } footer: {
-                    Text(host.gamesRoot)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-
-                /* While something is running its output is the whole point of the
-                 * screen, so it moves above the module list instead of sitting at
-                 * the bottom where it needs a scroll to be seen. */
-                if !host.runningModule.isEmpty {
-                    Section("Runtime output") {
-                        FramePanel(host: host)
-                    }
-                }
-
-                Section {
-                    ForEach(host.rows) { row in
-                        ModuleRowView(
-                            row: row,
-                            running: host.runningModule == row.id,
-                            onEnabled: { host.setEnabled(row, enabled: $0) },
-                            onRun: { host.run(row) },
-                            onStop: { host.stopRunning() },
-                            onReset: { host.resetFailure(row) }
-                        )
-                    }
-                } header: {
-                    Text("Modules")
-                } footer: {
-                    Text("READY is computed from three things: the manifest, the build table and the runtime probe. A manifest that says \"ready\" proves nothing.")
-                        .font(.footnote)
-                }
-
-            }
-            .navigationTitle("Aurora")
-            .toolbar {
-                Button("Rescan") { host.refresh() }
-                Button("Import") { showImporter = true }
-            }
-            .fileImporter(
-                isPresented: $showImporter,
-                allowedContentTypes: [.folder, .item],
-                allowsMultipleSelection: true
-            ) { result in
-                if case .success(let urls) = result {
-                    host.importGames(from: urls)
-                }
-            }
-        }
-    }
-}
-
-private struct GameRowView: View {
-    let game: GameRow
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(game.title).font(.body)
-                Text(game.module.isEmpty ? "no module claims this file" : game.module)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                if !game.detail.isEmpty {
-                    Text(game.detail)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
-            Text(game.state)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(stateColor.opacity(0.16))
-                .foregroundStyle(stateColor)
-                .clipShape(Capsule())
-        }
-    }
-
-    private var stateColor: Color {
-        switch game.state {
-        case "READY": return .green
-        case "RUNNING": return .blue
-        case "DISABLED": return .orange
-        case "FAILED": return .red
-        default: return .gray
-        }
-    }
-}
-
-private struct ModuleRowView: View {
-    let row: ModuleRow
-    let running: Bool
-    let onEnabled: (Bool) -> Void
-    let onRun: () -> Void
-    let onStop: () -> Void
-    let onReset: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Text(row.name.isEmpty ? row.id : row.name)
-                    .font(.headline)
-                Spacer()
-                Text(row.stateName)
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(color.opacity(0.16))
-                    .foregroundStyle(color)
-                    .clipShape(Capsule())
-            }
-
-            Text(row.id)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if !row.detail.isEmpty {
-                Text(row.detail)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            if row.compiled {
-                HStack {
-                    Toggle("Enabled", isOn: Binding(
-                        get: { row.enabled },
-                        set: { onEnabled($0) }
-                    ))
-                    .toggleStyle(.switch)
-                    .labelsHidden()
-
-                    Spacer()
-
-                    if running {
-                        Button("Stop", action: onStop)
-                            .buttonStyle(.bordered)
-                    } else if row.isFailed {
-                        Button("Retry", action: onReset)
-                            .buttonStyle(.bordered)
-                    } else {
-                        Button("Run", action: onRun)
-                            .buttonStyle(.borderedProminent)
-                            .disabled(!row.isReady)
-                    }
-                }
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    private var color: Color {
-        switch row.state {
-        case 4: return .green
-        case 5: return .blue
-        case 6: return .orange
-        case 7: return .red
-        default: return .gray
-        }
-    }
-}
-
-private struct FramePanel: View {
-    @ObservedObject var host: AuroraHost
-
-    private var audioStatus: String {
-        aurora_bridge_audio_running() != 0
-            ? "audio \(aurora_bridge_audio_sample_rate() / 1000) kHz"
-            : "audio off"
-    }
-
-    private var aspectRatio: CGFloat {
-        guard host.frameWidth > 0, host.frameHeight > 0 else { return 4.0 / 3.0 }
-        return CGFloat(host.frameWidth) / CGFloat(host.frameHeight)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if host.runningModule.isEmpty {
-                Text("No module running")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } else if host.useMetal {
-                MetalFrameView(framesPresented: host.framesPresented)
-                    .aspectRatio(aspectRatio, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .overlay(
-                        GeometryReader { geometry in
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .gesture(
-                                    DragGesture(minimumDistance: 0)
-                                        .onChanged { value in
-                                            let nx = Float(value.location.x / max(geometry.size.width, 1))
-                                            let ny = Float(value.location.y / max(geometry.size.height, 1))
-                                            aurora_bridge_set_touch(1, nx, ny)
-                                        }
-                                        .onEnded { _ in
-                                            aurora_bridge_set_touch(0, 0, 0)
-                                        }
-                                )
+            LibraryView(host: host, playing: $playing)
+                .navigationTitle("Aurora")
+                .navigationBarTitleDisplayMode(.large)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Image(systemName: "gearshape")
                         }
-                    )
-            } else if let image = host.frame {
-                Image(uiImage: image)
-                    .resizable()
-                    .interpolation(.none)
-                    .aspectRatio(image.size.width / image.size.height, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            } else {
-                Text("Waiting for the first frame")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack {
-                Text("frames presented: \(host.framesPresented)")
-                    .font(.caption)
-                    .monospaced()
-                Text(audioStatus)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if !host.runningModule.isEmpty {
-                    Text(host.runningModule)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Settings")
+                    }
                 }
-            }
-
-            if !host.lastError.isEmpty {
-                Text(host.lastError)
-                    .font(.caption2)
-                    .foregroundStyle(.red)
-
-                Section {
-                    Text(host.diagnostics.isEmpty ? "(no records yet)" : host.diagnostics)
-                        .font(.caption2)
-                        .monospaced()
-                        .textSelection(.enabled)
-                } header: {
-                    Text("Log")
-                } footer: {
-                    Text("The module's own log lines, newest last.")
-                        .font(.caption2)
-                }
+        }
+        .tint(Theme.accent)
+        .preferredColorScheme(.dark)
+        .sheet(isPresented: $showSettings) {
+            SettingsView(host: host)
+        }
+        .fullScreenCover(item: $playing) { game in
+            PlayerView(host: host, game: game) {
+                playing = nil
             }
         }
     }
+}
+
+enum Theme {
+    static let accent = Color(red: 1.0, green: 0.61, blue: 0.22)
+    static let card = Color(white: 0.12)
+    static let background = Color(white: 0.05)
 }
