@@ -70,6 +70,7 @@ struct LibraryView: View {
                 host.importGames(from: urls)
             }
         }
+        }
     }
 
     private func reasonFor(_ game: GameRow?) -> String {
