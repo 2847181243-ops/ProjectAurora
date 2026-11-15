@@ -149,7 +149,7 @@ struct BackdropGlow: View {
 /* Text colour. Auto follows the system (white on dark, black on light) and is the
  * default; the rest let somebody pick a reading colour that suits the backdrop. */
 enum TextTone: String, CaseIterable, Identifiable {
-    case auto, white, black, warm, accent
+    case auto, white, black, warm, accent, custom
     var id: String { rawValue }
 
     var label: String {
@@ -159,6 +159,7 @@ enum TextTone: String, CaseIterable, Identifiable {
         case .black: return "黑色"
         case .warm: return "暖白"
         case .accent: return "暖橙"
+        case .custom: return "自定义"
         }
     }
 
@@ -169,6 +170,30 @@ enum TextTone: String, CaseIterable, Identifiable {
         case .black: return .black
         case .warm: return Color(red: 0.98, green: 0.94, blue: 0.88)
         case .accent: return Theme.accent
+        case .custom: return nil   /* filled in from the stored hex */
         }
+    }
+}
+
+
+extension Color {
+    /* "#RRGGBB" <-> Color. Kept as text in the defaults so the picker's choice
+     * survives a relaunch without inventing another storage format. */
+    init?(hex: String) {
+        var text = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if text.hasPrefix("#") { text.removeFirst() }
+        guard text.count == 6, let value = UInt32(text, radix: 16) else { return nil }
+        let r = Double((value >> 16) & 0xFF) / 255.0
+        let g = Double((value >> 8) & 0xFF) / 255.0
+        let b = Double(value & 0xFF) / 255.0
+        self.init(red: r, green: g, blue: b)
+    }
+
+    var hexString: String {
+        let ui = UIColor(self)
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        guard ui.getRed(&r, green: &g, blue: &b, alpha: &a) else { return "FFFFFF" }
+        return String(format: "%02X%02X%02X",
+                      Int((r * 255).rounded()), Int((g * 255).rounded()), Int((b * 255).rounded()))
     }
 }

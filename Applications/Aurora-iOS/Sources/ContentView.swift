@@ -12,6 +12,7 @@ struct ContentView: View {
     @AppStorage("appearance.glassAlpha") private var manualAlpha = 0.04
     @AppStorage("appearance.glassAuto") private var glassAuto = false
     @AppStorage("appearance.textTone") private var textToneRaw = TextTone.auto.rawValue
+    @AppStorage("appearance.textColorHex") private var textColorHex = "FF9C38"
     @Environment(\.colorScheme) private var scheme
     @State private var showSettings = false
     @State private var playing: GameRow?
@@ -29,6 +30,11 @@ struct ContentView: View {
      * the wallpaper image at all. */
     private var tone: TextTone {
         TextTone(rawValue: textToneRaw) ?? .auto
+    }
+
+    private var resolvedTone: Color {
+        if tone == .custom { return Color(hex: textColorHex) ?? Theme.accent }
+        return tone.color ?? Color.primary
     }
 
     private var effectiveAlpha: Double {
@@ -79,7 +85,7 @@ struct ContentView: View {
             }
         }
         .environment(\.glassAlpha, effectiveAlpha)
-        .foregroundStyle(tone.color ?? Color.primary)
+        .foregroundStyle(resolvedTone)
         .tint(Theme.accent)
         .preferredColorScheme(background.colorScheme)
         .sheet(isPresented: $showSettings) {

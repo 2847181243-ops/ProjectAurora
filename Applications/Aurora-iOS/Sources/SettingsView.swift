@@ -60,6 +60,12 @@ struct SettingsView: View {
                             Text(tone.label).tag(tone.rawValue)
                         }
                     }
+                    if TextTone(rawValue: textToneRaw) == .custom {
+                        ColorPicker("选择颜色", selection: Binding(
+                            get: { Color(hex: textColorHex) ?? .white },
+                            set: { textColorHex = $0.hexString }
+                        ), supportsOpacity: false)
+                    }
                 }
 
                 Section("游戏库") {
