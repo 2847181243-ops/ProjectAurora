@@ -13,6 +13,8 @@ struct SettingsView: View {
     @AppStorage("appearance.background") private var backgroundRaw = BgStyle.black.rawValue
     @State private var showImagePicker = false
     @State private var customMissing = false
+    @State private var pickFailed = false
+    @State private var pickedPreview: UIImage?
     @AppStorage("appearance.glassAlpha") private var glassAlpha = 0.04
     @AppStorage("appearance.glassAuto") private var glassAuto = false
     @AppStorage("appearance.textTone") private var textToneRaw = TextTone.auto.rawValue
@@ -46,11 +48,41 @@ struct SettingsView: View {
                     }
                     if BgStyle(rawValue: backgroundRaw) == .custom {
                         Button("选择图片") { showImagePicker = true }
+                        .fileImporter(isPresented: $showImagePicker,
+                                      allowedContentTypes: [.image],
+                                      allowsMultipleSelection: false) { result in
+                            if case .success(let urls) = result, let url = urls.first {
+                                let accessing = url.startAccessingSecurityScopedResource()
+                                defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                                if let data = try? Data(contentsOf: url), let image = UIImage(data: data),
+                                   BackgroundStore.save(image) {
+                                    pickedPreview = image
+                                    pickFailed = false
+                                    customMissing = false
+                                } else {
+                                    pickFailed = true
+                                }
+                            }
+                        }
                         Button("清除图片", role: .destructive) {
                             BackgroundStore.clear()
                             customMissing = true
                         }
-                        if customMissing || BackgroundStore.load() == nil {
+                        /* Show what was actually stored. Without this a pick that
+                         * silently fails looks identical to a button that does
+                         * nothing at all. */
+                        if let pickedPreview {
+                            Image(uiImage: pickedPreview)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(height: 90)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        if pickFailed {
+                            Text("这张图片读不出来，换一张试试")
+                                .font(.caption2)
+                                .foregroundStyle(.red)
+                        } else if customMissing || BackgroundStore.load() == nil {
                             Text("还没有选择图片，背景暂时是黑色")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
@@ -117,23 +149,12 @@ struct SettingsView: View {
                         .font(.caption2)
                 }
             }
+            .onAppear { pickedPreview = BackgroundStore.load() }
             .navigationTitle("设置")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("完成") { dismiss() }
-                }
-            }
-            .fileImporter(isPresented: $showImagePicker,
-                          allowedContentTypes: [.image],
-                          allowsMultipleSelection: false) { result in
-                if case .success(let urls) = result, let url = urls.first {
-                    let accessing = url.startAccessingSecurityScopedResource()
-                    if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                        _ = BackgroundStore.save(image)
-                        customMissing = false
-                    }
-                    if accessing { url.stopAccessingSecurityScopedResource() }
                 }
             }
             .fileImporter(isPresented: $showImporter,
