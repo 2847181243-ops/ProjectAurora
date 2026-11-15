@@ -22,8 +22,8 @@ struct GameDetailView: View {
     var body: some View {
         GeometryReader { geometry in
             let wide = geometry.size.width > 700
-            let coverWidth = wide ? min(geometry.size.width * 0.30, 400)
-                                  : geometry.size.width * 0.36
+            let coverWidth = wide ? min(geometry.size.width * 0.34, 460)
+                                  : geometry.size.width * 0.40
             content(coverWidth: coverWidth, wide: wide)
         }
         .background(Color.black.ignoresSafeArea())
@@ -36,9 +36,12 @@ struct GameDetailView: View {
     private func content(coverWidth: CGFloat, wide: Bool) -> some View {
         VStack(spacing: 18) {
             HStack(alignment: .top, spacing: wide ? 28 : 16) {
+                /* Same wider proportion as the shelf: a 2:3 poster on a tablet
+                 * ends up taller than the column beside it. */
                 CoverImage(game: game)
-                    .aspectRatio(2.0 / 3.0, contentMode: .fit)
+                    .aspectRatio(4.0 / 5.0, contentMode: .fill)
                     .frame(width: coverWidth)
+                    .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)

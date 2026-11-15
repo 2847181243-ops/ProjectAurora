@@ -22,7 +22,7 @@ struct LibraryView: View {
         /* Covers stay small so the shelf fills the width: a tablet should show a
          * row of games, not two posters. */
         let spacing: CGFloat = 16
-        let target: CGFloat = 300
+        let target: CGFloat = 260
         let fits = Int((width + spacing) / (target + spacing))
         let count = min(6, max(2, fits))
         let total = width - spacing * CGFloat(count + 1)
