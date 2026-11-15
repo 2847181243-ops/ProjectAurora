@@ -115,9 +115,13 @@ jobs:
       - name: embed the PSP core
         run: |
           set -euo pipefail
-          APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 8 | head -1)
+          # find can return the intermediate build product instead of the archive;
+          # embedding into the wrong one looks like "the dylib is missing".
+          APP=Applications/Aurora-iOS/build/Aurora.xcarchive/Products/Applications/Aurora.app
+          if [ ! -d "$APP" ]; then APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 8 | head -1); fi
           BIN="$APP/Aurora"
           CORE=ppssppcore/lib/libppsspp_libretro.dylib
+          echo "embedding into $APP"
           if [ ! -f "$CORE" ]; then echo "no core artifact, skipping"; exit 0; fi
           mkdir -p "$APP/Frameworks"
           # Xcode rewrote the load command to @rpath/ppsspp_libretro.dylib, so the
@@ -135,7 +139,8 @@ jobs:
           set -uo pipefail
           exec > >(tee check.log) 2>&1
           echo "== bundle check =="
-          APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 8 | head -1)
+          APP=Applications/Aurora-iOS/build/Aurora.xcarchive/Products/Applications/Aurora.app
+          if [ ! -d "$APP" ]; then APP=$(find Applications/Aurora-iOS/build -name 'Aurora.app' -maxdepth 8 | head -1); fi
           BIN="$APP/Aurora"
           echo "app: $APP"
           if [ ! -x "$BIN" ]; then echo '::error::app binary missing'; exit 1; fi
