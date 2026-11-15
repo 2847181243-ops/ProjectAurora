@@ -110,7 +110,6 @@ targets:
           - "$(SRCROOT)/../../SDK/AuroraDisplayAPI/include"
           - "$(SRCROOT)/../../SDK/AuroraInputAPI/include"
           - "$(SRCROOT)/Sources"
-        OTHER_LDFLAGS: "$(inherited) -L$(SRCROOT)/../../ppssppcore/lib -lppsspp_libretro"
         OTHER_LDFLAGS:
           - "-lc++"
           - "-laurora_onscripter"
@@ -132,6 +131,8 @@ targets:
           - "-lbz2"
           - "-lz"
           - "-liconv"
+          - "-L$(SRCROOT)/../../ppssppcore/lib"
+          - "-lppsspp_libretro"
         # The SDL2 dylib sits next to the executable, and its install name is
         # @rpath/libSDL2-2.0.0.dylib. Without an @executable_path runpath dyld
         # cannot resolve it on a real device (the app died at launch with
@@ -140,6 +141,7 @@ targets:
           - "$(inherited)"
           - "@executable_path"
         LIBRARY_SEARCH_PATHS:
+          - "$(SRCROOT)/../../ppssppcore/lib"
           - "$(SRCROOT)/../../krkrlib"
           - "$(SRCROOT)/../../onslib/lib"
           - "$(SRCROOT)/../../onslib/prefix/lib"
