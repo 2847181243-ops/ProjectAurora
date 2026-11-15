@@ -34,7 +34,11 @@ struct LibraryView: View {
         GeometryReader { geo in
         ScrollView {
             if onlyGames.isEmpty {
-                emptyState
+                if host.isScanning {
+                    ProgressView("正在扫描游戏…").padding(.top, 60)
+                } else {
+                    emptyState
+                }
             } else {
                 LazyVGrid(columns: columns(for: geo.size.width), spacing: 12) {
                     ForEach(onlyGames) { game in

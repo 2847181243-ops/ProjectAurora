@@ -42,6 +42,8 @@ struct ModuleRow: Identifiable {
 final class AuroraHost: ObservableObject {
     @Published var rows: [ModuleRow] = []
     @Published var games: [GameRow] = []
+    @Published var isScanning = false
+    private let scanQueue = DispatchQueue(label: "aurora.library.scan", qos: .userInitiated)
     @Published var frame: UIImage?
     @Published var runningModule: String = ""
     @Published var diagnostics: String = ""
@@ -214,26 +216,36 @@ final class AuroraHost: ObservableObject {
 
     var gamesRoot: String { String(cString: aurora_bridge_games_root()) }
 
+    /* Scanning opens every game folder and can take seconds on a slow external
+     * file or a big archive. Doing that on the main thread left the window black
+     * long enough to look like a hang, so the scan runs on its own queue and the
+     * results come back to the main thread. */
     func rescanLibrary() {
-        _ = aurora_bridge_library_scan()
-        let count = aurora_bridge_library_count()
-        var list: [GameRow] = []
-        var index: Int32 = 0
-        while index < count {
-            let title = String(cString: aurora_bridge_library_title(index))
-            let module = String(cString: aurora_bridge_library_module(index))
-            list.append(GameRow(
-                id: "\(index)-\(title)",
-                title: title,
-                module: module,
-                state: String(cString: aurora_bridge_library_state(index)),
-                detail: String(cString: aurora_bridge_library_detail(index)),
-                path: String(cString: aurora_bridge_library_path(index)),
-                format: String(cString: aurora_bridge_library_format(index))
-            ))
-            index += 1
+        isScanning = true
+        scanQueue.async { [weak self] in
+            _ = aurora_bridge_library_scan()
+            let count = aurora_bridge_library_count()
+            var list: [GameRow] = []
+            var index: Int32 = 0
+            while index < count {
+                let title = String(cString: aurora_bridge_library_title(index))
+                let module = String(cString: aurora_bridge_library_module(index))
+                list.append(GameRow(
+                    id: "\(index)-\(title)",
+                    title: title,
+                    module: module,
+                    state: String(cString: aurora_bridge_library_state(index)),
+                    detail: String(cString: aurora_bridge_library_detail(index)),
+                    path: String(cString: aurora_bridge_library_path(index)),
+                    format: String(cString: aurora_bridge_library_format(index))
+                ))
+                index += 1
+            }
+            DispatchQueue.main.async {
+                self?.games = list
+                self?.isScanning = false
+            }
         }
-        games = list
     }
 
     func importGames(from urls: [URL]) {
