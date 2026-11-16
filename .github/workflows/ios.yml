@@ -191,6 +191,7 @@ jobs:
           path: |
             *.log
             Applications/Aurora-iOS/*.log
+            Applications/Aurora-iOS/Generated/*.cpp
           if-no-files-found: warn
 
       - name: package ipa
